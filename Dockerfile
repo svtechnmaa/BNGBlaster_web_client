@@ -1,6 +1,6 @@
 FROM python:3.10.12-slim
 
-LABEL org.opencontainers.image.source=https://github.com/moophat/BNGBlaster_web_client.git
+LABEL org.opencontainers.image.source=https://github.com/svtechnmaa/BNGBlaster_web_client.git
 
 LABEL maintainer "linhnt-hub"
 
