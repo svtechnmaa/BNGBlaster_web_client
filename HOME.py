@@ -194,11 +194,11 @@ def gif(gif_path):
 # path_templates_interfaces="/home/juniper/bngblaster/templates_interfaces"
 
 ## Read VAR_PATH from env 
-if "STREAMLIT_CONFIG" in os.environ:
-    file_path= os.environ['STREAMLIT_CONFIG']
+if "BNGBLASTER_CONFIG" in os.environ:
+    file_path= os.environ['BNGBLASTER_CONFIG']
 else:
     file_path = "./default_variable.yml"
-print(f"STREAMLIT_CONFIG IS {file_path}")
+print(f"BNGBLASTER_CONFIG IS {file_path}")
 ## read file yaml config
 def read_config_yaml(file_path):
     with open(file_path, 'r') as yaml_file:
@@ -520,7 +520,8 @@ def delete_config(path_configs, instance):
     with col1:
         if st.button(":red[**YES**]"):
             os.remove(f"{path_configs}/{instance}.json")
-            os.remove(f"{path_configs}/{instance}.yml")
+            if os.path.exists('%s/%s.yml'%(path_configs,instance)):
+                os.remove(f"{path_configs}/{instance}.yml")
             if os.path.exists('%s/%s_streams.yml'%(path_configs,instance)):
                 os.remove(f"{path_configs}/{instance}_streams.yml")
             if os.path.exists('%s/%s_interfaces.yml'%(path_configs,instance)):
@@ -718,7 +719,7 @@ if st.session_state.p3:
             st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, True, False
             log_authorize(st.session_state.user, 'Change RUN page')
             st.rerun()
-    tab1, tab2, tab3 = st.tabs([":bookmark_tabs: CREATE", ":pencil: MODIFY", ":inbox_tray: TEMPLATE"])
+    tab1, tab2, tab3, tab4 = st.tabs([":bookmark_tabs: CREATE", ":pencil: MODIFY", ":arrows_counterclockwise: JSON_IMPORT", ":inbox_tray: TEMPLATE"])
     with tab1:
         with st.container(border= True):
             st.subheader(':sunny: :green[**CREATE YOUR CONFIG**]')
@@ -1002,34 +1003,66 @@ if st.session_state.p3:
             edit_list_var=[]
             with st.container(border=True):
                 edit_instance= st.selectbox(':orange[Select your instance for modifing]?', list_instance, placeholder = 'Select one instance')
-            try:
-                with open("%s/%s.yml"%(path_configs,edit_instance) , 'r') as file_data:
-                    config_data = yaml.load(file_data, Loader=yaml.FullLoader)
-                    edit_template= config_data[edit_instance]['template']
-                    edit_list_var = get_variables_jinja_file(f'{path_templates}/{edit_template}')
-                    edit_list_var.sort()
-            except Exception as ex:
-                st.error(f"Can not load data file {ex}")
-            edit_dict_input={}
-            if edit_list_var:
-                st.write(':violet[**EDIT YOUR PROTOCOLS VARIABLE BELOW**]')
-                index=int(len(edit_list_var)/3)
-                with st.container(border= True):
-                    col1, col2, col3 = st.columns([1,1,1])
-                    with col1:
-                        with st.container(border= True):
-                            for i in edit_list_var[0:index+1]:
-                                exec(f"""edit_dict_input['{i}'] = st.text_input(f':orange[Modify **{i}**] ',config_data['{edit_instance}']['{i}'], placeholder = f'Typing {i}')""")
-                    with col2:
-                        with st.container(border= True):
-                            for i in edit_list_var[index+1:2*index+1]:
-                                exec(f"""edit_dict_input['{i}'] = st.text_input(f':orange[Modify **{i}**] ',config_data['{edit_instance}']['{i}'], placeholder = f'Typing {i}')""")
-                    with col3:
-                        with st.container(border= True):
-                            for i in edit_list_var[2*index+1:len(edit_list_var)]:
-                                exec(f"""edit_dict_input['{i}'] = st.text_input(f':orange[Modify **{i}**] ',config_data['{edit_instance}']['{i}'], placeholder = f'Typing {i}')""") 
+            if os.path.exists('%s/%s.yml'%(path_configs,edit_instance)):
+                try:
+                    with open("%s/%s.yml"%(path_configs,edit_instance) , 'r') as file_data:
+                        config_data = yaml.load(file_data, Loader=yaml.FullLoader)
+                        edit_template= config_data[edit_instance]['template']
+                        edit_list_var = get_variables_jinja_file(f'{path_templates}/{edit_template}')
+                        edit_list_var.sort()
+                except Exception as ex:
+                    st.error(f"Can not load data file {ex}")
+                edit_dict_input={}
+                if edit_list_var:
+                    st.write(':violet[**EDIT YOUR PROTOCOLS VARIABLE BELOW**]')
+                    index=int(len(edit_list_var)/3)
+                    with st.container(border= True):
+                        col1, col2, col3 = st.columns([1,1,1])
+                        with col1:
+                            with st.container(border= True):
+                                for i in edit_list_var[0:index+1]:
+                                    exec(f"""edit_dict_input['{i}'] = st.text_input(f':orange[Modify **{i}**] ',config_data['{edit_instance}']['{i}'], placeholder = f'Typing {i}')""")
+                        with col2:
+                            with st.container(border= True):
+                                for i in edit_list_var[index+1:2*index+1]:
+                                    exec(f"""edit_dict_input['{i}'] = st.text_input(f':orange[Modify **{i}**] ',config_data['{edit_instance}']['{i}'], placeholder = f'Typing {i}')""")
+                        with col3:
+                            with st.container(border= True):
+                                for i in edit_list_var[2*index+1:len(edit_list_var)]:
+                                    exec(f"""edit_dict_input['{i}'] = st.text_input(f':orange[Modify **{i}**] ',config_data['{edit_instance}']['{i}'], placeholder = f'Typing {i}')""") 
+                else:
+                    print('Can not load jinja template')
             else:
-                print('Can not load jinja template')
+                with open("%s/%s.json"%(path_configs,edit_instance) , 'r') as edit_config_data:
+                    edit_json_raw= edit_config_data.read()
+                with st.container(border=True):
+                    edit_json= st_ace(
+                        value= edit_json_raw,
+                        language= 'json', 
+                        theme= '', 
+                        show_gutter= True, 
+                        keybinding='vscode', 
+                        auto_update= True, 
+                        placeholder= '*Edit your config*')
+                col141, col151, col161 = st.columns([1,4,1])
+                with col141:
+                    if st.button('**SAVE**', type= 'primary', use_container_width=True):
+                        st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False,False, True, False, False
+                        try: 
+                            json.loads(edit_json)
+                            with open("%s/%s.json"%(path_configs,edit_instance) , 'w') as after_edit_json:
+                                json.dump(json.loads(edit_json), after_edit_json, indent=2)
+                                st.toast(':blue[Save instance **%s** successfully]'%edit_instance, icon="🔥")
+                        except Exception as e:
+                            st.error('Error json %s'%e, icon="🚨")
+                with col161:
+                    if st.button('**DELETE**', use_container_width=True):
+                        st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, True, False, False
+                        delete_config(path_configs, edit_instance)
+                if edit_json != "":
+                    with st.popover(":green[**REVIEW JSON**]", use_container_width=True):
+                        # st.json(yaml.safe_load(edit_content))
+                        st.json(edit_json)
             if os.path.exists('%s/%s_interfaces.yml'%(path_configs,edit_instance)):
                 with open('%s/%s_interfaces.yml'%(path_configs,edit_instance), mode= 'r') as interfaces:
                     edit_interfaces_input= yaml.safe_load(interfaces.read())
@@ -1132,65 +1165,66 @@ if st.session_state.p3:
             st.divider()
             edit_content=""
             col14, col15, col16 = st.columns([1,4,1])
-            with col14:
-                if st.button('**SAVE**', type= 'primary', disabled = st.session_state.edit_instance, use_container_width=True):
-                    st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False,False, True, False, False
-                    if "" not in edit_dict_input.values():
-                        streams_save={}
-                        interfaces_save={}
-                        if os.path.exists('%s/%s_streams.yml'%(path_configs,edit_instance)):
-                            streams_save['streams']= edit_streams
-                        if os.path.exists('%s/%s_interfaces.yml'%(path_configs,edit_instance)):
-                            interfaces_save['interfaces']= dict_edit_interfaces
-                        # Render config from Jinja file
-                        environment = Environment(loader=FileSystemLoader(f"{path_templates}"))
-                        template = environment.get_template(f"{config_data[edit_instance]['template']}")
-                        edit_content = template.render(edit_dict_input)
-                        ### Save new config
-                        with open('%s/%s.json'%(path_configs,edit_instance), mode= 'w', encoding= 'utf-8') as edit_config:
+            if os.path.exists('%s/%s.yml'%(path_configs,edit_instance)):
+                with col14:
+                    if st.button('**SAVE**', type= 'primary', disabled = st.session_state.edit_instance, use_container_width=True):
+                        st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False,False, True, False, False
+                        if "" not in edit_dict_input.values():
+                            streams_save={}
+                            interfaces_save={}
                             if os.path.exists('%s/%s_streams.yml'%(path_configs,edit_instance)):
-                                if os.path.exists('%s/%s_interfaces.yml'%(path_configs,edit_instance)):
-                                    edit_content += "\n" + yaml.dump(streams_save) + "\n" +yaml.dump(interfaces_save)
+                                streams_save['streams']= edit_streams
+                            if os.path.exists('%s/%s_interfaces.yml'%(path_configs,edit_instance)):
+                                interfaces_save['interfaces']= dict_edit_interfaces
+                            # Render config from Jinja file
+                            environment = Environment(loader=FileSystemLoader(f"{path_templates}"))
+                            template = environment.get_template(f"{config_data[edit_instance]['template']}")
+                            edit_content = template.render(edit_dict_input)
+                            ### Save new config
+                            with open('%s/%s.json'%(path_configs,edit_instance), mode= 'w', encoding= 'utf-8') as edit_config:
+                                if os.path.exists('%s/%s_streams.yml'%(path_configs,edit_instance)):
+                                    if os.path.exists('%s/%s_interfaces.yml'%(path_configs,edit_instance)):
+                                        edit_content += "\n" + yaml.dump(streams_save) + "\n" +yaml.dump(interfaces_save)
+                                    else:
+                                        edit_content += "\n" + yaml.dump(streams_save)
                                 else:
-                                    edit_content += "\n" + yaml.dump(streams_save)
-                            else:
-                                if os.path.exists('%s/%s_interfaces.yml'%(path_configs,edit_instance)):
-                                    edit_content += "\n" +yaml.dump(interfaces_save)
-                            json.dump(yaml.safe_load(edit_content), edit_config, indent=2)
-                        save_dict_data, save_dict_data_input={}, {} # Build dict of data
-                        for i in edit_dict_input.keys():
-                            save_dict_data_input.update({i: edit_dict_input[i]})
-                        save_dict_data_input['template']= config_data[edit_instance]['template'] # Save mapping config: template
-                        save_dict_data[edit_instance]= save_dict_data_input
-                        ### Save data instance to yaml
-                        with open('%s/%s.yml'%(path_configs,edit_instance), mode= 'w', encoding= 'utf-8') as data:
-                            data.write('---\n')
-                            data.write(yaml.dump(save_dict_data))
-                            data.write('\n')
-                        ### Save interfaces to yaml
-                        if os.path.exists('%s/%s_interfaces.yml'%(path_configs,edit_instance)):
-                            with open('%s/%s_interfaces.yml'%(path_configs,edit_instance), mode= 'w', encoding= 'utf-8') as interfaces_data:
-                                interfaces_data.write('---\n')
-                                interfaces_data.write(yaml.dump(interfaces_save))
-                        ### Save streams to yaml
-                        if os.path.exists('%s/%s_streams.yml'%(path_configs,edit_instance)):
-                            with open('%s/%s_streams.yml'%(path_configs,edit_instance), mode= 'w', encoding= 'utf-8') as streams_data:
-                                streams_data.write('---\n')
-                                streams_data.write(yaml.dump(streams_save))
-                        st.toast(':blue[Save instance %s successfully]'%edit_instance, icon="🔥")
-                        log_authorize(st.session_state.user, f'Edit and save instance {edit_instance}')
-                    else:
-                        st.toast(':red[Have parameters empty, fill us before save, please]', icon="🚨")
-            with col16:
-                if st.button('**DELETE**', use_container_width=True):
-                    st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, True, False, False
-                    delete_config(path_configs, edit_instance)
-            if edit_content != "":
-                with st.popover(":green[**REVIEW**]", use_container_width=True):
-                    # st.json(yaml.safe_load(edit_content))
-                    st.code(edit_content)
+                                    if os.path.exists('%s/%s_interfaces.yml'%(path_configs,edit_instance)):
+                                        edit_content += "\n" +yaml.dump(interfaces_save)
+                                json.dump(yaml.safe_load(edit_content), edit_config, indent=2)
+                            save_dict_data, save_dict_data_input={}, {} # Build dict of data
+                            for i in edit_dict_input.keys():
+                                save_dict_data_input.update({i: edit_dict_input[i]})
+                            save_dict_data_input['template']= config_data[edit_instance]['template'] # Save mapping config: template
+                            save_dict_data[edit_instance]= save_dict_data_input
+                            ### Save data instance to yaml
+                            with open('%s/%s.yml'%(path_configs,edit_instance), mode= 'w', encoding= 'utf-8') as data:
+                                data.write('---\n')
+                                data.write(yaml.dump(save_dict_data))
+                                data.write('\n')
+                            ### Save interfaces to yaml
+                            if os.path.exists('%s/%s_interfaces.yml'%(path_configs,edit_instance)):
+                                with open('%s/%s_interfaces.yml'%(path_configs,edit_instance), mode= 'w', encoding= 'utf-8') as interfaces_data:
+                                    interfaces_data.write('---\n')
+                                    interfaces_data.write(yaml.dump(interfaces_save))
+                            ### Save streams to yaml
+                            if os.path.exists('%s/%s_streams.yml'%(path_configs,edit_instance)):
+                                with open('%s/%s_streams.yml'%(path_configs,edit_instance), mode= 'w', encoding= 'utf-8') as streams_data:
+                                    streams_data.write('---\n')
+                                    streams_data.write(yaml.dump(streams_save))
+                            st.toast(':blue[Save instance %s successfully]'%edit_instance, icon="🔥")
+                            log_authorize(st.session_state.user, f'Edit and save instance {edit_instance}')
+                        else:
+                            st.toast(':red[Have parameters empty, fill us before save, please]', icon="🚨")
+                with col16:
+                    if st.button('**DELETE**', use_container_width=True):
+                        st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, True, False, False
+                        delete_config(path_configs, edit_instance)
+                if edit_content != "":
+                    with st.popover(":green[**REVIEW**]", use_container_width=True):
+                        # st.json(yaml.safe_load(edit_content))
+                        st.code(edit_content)
     if dict_user_db[st.session_state.user] == 'admin' or dict_user_db[st.session_state.user] == 'admin1':
-        with tab3:
+        with tab4:
             with st.container(border= True):
                 st.subheader(':sunny: :green[YOUR SELECTION]')
                 import_radio = st.radio(
@@ -1528,6 +1562,50 @@ if st.session_state.p3:
                             st.code(streams_output_str)
                         else:
                             st.error("Select above first", icon="🚨")
+    with tab3:
+        col1, col2 = st.columns([2,2])
+        with col1:
+            with st.container(border=True):
+                name_json_config= st.text_input("**:violet[1. INPUT NAME OF CONFIG]**")
+                data_json_import = st.file_uploader("**:violet[2. CHOOSE YOUR JSON FILE]**", accept_multiple_files=False)
+                if data_json_import:
+                    stringio = StringIO(data_json_import.getvalue().decode("utf-8"))
+                    string_data = stringio.read()
+                    try:
+                        input_json = json.loads(string_data)
+                        if name_json_config != '':
+                            # st.write(name_json_config)
+                            if (name_json_config+'.json') not in list_json:
+                                try:
+                                    export_yaml= yaml.dump(input_json)
+                                    with col2:
+                                        with st.container(border=True):
+                                            st.write("**:violet[3. EDIT CONFIG]**")
+                                            with st.container(border=True):
+                                                convert_json= st_ace(
+                                                value= export_yaml,
+                                                language= 'yaml', 
+                                                theme= '', 
+                                                show_gutter= True, 
+                                                keybinding='vscode', 
+                                                auto_update= True, 
+                                                placeholder= '*Edit your config*')
+                                            if st.button("SAVE CONFIG", type= 'primary', use_container_width= True):
+                                                with open('%s/%s.json'%(path_configs,name_json_config), mode= 'w', encoding= 'utf-8') as json_config:
+                                                    json.dump(yaml.safe_load(convert_json), json_config, indent=2)
+                                                st.success("Config save successfully", icon="🔥")
+                                except Exception as e:
+                                    with col2:
+                                        st.error(f"Can not yaml dump content, check error {e}", icon="🚨")
+                            else:
+                                st.error('Name existed', icon="🚨")
+                        else:
+                            st.error('Name empty', icon="🚨")
+                    except Exception as e:
+                        st.error(f"Can not read json content, check error {e}", icon="🚨")
+                    # st.write(list_json)
+                else:
+                    st.error('Import File', icon="🚨")
 if st.session_state.p4:
     st.title(':infinity: :rainbow[RUN BLASTER]')
     col41, col42 ,col43 =st.columns([19,0.9,0.9])
@@ -1830,7 +1908,7 @@ if dict_user_db[st.session_state.user] == 'admin' and st.session_state.p2:
                 if username_of_forgotten_password:
                     with open('authen/config.yaml', 'w') as file:
                         yaml.dump(config, file, default_flow_style=False)
-                    st.success('New password to be sent securely')
+                    st.success('New password to be sent securely', icon="🔥")
                     # The developer should securely transfer the new password to the user.
                 elif username_of_forgotten_password == False:
                     st.error('Username not found')
@@ -1845,7 +1923,7 @@ if dict_user_db[st.session_state.user] == 'admin' and st.session_state.p2:
                     conn = sqlite_connect_to_db(db_name)
                     sqlite_insert_user(conn, username_of_registered_user, 'operator')
                     conn.close()
-                    st.success('User registered successfully')
+                    st.success('User registered successfully', icon="🔥")
             except Exception as e:
                 st.error(e)
         with st.expander(':green[EDIT USER PRIVILEGES]'):

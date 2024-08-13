@@ -20,7 +20,7 @@ RUN /usr/bin/git clone --branch main https://github.com/moophat/BNGBlaster_web_c
 
 WORKDIR /BNGBlaster_web_client
 COPY default_variable.yml /root/default_variable.yml 
-ENV STREAMLIT_CONFIG="/root/default_variable.yml"
+ENV BNGBLASTER_CONFIG="/root/default_variable.yml"
 COPY entrypoint.sh /root/entrypoint.sh
 RUN ["chmod", "+x", "/root/entrypoint.sh"]
 
