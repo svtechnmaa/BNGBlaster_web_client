@@ -14,7 +14,7 @@ RUN apt-get update -y \
 #########git clone#########
 
 # # Clone the conf files into the docker container
-RUN /usr/bin/git clone --branch main https://github.com/moophat/BNGBlaster_web_client.git
+RUN /usr/bin/git clone --branch main https://github.com/svtechnmaa/BNGBlaster_web_client.git
 
 ########done git clone#########
 
