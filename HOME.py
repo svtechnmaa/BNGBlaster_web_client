@@ -1642,71 +1642,72 @@ if st.session_state.p4:
                 st.session_state.button_stop= False
                 with col19:
                     st.warning("This instance already running", icon="🔥")
-                with open('%s/%s.yml'%(path_configs,instance), 'r') as file_temp:
-                    run_template = yaml.load(file_temp, Loader=yaml.FullLoader)
-                col17, col18 =st.columns([1,1])
-                if run_template[instance]['template'] == "bgp.j2":
-                    with col17:
-                        with st.form('ADVERTISE'):
-                            prefix= st.text_input(f":orange[Your prefix you want advertise: ]","", placeholder = "Fill your IP prefix")
-                            num_prefix= st.text_input(f":orange[Your number of prefixs you want advertise: ]","", placeholder = "Fill number")
-                            submitted = st.form_submit_button(label= "ADVERTISE")
-                            if submitted:
-                                if "/" in prefix and prefix:
-                                    name_bgp_update = instance + "_"+ prefix.split('/')[0]+"_"+num_prefix
-                                    payload_command_bgp_raw_update= """
-                                    {
-                                        "command": "bgp-raw-update",
-                                        "arguments": {
-                                            "file": "/var/bngblaster/uploads/%s.bgp"
+                if os.path.exists('%s/%s.yml'%(path_configs,instance)):
+                    with open('%s/%s.yml'%(path_configs,instance), 'r') as file_temp:
+                        run_template = yaml.load(file_temp, Loader=yaml.FullLoader)
+                    col17, col18 =st.columns([1,1])
+                    if run_template[instance]['template'] == "bgp.j2":
+                        with col17:
+                            with st.form('ADVERTISE'):
+                                prefix= st.text_input(f":orange[Your prefix you want advertise: ]","", placeholder = "Fill your IP prefix")
+                                num_prefix= st.text_input(f":orange[Your number of prefixs you want advertise: ]","", placeholder = "Fill number")
+                                submitted = st.form_submit_button(label= "ADVERTISE")
+                                if submitted:
+                                    if "/" in prefix and prefix:
+                                        name_bgp_update = instance + "_"+ prefix.split('/')[0]+"_"+num_prefix
+                                        payload_command_bgp_raw_update= """
+                                        {
+                                            "command": "bgp-raw-update",
+                                            "arguments": {
+                                                "file": "/var/bngblaster/uploads/%s.bgp"
+                                            }
                                         }
-                                    }
-                                    """%name_bgp_update
-                                    if prefix and num_prefix:
-                                        # subprocess.run(["bgpupdate","-f", "%s.bgp"%instance,"-a", run_template[instance]['local_as'], "-n",run_template[instance]['bgp_local_address'], "-p", prefix, "-P",num_prefix,"-f", "withdraw.bgp","--withdraw"], capture_output=True, text=True)
-                                        result = subprocess.run(["bgpupdate","-f", "./bgp_update/%s.bgp"%name_bgp_update,"-a", run_template[instance]['bgp_local_as'], "-n",run_template[instance]['bgp_local_address'], "-p", prefix, "-P",num_prefix], capture_output=True, text=True)
-                                        if 'error' not in str(result):
-                                            # send_file = push_file_to_server_rest_api(blaster_server['ip'], '5000', './bgp_update/%s.bgp'%name_bgp_update)
-                                            push_file_to_server_by_ftp(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd'],f"{path_bgp_update}/{name_bgp_update}.bgp", f'/var/bngblaster/uploads/{name_bgp_update}.bgp')
-                                            adv_sc, adv_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'POST', payload_command_bgp_raw_update, '/_command')
-                                            st.info(':blue[Advertise sucessfully]', icon="🔥")
-                                            log_authorize(st.session_state.user, f'Advertise BGP route {prefix} num {num_prefix}')
+                                        """%name_bgp_update
+                                        if prefix and num_prefix:
+                                            # subprocess.run(["bgpupdate","-f", "%s.bgp"%instance,"-a", run_template[instance]['local_as'], "-n",run_template[instance]['bgp_local_address'], "-p", prefix, "-P",num_prefix,"-f", "withdraw.bgp","--withdraw"], capture_output=True, text=True)
+                                            result = subprocess.run(["bgpupdate","-f", "./bgp_update/%s.bgp"%name_bgp_update,"-a", run_template[instance]['bgp_local_as'], "-n",run_template[instance]['bgp_local_address'], "-p", prefix, "-P",num_prefix], capture_output=True, text=True)
+                                            if 'error' not in str(result):
+                                                # send_file = push_file_to_server_rest_api(blaster_server['ip'], '5000', './bgp_update/%s.bgp'%name_bgp_update)
+                                                push_file_to_server_by_ftp(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd'],f"{path_bgp_update}/{name_bgp_update}.bgp", f'/var/bngblaster/uploads/{name_bgp_update}.bgp')
+                                                adv_sc, adv_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'POST', payload_command_bgp_raw_update, '/_command')
+                                                st.info(':blue[Advertise sucessfully]', icon="🔥")
+                                                log_authorize(st.session_state.user, f'Advertise BGP route {prefix} num {num_prefix}')
+                                            else:
+                                                st.error(":violet[Wrong prefix]", icon="🔥")
                                         else:
-                                            st.error(":violet[Wrong prefix]", icon="🔥")
+                                            st.error(":violet[Fill prefix advertise above first]", icon="🔥")
                                     else:
-                                        st.error(":violet[Fill prefix advertise above first]", icon="🔥")
-                                else:
-                                    st.error('Type your prefix with subnet mask, plz', icon="🚨")
-                    with col18:
-                        with st.form('WITHDRAW'):
-                            prefix_wd= st.text_input(f":orange[Your prefix you want withdraw: ]","", placeholder = "Fill your IP prefix")
-                            num_prefix_wd= st.text_input(f":orange[Your number of prefixs you want withdraw: ]","", placeholder = "Fill number")
-                            submitted = st.form_submit_button(label= "WITHDRAW")
-                            if submitted:
-                                if "/" in prefix_wd and prefix_wd:
-                                    name_bgp_update_wd = instance+"_withdraw_"+ prefix_wd.split('/')[0]+"_"+num_prefix_wd
-                                    payload_command_bgp_raw_update_wd= """
-                                    {
-                                        "command": "bgp-raw-update",
-                                        "arguments": {
-                                            "file": "/var/bngblaster/uploads/%s.bgp"
+                                        st.error('Type your prefix with subnet mask, plz', icon="🚨")
+                        with col18:
+                            with st.form('WITHDRAW'):
+                                prefix_wd= st.text_input(f":orange[Your prefix you want withdraw: ]","", placeholder = "Fill your IP prefix")
+                                num_prefix_wd= st.text_input(f":orange[Your number of prefixs you want withdraw: ]","", placeholder = "Fill number")
+                                submitted = st.form_submit_button(label= "WITHDRAW")
+                                if submitted:
+                                    if "/" in prefix_wd and prefix_wd:
+                                        name_bgp_update_wd = instance+"_withdraw_"+ prefix_wd.split('/')[0]+"_"+num_prefix_wd
+                                        payload_command_bgp_raw_update_wd= """
+                                        {
+                                            "command": "bgp-raw-update",
+                                            "arguments": {
+                                                "file": "/var/bngblaster/uploads/%s.bgp"
+                                            }
                                         }
-                                    }
-                                    """%name_bgp_update_wd
-                                    if prefix_wd and num_prefix_wd:
-                                        result_wd= subprocess.run(["bgpupdate","-a", run_template[instance]['bgp_local_as'], "-n",run_template[instance]['bgp_local_address'], "-p", prefix_wd, "-P",num_prefix_wd,"-f", "./bgp_update/%s.bgp"%name_bgp_update_wd,"--withdraw"], capture_output=True, text=True)
-                                        if "error" not in str(result_wd):
-                                            # send_file_wd = push_file_to_server_rest_api(blaster_server['ip'], '5000', './bgp_update/%s.bgp'%name_bgp_update_wd)
-                                            push_file_to_server_by_ftp(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']]['user'],dict_blaster_db_format[blaster_server['ip']]['passwd'] ,f"{path_bgp_update}/{name_bgp_update_wd}.bgp", f'/var/bngblaster/uploads/{name_bgp_update_wd}.bgp')
-                                            wd_sc, wd_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'POST', payload_command_bgp_raw_update_wd, '/_command')
-                                            st.info(':blue[Withdraw sucessfully]', icon="🔥")
-                                            log_authorize(st.session_state.user, f'Withdraw BGP route {prefix_wd} num {num_prefix_wd}')
+                                        """%name_bgp_update_wd
+                                        if prefix_wd and num_prefix_wd:
+                                            result_wd= subprocess.run(["bgpupdate","-a", run_template[instance]['bgp_local_as'], "-n",run_template[instance]['bgp_local_address'], "-p", prefix_wd, "-P",num_prefix_wd,"-f", "./bgp_update/%s.bgp"%name_bgp_update_wd,"--withdraw"], capture_output=True, text=True)
+                                            if "error" not in str(result_wd):
+                                                # send_file_wd = push_file_to_server_rest_api(blaster_server['ip'], '5000', './bgp_update/%s.bgp'%name_bgp_update_wd)
+                                                push_file_to_server_by_ftp(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']]['user'],dict_blaster_db_format[blaster_server['ip']]['passwd'] ,f"{path_bgp_update}/{name_bgp_update_wd}.bgp", f'/var/bngblaster/uploads/{name_bgp_update_wd}.bgp')
+                                                wd_sc, wd_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'POST', payload_command_bgp_raw_update_wd, '/_command')
+                                                st.info(':blue[Withdraw sucessfully]', icon="🔥")
+                                                log_authorize(st.session_state.user, f'Withdraw BGP route {prefix_wd} num {num_prefix_wd}')
+                                            else:
+                                                st.error(":violet[Wrong prefix]", icon="🔥")
                                         else:
-                                            st.error(":violet[Wrong prefix]", icon="🔥")
+                                            st.error(":violet[Fill prefix withdraw above first]", icon="🔥")
                                     else:
-                                        st.error(":violet[Fill prefix withdraw above first]", icon="🔥")
-                                else:
-                                    st.error('Type your prefix with subnet mask, plz', icon="🚨")
+                                        st.error('Type your prefix with subnet mask, plz', icon="🚨")
             else:
                 with col19:
                     st.session_state.button_start= False
