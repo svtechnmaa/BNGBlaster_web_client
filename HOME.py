@@ -1908,7 +1908,7 @@ if dict_user_db[st.session_state.user] == 'admin' and st.session_state.p2:
                 st.write(username_of_forgotten_password, '\n', email_of_forgotten_password, '\n' ,new_random_password)
                 if username_of_forgotten_password:
                     with open('authen/config.yaml', 'w') as file:
-                        yaml.dump(config, file, default_flow_style=False)
+                        yaml.dump(config_authen, file, default_flow_style=False)
                     st.success('New password to be sent securely', icon="🔥")
                     # The developer should securely transfer the new password to the user.
                 elif username_of_forgotten_password == False:
@@ -1920,7 +1920,7 @@ if dict_user_db[st.session_state.user] == 'admin' and st.session_state.p2:
                 email_of_registered_user, username_of_registered_user, name_of_registered_user = authenticator.register_user(pre_authorization=False)
                 if email_of_registered_user:
                     with open('authen/config.yaml', 'w') as file:
-                        yaml.dump(config, file, default_flow_style=False)
+                        yaml.dump(config_authen, file, default_flow_style=False)
                     conn = sqlite_connect_to_db(db_name)
                     sqlite_insert_user(conn, username_of_registered_user, 'operator')
                     conn.close()
