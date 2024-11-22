@@ -143,6 +143,12 @@ def is_valid_ip(ip):
         return True
     except ValueError:
         return False
+#############################################################################
+def check_key_value_is_list(dictionary, key):
+    if key in dictionary:
+        return isinstance(dictionary[key], list)
+    else:
+        return False
 ################### Function for set background ############################
 import base64
 def get_base64(bin_file):
@@ -1074,54 +1080,71 @@ if st.session_state.p3:
                     st.write(f':violet[**EDIT INTERFACES VARIABLE BELOW**]')
                     with st.container(border= True):
                         index_int = int(len(edit_list_key_interfaces)/2)
+                        # st.write(edit_list_key_interfaces)
                         col1, col2= st.columns([1,1])
                         with col1:
                             for key in edit_list_key_interfaces[0:index_int+1]:
-                                exec(f"edit_interfaces_{key} = []")
-                                with st.container(border= True):
-                                    st.write(f':green[**interfaces/{key}**]')
-                                    for i in range(len(edit_interfaces_input['interfaces'][key])):
-                                        temp_edit_interfaces ={}
-                                        with st.popover(f":orange[interfaces_{key}_{i}]", use_container_width=True):
-                                            list_input= edit_interfaces_input['interfaces'][key][i].keys()
-                                            for j in list_input:
-                                                exec(f"""temp_edit_interfaces['{j}'] = st.text_input(f":orange[interaces_{key}_{i}]/:orange[**{j}**]", edit_interfaces_input['interfaces'][key][i]['{j}'])""")
-                                        eval(f"edit_interfaces_{key}.append(temp_edit_interfaces)")
-                                        if i == (len(edit_interfaces_input['interfaces'][key])-1):
-                                            exec(f"dict_edit_interfaces[key] = edit_interfaces_{key}")
-                                        
-                                    ###### Convert value of interface value to int #############################
-                                    for i in eval(f"edit_interfaces_{key}"):
-                                        list_keys = list(i.keys())
-                                        for j in list_keys:
-                                            try:
-                                                temp=int(i[j])
-                                                i[j] = temp
-                                            except:
-                                                continue
+                                if check_key_value_is_list(edit_interfaces_input['interfaces'], key):
+                                    exec(f"edit_interfaces_{key} = []")
+                                    with st.container(border= True):
+                                        st.write(f':green[**interfaces/{key}**]')
+                                        for i in range(len(edit_interfaces_input['interfaces'][key])):
+                                            temp_edit_interfaces ={}
+                                            with st.popover(f":orange[interfaces_{key}_{i}]", use_container_width=True):
+                                                list_input= edit_interfaces_input['interfaces'][key][i].keys()
+                                                for j in list_input:
+                                                    exec(f"""temp_edit_interfaces['{j}'] = st.text_input(f":orange[interaces_{key}_{i}]/:orange[**{j}**]", edit_interfaces_input['interfaces'][key][i]['{j}'])""")
+                                            eval(f"edit_interfaces_{key}.append(temp_edit_interfaces)")
+                                            if i == (len(edit_interfaces_input['interfaces'][key])-1):
+                                                exec(f"dict_edit_interfaces[key] = edit_interfaces_{key}")
+                                            
+                                        ###### Convert value of interface value to int #############################
+                                        for i in eval(f"edit_interfaces_{key}"):
+                                            list_keys = list(i.keys())
+                                            for j in list_keys:
+                                                try:
+                                                    temp=int(i[j])
+                                                    i[j] = temp
+                                                except:
+                                                    continue
+                                else:
+                                    key_convert= key.replace('-','_')
+                                    with st.container(border= True):
+                                        st.write(f':green[**interfaces/{key}**]')
+                                        with st.popover(f":orange[interfaces_{key}]", use_container_width=True):
+                                            temp_edit_interfaces = st.text_input(f":orange[interfaces_{key}]", edit_interfaces_input['interfaces'][key])
+                                        dict_edit_interfaces[key] = temp_edit_interfaces
                         with col2:
                             for key in edit_list_key_interfaces[index_int+1:len(edit_list_key_interfaces)]:
-                                exec(f"edit_interfaces_{key} = []")
-                                with st.container(border= True):
-                                    st.write(f':green[**interfaces/{key}**]')
-                                    for i in range(len(edit_interfaces_input['interfaces'][key])):
-                                        temp_edit_interfaces ={}
-                                        with st.popover(f":orange[interfaces_{key}_{i}]", use_container_width=True):
-                                            list_input= edit_interfaces_input['interfaces'][key][i].keys()
-                                            for j in list_input:
-                                                exec(f"""temp_edit_interfaces['{j}'] = st.text_input(f":orange[interaces_{key}_{i}]/:orange[**{j}**]", edit_interfaces_input['interfaces'][key][i]['{j}'])""")
-                                        eval(f"edit_interfaces_{key}.append(temp_edit_interfaces)")
-                                        if i == (len(edit_interfaces_input['interfaces'][key])-1):
-                                            exec(f"dict_edit_interfaces[key] = edit_interfaces_{key}")
-                                    ###### Convert value of interface value to int #############################
-                                    for i in eval(f"edit_interfaces_{key}"):
-                                        list_keys = list(i.keys())
-                                        for j in list_keys:
-                                            try:
-                                                temp=int(i[j])
-                                                i[j] = temp
-                                            except:
-                                                continue
+                                if check_key_value_is_list(edit_interfaces_input['interfaces'],key):
+                                    exec(f"edit_interfaces_{key} = []")
+                                    with st.container(border= True):
+                                        st.write(f':green[**interfaces/{key}**]')
+                                        for i in range(len(edit_interfaces_input['interfaces'][key])):
+                                            temp_edit_interfaces ={}
+                                            with st.popover(f":orange[interfaces_{key}_{i}]", use_container_width=True):
+                                                list_input= edit_interfaces_input['interfaces'][key][i].keys()
+                                                for j in list_input:
+                                                    exec(f"""temp_edit_interfaces['{j}'] = st.text_input(f":orange[interaces_{key}_{i}]/:orange[**{j}**]", edit_interfaces_input['interfaces'][key][i]['{j}'])""")
+                                            eval(f"edit_interfaces_{key}.append(temp_edit_interfaces)")
+                                            if i == (len(edit_interfaces_input['interfaces'][key])-1):
+                                                exec(f"dict_edit_interfaces[key] = edit_interfaces_{key}")
+                                        ###### Convert value of interface value to int #############################
+                                        for i in eval(f"edit_interfaces_{key}"):
+                                            list_keys = list(i.keys())
+                                            for j in list_keys:
+                                                try:
+                                                    temp=int(i[j])
+                                                    i[j] = temp
+                                                except:
+                                                    continue
+                                else:
+                                    key_convert= key.replace('-','_')
+                                    with st.container(border= True):
+                                        st.write(f':green[**interfaces/{key}**]')
+                                        with st.popover(f":orange[interfaces_{key}]", use_container_width=True):
+                                            temp_edit_interfaces = st.text_input(f":orange[interfaces_{key}]", edit_interfaces_input['interfaces'][key])
+                                        dict_edit_interfaces[key] = temp_edit_interfaces
                         # st.write(dict_edit_interfaces)
             if os.path.exists('%s/%s_streams.yml'%(path_configs,edit_instance)):
                 # st.divider()
