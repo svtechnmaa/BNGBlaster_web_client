@@ -582,8 +582,12 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                         with st.popover(f":green[CONFIG EXISTED]", use_container_width=True):
                             view_config_avail_sc,  view_config_avail_ct = CALL_API_BLASTER(ip, port, i, 'GET', payload_start, '/config.json')
                             if view_config_avail_sc==200:
-                                config_avail = json.loads(view_config_avail_ct)
-                                st.write(config_avail)
+                                try:
+                                    config_avail = json.loads(view_config_avail_ct)
+                                    st.write(config_avail)
+                                except Exception as e:
+                                    st.error(':blue[Instance %s have json syntax error %s]'%(i,e), icon="🔥")
+                                    continue
                 # st.dataframe(list_instance_avail_from_blaster, use_container_width= True)
                 # st.dataframe(list_instance_avail_from_blaster, use_container_width= True, column_config={"value": "instance-name"})
         with col_display:
