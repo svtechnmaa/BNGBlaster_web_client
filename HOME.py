@@ -483,7 +483,7 @@ def find_interface(hostname, username, password):
         # Connect to the remote server
         client.connect(hostname, username=username, password=password)
         # Execute the command to check network interfaces
-        stdin, stdout, stderr = client.exec_command("netstat -i | grep -e ens -e eth")
+        stdin, stdout, stderr = client.exec_command("sudo netstat -i | grep -e ens -e eth")
         # Read the command output
         output = stdout.read().decode()
         error = stderr.read().decode()
