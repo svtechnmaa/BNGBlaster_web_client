@@ -29,7 +29,11 @@ if 'p1' not in st.session_state:
     st.session_state.p4= False
     st.session_state.p5= False
     st.session_state.user = ''
-
+def is_valid_name_instance(s):
+    # Regular expression to match only letters, numbers, and underscores,
+    # and not start with a number
+    pattern = r'^[A-Za-z_][A-Za-z0-9_]*$'
+    return bool(re.match(pattern, s))
 # Function for log action
 def log_authorize(user, action):
     from datetime import datetime, timezone, timedelta # Datetime
@@ -419,6 +423,8 @@ def execute_remote_command_use_passwd(host, username, passwd , command):
         client.connect(host, username=username, password=passwd)
         # Execute the command to check network interfaces
         stdin, stdout, stderr = client.exec_command(f'{command}')
+        stdin.write(passwd + "\n")
+        stdin.flush()
         # Read the command output
         output = stdout.read().decode()
         error = stderr.read().decode()
@@ -736,14 +742,14 @@ if st.session_state.p3:
             st.write(':violet[**YOUR INSTANCE NAME**]')
             with st.container(border=True):
                 instance_name = st.text_input(':orange[Name of your instance] ', placeholder = 'Typing your instance name')
-                if instance_name:
+                if is_valid_name_instance(instance_name):
                     if instance_name + '.json' not in list_json:
                         st.info(':blue[Your instance\'s name can be use]', icon="🔥")
                         st.session_state.create_instance= False
                     else:
                         st.error('Your instance was duplicate, choose other name', icon="🚨")
                 else:
-                    st.error('Instance name can not null', icon="🔥")
+                    st.error('Instance name is null or wrong syntax', icon="🔥")
             st.write(':violet[**SELECT YOUR PROTOCOLS TEMPLATES**]')
             col21, col22 = st.columns([4.2,1])
             with col21:
@@ -1458,8 +1464,12 @@ if st.session_state.p3:
                                 st.warning("Name can not null", icon="🔥")
                                 st.session_state.save_template= True
                             else:
-                                st.info("You can use this name", icon="🔥")
-                                st.session_state.save_template= False
+                                if is_valid_name_instance(name_template):
+                                    st.info("You can use this name", icon="🔥")
+                                    st.session_state.save_template= False
+                                else:
+                                    st.warning("Name wrong syntax", icon="🔥")
+                                    st.session_state.save_template= True
                     if st.button("**SAVE**", type= 'primary', disabled= st.session_state.save_template):
                         if output_str != "":
                             with open(f"{path_templates}/{name_template}.j2", 'w') as file:
@@ -1519,8 +1529,12 @@ if st.session_state.p3:
                                 st.warning("Name can not null", icon="🔥")
                                 st.session_state.save_template= True
                             else:
-                                st.info("You can use this name", icon="🔥")
-                                st.session_state.save_template= False
+                                if is_valid_name_instance(name_template):
+                                    st.info("You can use this name", icon="🔥")
+                                    st.session_state.save_template= False
+                                else:
+                                    st.warning("Name wrong syntax", icon="🔥")
+                                    st.session_state.save_template= True
                     if st.button("**SAVE**", type= 'primary', disabled= st.session_state.save_template):
                         if output_str != "":
                             with open(f"{path_templates_interfaces}/{name_template}.j2", 'w') as file:
@@ -1580,8 +1594,12 @@ if st.session_state.p3:
                                 st.warning("Typing your name", icon="🔥")
                                 st.session_state.save_template= True
                             else:
-                                st.info("You can use this name", icon="🔥")
-                                st.session_state.save_template= False
+                                if is_valid_name_instance(name_template):
+                                    st.info("You can use this name", icon="🔥")
+                                    st.session_state.save_template= False
+                                else:
+                                    st.warning("Name wrong syntax", icon="🔥")
+                                    st.session_state.save_template= True
                     if st.button("**SAVE**", type= 'primary', disabled= st.session_state.save_template):
                         if streams_output_str != "":
                             with open(f"{path_templates_streams}/{name_template}.j2", 'w') as file:
@@ -1600,7 +1618,7 @@ if st.session_state.p3:
                     string_data = stringio.read()
                     try:
                         input_json = json.loads(string_data)
-                        if name_json_config != '':
+                        if is_valid_name_instance(name_json_config):
                             # st.write(name_json_config)
                             if (name_json_config+'.json') not in list_json:
                                 try:
@@ -1627,7 +1645,7 @@ if st.session_state.p3:
                             else:
                                 st.error('Name existed', icon="🚨")
                         else:
-                            st.error('Name empty', icon="🚨")
+                            st.error('Name empty or wrong syntax', icon="🚨")
                     except Exception as e:
                         st.error(f"Can not read json content, check error {e}", icon="🚨")
                     # st.write(list_json)
@@ -1770,6 +1788,26 @@ if st.session_state.p4:
                                 execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), "sudo modprobe 8021q")
                                 execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo ip link add link {y.split('.')[0]} name {y} type vlan id {y.split('.')[1]}")
                                 execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo ip link set dev {y} up")
+                    else:
+                        list_inf = []
+                        with open(f"{path_configs}/{instance}.json", "r") as json_run:
+                            val_json=json.load(json_run)
+                        try:
+                            for i in range(len(val_json['interfaces']['access'])):
+                                list_inf.append(val_json['interfaces']['access'][i]['interface'])
+                        except:
+                            pass
+                        try:
+                            for i in range(len(val_json['interfaces']['network'])):
+                                list_inf.append(val_json['interfaces']['network'][i]['interface'])
+                        except:
+                            pass
+                        for i in list_inf:
+                            if '.' in i:
+                                st.toast(i)
+                                execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), "sudo -S modprobe 8021q")
+                                execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo -S ip link add link {i.split('.')[0]} name {i} type vlan id {i.split('.')[1]}")
+                                execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo -S ip link set dev {i} up")
                     try:
                         exist_sc, exist_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'GET', payload_start)
                         # st.write(exist_sc, exist_ct)
