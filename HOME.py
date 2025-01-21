@@ -1116,7 +1116,12 @@ if st.session_state.p3:
                                                             temp=int(k[n])
                                                             k[n] = temp
                                                         except:
-                                                            continue
+                                                            pass
+                                                        try:
+                                                            temp=bool(k[n])
+                                                            k[n] = temp
+                                                        except:
+                                                            pass
                                                 exec(f"dict_edit_interfaces[key] = edit_interfaces_{key}")
                                 else:
                                     # key_convert= key.replace('-','_')
@@ -1127,11 +1132,11 @@ if st.session_state.p3:
                                         try:
                                             temp_edit_interfaces= int(temp_edit_interfaces)
                                         except:
-                                            continue
+                                            pass
                                         try:
                                             temp_edit_interfaces= float(temp_edit_interfaces)
                                         except:
-                                            continue
+                                            pass
                                         dict_edit_interfaces[key] = temp_edit_interfaces
                         with col2:
                             for key in edit_list_key_interfaces[index_int+1:len(edit_list_key_interfaces)]:
@@ -1155,7 +1160,12 @@ if st.session_state.p3:
                                                             temp=int(k[n])
                                                             k[n] = temp
                                                         except:
-                                                            continue
+                                                            pass
+                                                        try:
+                                                            temp=bool(k[n])
+                                                            k[n] = temp
+                                                        except:
+                                                            pass
                                                 exec(f"dict_edit_interfaces[key] = edit_interfaces_{key}")
                                 else:
                                     # key_convert= key.replace('-','_')
@@ -1166,11 +1176,11 @@ if st.session_state.p3:
                                         try:
                                             temp_edit_interfaces= int(temp_edit_interfaces)
                                         except:
-                                            continue
+                                            pass
                                         try:
                                             temp_edit_interfaces= float(temp_edit_interfaces)
                                         except:
-                                            continue
+                                            pass
                                         dict_edit_interfaces[key] = temp_edit_interfaces
                         # st.write(dict_edit_interfaces)
             if os.path.exists('%s/%s_streams.yml'%(path_configs,edit_instance)):
