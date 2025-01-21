@@ -489,7 +489,9 @@ def find_interface(hostname, username, password):
         # Connect to the remote server
         client.connect(hostname, username=username, password=password)
         # Execute the command to check network interfaces
-        stdin, stdout, stderr = client.exec_command("sudo netstat -i | grep -e ens -e eth")
+        stdin, stdout, stderr = client.exec_command("sudo -S netstat -i | grep -e ens -e eth")
+        stdin.write(password + "\n")
+        stdin.flush()
         # Read the command output
         output = stdout.read().decode()
         error = stderr.read().decode()
@@ -1777,11 +1779,14 @@ if st.session_state.p4:
                                     continue
                         else:
                             for type_int in list_int_key:
-                                for i in data_set['interfaces'][type_int]:
-                                    try:
-                                        int_list.append(i['interface'])
-                                    except:
-                                        continue
+                                if isinstance(data_set['interfaces'][type_int], list):
+                                    for i in data_set['interfaces'][type_int]:
+                                        try:
+                                            int_list.append(i['interface'])
+                                        except:
+                                            continue
+                                else:
+                                    continue
                         # st.write(int_list)
                         for y in int_list:
                             if "." in y:
@@ -1804,7 +1809,7 @@ if st.session_state.p4:
                             pass
                         for i in list_inf:
                             if '.' in i:
-                                st.toast(i)
+                                # st.toast(i)
                                 execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), "sudo -S modprobe 8021q")
                                 execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo -S ip link add link {i.split('.')[0]} name {i} type vlan id {i.split('.')[1]}")
                                 execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo -S ip link set dev {i} up")
