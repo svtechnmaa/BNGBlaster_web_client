@@ -1117,11 +1117,10 @@ if st.session_state.p3:
                                                             k[n] = temp
                                                         except:
                                                             pass
-                                                        try:
-                                                            temp=bool(k[n])
-                                                            k[n] = temp
-                                                        except:
-                                                            pass
+                                                        if (k[n]== 'True') or (k[n]== 'true'):
+                                                            k[n] = True
+                                                        if (k[n]== 'False') or (k[n]== 'false'):
+                                                            k[n] = False
                                                 exec(f"dict_edit_interfaces[key] = edit_interfaces_{key}")
                                 else:
                                     # key_convert= key.replace('-','_')
@@ -1162,11 +1161,10 @@ if st.session_state.p3:
                                                             k[n] = temp
                                                         except:
                                                             pass
-                                                        try:
-                                                            temp=bool(k[n])
-                                                            k[n] = temp
-                                                        except:
-                                                            pass
+                                                        if (k[n]== 'True') or (k[n]== 'true'):
+                                                            k[n] = True
+                                                        if (k[n]== 'False') or (k[n]== 'false'):
+                                                            k[n] = False
                                                 exec(f"dict_edit_interfaces[key] = edit_interfaces_{key}")
                                 else:
                                     # key_convert= key.replace('-','_')
