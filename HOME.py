@@ -604,14 +604,22 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                 for i in select_running_instance_cb:
                     with st.popover(f":chart: *{i}*", use_container_width=True):
                         df_nw_tx_rx = pd.DataFrame([[0, 0]], columns=(["network_tx_packets", "network_rx_packets"]))
+                        df_nw_tx_rx_pps = pd.DataFrame([[0, 0]], columns=(["network_tx_pps", "network_rx_pps"]))
                         df_acc_tx_rx = pd.DataFrame([[0, 0]], columns=(["access_tx_packets", "access_rx_packets"]))
+                        df_acc_tx_rx_pps = pd.DataFrame([[0, 0]], columns=(["access_tx_pps", "access_rx_pps"]))
                         df_pktloss = pd.DataFrame([[0, 0]], columns=(["network_interface_pkt_loss", "access_interface_pkt_loss"]))
                         with st.container(border= True):
                             st.write(':orange[**NETWORK INTERFACE**]')
-                            exec(f'nw_int_chart_{i} = st.line_chart(df_nw_tx_rx, color = ["#FF0000", "#0000FF"], use_container_width= True)')
+                            with st.container(border= True):
+                                exec(f'nw_int_chart_{i} = st.line_chart(df_nw_tx_rx, color = ["#FF0000", "#0000FF"], use_container_width= True)')
+                            with st.container(border= True):
+                                exec(f'nw_int_chart_{i}_pps = st.line_chart(df_nw_tx_rx_pps, color = ["#FF0000", "#0000FF"], use_container_width= True)')
                         with st.container(border= True):
                             st.write(':orange[**ACCESS INTERFACE**]')
-                            exec(f'acc_int_chart_{i} = st.line_chart(df_acc_tx_rx, color = ["#FF0000", "#0000FF"], use_container_width= True)')
+                            with st.container(border= True):
+                                exec(f'acc_int_chart_{i} = st.line_chart(df_acc_tx_rx, color = ["#FF0000", "#0000FF"], use_container_width= True)')
+                            with st.container(border= True):
+                                exec(f'acc_int_chart_{i}_pps = st.line_chart(df_acc_tx_rx_pps, color = ["#FF0000", "#0000FF"], use_container_width= True)')
                         with st.container(border= True):
                             st.write(':orange[**PACKET LOSS**]')
                             exec(f'pktloss_chart_{i} = st.line_chart(df_pktloss, color = ["#FF0000", "#0000FF"],use_container_width= True)')
@@ -628,9 +636,13 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                             if run_command_nw_int_sc == 200:
                                 add_nw_df = pd.DataFrame([[filter_dict(data_nw_int, 'network-interfaces.0.tx-packets'), filter_dict(data_nw_int, 'network-interfaces.0.rx-packets')]], columns=(["network_tx_packets", "network_rx_packets"]))
                                 eval(f'nw_int_chart_{i}.add_rows(add_nw_df)')
+                                add_nw_pps_df = pd.DataFrame([[filter_dict(data_nw_int, 'network-interfaces.0.tx-pps'), filter_dict(data_nw_int, 'network-interfaces.0.rx-pps')]], columns=(["network_tx_pps", "network_rx_pps"]))
+                                eval(f'nw_int_chart_{i}_pps.add_rows(add_nw_pps_df)')
 
                                 add_acc_df = pd.DataFrame([[filter_dict(data_acc_int, 'access-interfaces.0.tx-packets'), filter_dict(data_acc_int, 'access-interfaces.0.rx-packets')]], columns=(["access_tx_packets", "access_rx_packets"]))
                                 eval(f'acc_int_chart_{i}.add_rows(add_acc_df)')
+                                add_acc_pps_df = pd.DataFrame([[filter_dict(data_acc_int, 'access-interfaces.0.tx-pps'), filter_dict(data_acc_int, 'access-interfaces.0.rx-pps')]], columns=(["access_tx_pps", "access_rx_pps"]))
+                                eval(f'acc_int_chart_{i}_pps.add_rows(add_acc_pps_df)')
 
                                 add_pktloss_df = pd.DataFrame([[filter_dict(data_nw_int, 'network-interfaces.0.rx-loss-packets-streams'), filter_dict(data_acc_int, 'access-interfaces.0.rx-loss-packets-streams')]], columns=(["network_interface_pkt_loss", "access_interface_pkt_loss"]))
                                 eval(f'pktloss_chart_{i}.add_rows(add_pktloss_df)')
