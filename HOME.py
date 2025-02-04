@@ -354,7 +354,6 @@ def get_variables_jinja_file(file_path):
         # return list(dict.fromkeys(variables))
         return list(undeclared_variables)
 
-
 def get_list_file(file_path, file_type):
   file_list=[]
   list_file_result=[]
