@@ -10,3 +10,4 @@ robotframework-SeleniumLibrary
 selenium
 coverage
 scapy
+mysql-connector-python
