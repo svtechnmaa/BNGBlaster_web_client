@@ -1,24 +1,22 @@
-name: Build and Test Streamlit App
+name: Build and Test BNGBLASTER App
 
 on:
   push:
     branches:
-      - main
+      - test
   pull_request:
     branches:
-      - main
+      - test
 
 jobs:
-  build_run_test:
-    runs-on: ubuntu-latest
+  build_and_push_image:
+    runs-on: ubuntu-dind
     permissions:
       contents: read
       packages: write
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
     - name: Cache Docker layers
       uses: actions/cache@v3
       with:
@@ -26,37 +24,130 @@ jobs:
         key: ${{ runner.os }}-buildx-${{ github.sha }}
         restore-keys: |
           ${{ runner.os }}-buildx-
-    - name: Build Docker image
-      run: docker build -t my-streamlit-app .
-    - name: Run Streamlit app
-      run: |
-        docker run -d --name streamlit-container -p 8505:8505 my-streamlit-app
-        sleep 10  # Give the container some time to start
-    - name: Check container status
-      run: docker inspect streamlit-container
-    - name: Run Robot Framework tests
-      run: |
-        pip install git+https://github.com/robotframework/SeleniumLibrary.git
-        wget https://github.com/mozilla/geckodriver/releases/download/v0.34.0/geckodriver-v0.34.0-linux64.tar.gz
-        tar -xvzf geckodriver*
-        chmod +x geckodriver
-        sudo mv geckodriver /usr/local/bin/
-        robot tests/
-    - name: Downcase REPO
-      run: |
-        echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
     - name: Login to GitHub Container Registry
       uses: docker/login-action@v2
       with:
         registry: ghcr.io
         username: '${{ github.repository_owner }}'
         password: '${{ secrets.GITHUB_TOKEN }}'
+    - name: Build Docker image
+      run: docker build -t my-bngblaster-app .
+    - name: Downcase REPO
+      run: |
+        echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
     - name: Push image to GitHub Container Registry
       run: |
-        docker tag my-streamlit-app:latest ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
-        docker tag my-streamlit-app:latest ghcr.io/${{ env.REPO }}:latest
+        docker tag my-bngblaster-app:latest ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
+        docker tag my-bngblaster-app:latest ghcr.io/${{ env.REPO }}:latest
         docker push ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
         docker push ghcr.io/${{ env.REPO }}:latest
-    - name: Stop and remove container
+  test_image_and_commit_chart:
+    runs-on: robot-dind
+    needs: build_and_push_image
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: '${{ github.repository_owner }}'
+        password: '${{ secrets.GITHUB_TOKEN }}'
+
+    - name: Downcase REPO
+      run: |
+        echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+    - name: Pull Docker image
+      run: docker pull ghcr.io/${{ env.REPO }}:latest
+    - name: Get latest image version ID 
+      run: |
+        LATEST_VERSION_ID=$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+        -H "Accept: application/vnd.github.v3+json" \
+        https://api.github.com/orgs/svtechnmaa/packages/container/bngblaster_web_client/versions \
+        | jq '.[0].id')
+        echo "LATEST_VERSION_ID=$LATEST_VERSION_ID" >> $GITHUB_ENV
+    - name: Run bngblaster app
+      run: |
+        docker run -d --name bngblaster-container -p 8505:8505 ghcr.io/${{ env.REPO }}:latest
+        sleep 10  # Give the container some time to start
+    - name: Check container status
+      run: docker inspect bngblaster-container
+
+    - name: Run Robot Framework tests
+      run: robot tests/
+  
+    - name: Delete GHCR image if test fails
+      if: failure()
+      uses: actions/delete-package-versions@v5
+      with:
+        package-name: "bngblaster_web_client"  
+        package-type: "container"
+        owner: "svtechnmaa"
+        token: ${{ secrets.GITHUB_TOKEN }}
+        package-version-ids: ${{ env.LATEST_VERSION_ID }}
+
+    - name: Send email with test results
       if: always()
-      run: docker rm -f streamlit-container
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 465
+        username: ${{ secrets.MAIL_USERNAME }}
+        password: ${{ secrets.MAIL_PASSWORD }}
+        subject: "Test Result for BNGBLASTER App"
+        body: |
+          Robot Test Result: ${{ job.status }}  
+        to: ${{ secrets.MAIL_USERNAME }} 
+        from: workflow of svtechnmaa/bngblaster_web_client
+
+    # - name: Install Helm
+    #   uses: azure/setup-helm@v3
+    #   with:
+    #     version: 'latest'
+    # - name: Setup Python
+    #   uses: actions/setup-python@v5.3.0
+    #   with:
+    #     python-version: "3.13"
+    
+    # - name: Clone charts Repository
+    #   uses: actions/checkout@v3
+    #   with:
+    #     repository: '${{ github.repository_owner }}/charts'
+    #     ref: 'fix/tag'
+
+    # - name: Clone stack_charts Repository
+    #   uses: actions/checkout@v3
+    #   with:
+    #     repository: '${{ github.repository_owner }}/stacked_charts'
+    #     ref: 'fix/tag'
+    #     token: '${{ secrets.PUSH_TOKEN }}'
+    # - name: Clone SVTECH_CI_utilities Repository
+    #   uses: actions/checkout@v3
+    #   with:
+    #     repository: '$${{ github.repository_owner }}/SVTECH_CI_utilities'
+    #     ref: 'dev-jenkins'
+    #     token: '${{ secrets.PUSH_TOKEN }}'
+
+    # - name: Update image version in helm chart
+    #   run: |
+    #     sed -i '/^  repository: svtechnmaa\/bngblaster_web_client/{N;s/  tag: .*/  tag: '"v1.$github.run_number"'/}' charts/kubernetes/bngblaster/values.yaml
+    #     python3 SVTECH_CI_utilities/auto_testing/python_script/public_helmchart_release.py --BUILD_VARS_PATH='.' --ID='.' --GITHUB_TOKEN=${{secrets.PUSH_TOKEN}} --OWNER=svtechnmaa --charts_string=bngblaster --REPO=charts
+                                              
+    #     ARTIFACTHUB_PATH="charts/artifacthub"
+    #     helm repo index $ARTIFACTHUB_PATH
+        
+    #     # cd charts/
+    #     # git add .
+    #     # git commit -m "no-ci: Update BNGBlaster image version to v1.$github.run_number"
+    #     # git remote set-url origin https://svtechnmaa:${{secrets.PUSH_TOKEN}}@github.com/svtechnmaa/charts.git
+    #     # git push origin $HELMCHART_TAG
+
+    #     # cd stacked_charts
+    #     # git add .
+    #     # git commit -m "no-ci: Update BNGBlaster image version to v1.$github.run_number" 
+    #     # git remote set-url origin https://svtechnmaa:${{secrets.PUSH_TOKEN}}@github.com/svtechnmaa/stacked_charts.git
+    #     # git push origin $CONTAINER_REPO_TAG
