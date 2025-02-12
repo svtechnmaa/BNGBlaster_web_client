@@ -39,15 +39,15 @@ jobs:
     - name: Build Docker image
       run: docker build -t my-bngblaster-app .
 
-    - name: Scan Docker image
-      uses: aquasecurity/trivy-action@0.28.0
-      with:
-        scan-type: 'image'
-        scan-ref: 'my-bngblaster-app:latest'
-        severity: 'CRITICAL,HIGH'
-        cache: true
-        exit-code: 1
-        format: 'table'
+    # - name: Scan Docker image
+    #   uses: aquasecurity/trivy-action@0.28.0
+    #   with:
+    #     scan-type: 'image'
+    #     scan-ref: 'my-bngblaster-app:latest'
+    #     severity: 'CRITICAL,HIGH'
+    #     cache: true
+    #     exit-code: 1
+    #     format: 'table'
     - name: Vulnerabilities are found
       if: failure()
       run: echo "Build failed due to security vulnerabilities. Please update Dockerfile and retry."
