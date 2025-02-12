@@ -17,6 +17,7 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
+
     - name: Cache Docker layers
       uses: actions/cache@v3
       with:
@@ -24,6 +25,7 @@ jobs:
         key: ${{ runner.os }}-buildx-${{ github.sha }}
         restore-keys: |
           ${{ runner.os }}-buildx-
+
     - name: Login to GitHub Container Registry
       uses: docker/login-action@v2
       with:
@@ -32,15 +34,18 @@ jobs:
         password: '${{ secrets.GITHUB_TOKEN }}'
     - name: Build Docker image
       run: docker build -t my-bngblaster-app .
+
     - name: Downcase REPO
       run: |
         echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+
     - name: Push image to GitHub Container Registry
       run: |
         docker tag my-bngblaster-app:latest ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
         docker tag my-bngblaster-app:latest ghcr.io/${{ env.REPO }}:latest
         docker push ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
         docker push ghcr.io/${{ env.REPO }}:latest
+
   test_image_and_commit_chart:
     runs-on: robot-dind
     needs: build_and_push_image
@@ -70,6 +75,7 @@ jobs:
         https://api.github.com/orgs/svtechnmaa/packages/container/bngblaster_web_client/versions \
         | jq '.[0].id')
         echo "LATEST_VERSION_ID=$LATEST_VERSION_ID" >> $GITHUB_ENV
+        
     - name: Run bngblaster app
       run: |
         docker run -d --name bngblaster-container -p 8505:8505 ghcr.io/${{ env.REPO }}:latest
@@ -103,7 +109,7 @@ jobs:
           Robot Test Result: ${{ job.status }}  
         to: ${{ secrets.MAIL_USERNAME }} 
         from: workflow of svtechnmaa/bngblaster_web_client
-
+        
     # - name: Install Helm
     #   uses: azure/setup-helm@v3
     #   with:
