@@ -9,7 +9,7 @@ on:
       - test
 
 jobs:
-  build_and_push_image:
+  build:
     runs-on: ubuntu-dind
     permissions:
       contents: read
@@ -18,6 +18,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
+    # Modify cache
     - name: Cache Docker layers
       uses: actions/cache@v3
       with:
@@ -36,6 +37,7 @@ jobs:
         exit-code: 1
         format: 'table'
     
+    # --no-cache ???
     - name: Build Docker image
       run: docker build -t my-bngblaster-app .
 
@@ -48,6 +50,8 @@ jobs:
     #     cache: true
     #     exit-code: 1
     #     format: 'table'
+      
+    # Modify to this step depend on befor step
     - name: Vulnerabilities are found
       if: failure()
       run: echo "Build failed due to security vulnerabilities. Please update Dockerfile and retry."
@@ -66,13 +70,11 @@ jobs:
     - name: Push image to GitHub Container Registry
       run: |
         docker tag my-bngblaster-app:latest ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
-        docker tag my-bngblaster-app:latest ghcr.io/${{ env.REPO }}:latest
         docker push ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
-        docker push ghcr.io/${{ env.REPO }}:latest
 
-  test_image_and_commit_chart:
+  test:
     runs-on: robot-dind
-    needs: build_and_push_image
+    needs: build
     permissions:
       contents: read
       packages: write
@@ -91,7 +93,8 @@ jobs:
       run: |
         echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
     - name: Pull Docker image
-      run: docker pull ghcr.io/${{ env.REPO }}:latest
+      run: docker pull ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
+
     - name: Get latest image version ID 
       run: |
         LATEST_VERSION_ID=$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
@@ -100,10 +103,12 @@ jobs:
         | jq '.[0].id')
         echo "LATEST_VERSION_ID=$LATEST_VERSION_ID" >> $GITHUB_ENV
 
+      # Modify 
     - name: Run bngblaster app
       run: |
         docker run -d --name bngblaster-container -p 8505:8505 ghcr.io/${{ env.REPO }}:latest
         sleep 10  # Give the container some time to start
+
     - name: Check container status
       run: docker inspect bngblaster-container
 
@@ -114,9 +119,9 @@ jobs:
       if: failure()
       uses: actions/delete-package-versions@v5
       with:
-        package-name: "bngblaster_web_client"  
+        package-name: ${{ env.REPO }}
         package-type: "container"
-        owner: "svtechnmaa"
+        owner: ${{ github.repository_owner }}
         token: ${{ secrets.GITHUB_TOKEN }}
         package-version-ids: ${{ env.LATEST_VERSION_ID }}
 
@@ -130,10 +135,11 @@ jobs:
         password: ${{ secrets.MAIL_PASSWORD }}
         subject: "Test Result for BNGBLASTER App"
         body: |
-          Robot Test Result: ${{ job.status }}  
+          Robot Test Result: ${{ job.status }} 
+          Committer: ${{ github.actor }} 
         to: ${{ secrets.MAIL_USERNAME }} 
         from: workflow of svtechnmaa/bngblaster_web_client
-        
+      
     # - name: Install Helm
     #   uses: azure/setup-helm@v3
     #   with:
