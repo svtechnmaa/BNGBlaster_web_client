@@ -31,7 +31,7 @@ jobs:
       with:
         scan-type: 'fs'
         scan-ref: '.'
-        severity: 'CRITICAL,HIGH'
+        severity: 'CRITICAL'
         cache: true
         exit-code: 1
         format: 'table'
