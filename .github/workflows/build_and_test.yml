@@ -54,7 +54,7 @@ jobs:
         format: 'table'
       
     - name: Vulnerabilities are found
-      if: steps.scan_dockerfile.outcome == 'failure' || steps.scan_image.outcome == 'failure'
+      if: contains('failure', steps.scan_dockerfile.outcome) || contains('failure', steps.scan_image.outcome)
       run: echo "Build failed due to security vulnerabilities. Please update Dockerfile and retry."
 
     - name: Downcase REPO
@@ -130,7 +130,7 @@ jobs:
       run: |
         docker tag ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }} ghcr.io/${{ env.REPO }}:latest
         docker push ghcr.io/${{ env.REPO }}:latest
-        
+
     - name: Send email with test results
       if: always()
       uses: dawidd6/action-send-mail@v3
