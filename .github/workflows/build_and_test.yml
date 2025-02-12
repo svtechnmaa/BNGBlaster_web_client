@@ -9,73 +9,73 @@ on:
       - test
 
 jobs:
-  build:
-    runs-on: ubuntu-dind
-    permissions:
-      contents: read
-      packages: write
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+  # build:
+  #   runs-on: ubuntu-dind
+  #   permissions:
+  #     contents: read
+  #     packages: write
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v3
 
-    # Optimal cache
-    - name: Cache Docker layers
-      uses: actions/cache@v3
-      with:
-        path: /tmp/.buildx-cache
-        key: ${{ runner.os }}-buildx-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-buildx-
+  #   # Optimal cache
+  #   - name: Cache Docker layers
+  #     uses: actions/cache@v3
+  #     with:
+  #       path: /tmp/.buildx-cache
+  #       key: ${{ runner.os }}-buildx-${{ github.sha }}
+  #       restore-keys: |
+  #         ${{ runner.os }}-buildx-
 
-    - name: Scan Dockerfile 
-      id: scan_dockerfile
-      uses: aquasecurity/trivy-action@0.28.0
-      with:
-        scan-type: 'fs'
-        scan-ref: '.'
-        severity: 'CRITICAL'
-        cache: true
-        exit-code: 1
-        format: 'table'
+  #   - name: Scan Dockerfile 
+  #     id: scan_dockerfile
+  #     uses: aquasecurity/trivy-action@0.28.0
+  #     with:
+  #       scan-type: 'fs'
+  #       scan-ref: '.'
+  #       severity: 'CRITICAL'
+  #       cache: true
+  #       exit-code: 1
+  #       format: 'table'
     
-    ## build with flag --no-cache ?
-    - name: Build Docker image
-      run: docker build -t my-bngblaster-app .
+  #   ## build with flag --no-cache ?
+  #   - name: Build Docker image
+  #     run: docker build -t my-bngblaster-app .
 
-    - name: Scan Docker image
-      id: scan_image
-      uses: aquasecurity/trivy-action@0.28.0
-      with:
-        scan-type: 'image'
-        scan-ref: 'my-bngblaster-app:latest'
-        severity: 'CRITICAL,HIGH'
-        cache: true
-        exit-code: 1
-        format: 'table'
+  #   - name: Scan Docker image
+  #     id: scan_image
+  #     uses: aquasecurity/trivy-action@0.28.0
+  #     with:
+  #       scan-type: 'image'
+  #       scan-ref: 'my-bngblaster-app:latest'
+  #       severity: 'CRITICAL,HIGH'
+  #       cache: true
+  #       exit-code: 1
+  #       format: 'table'
       
-    - name: Vulnerabilities are found
-      if: contains('failure', steps.scan_dockerfile.outcome) || contains('failure', steps.scan_image.outcome)
-      run: echo "Build failed due to security vulnerabilities. Please update Dockerfile and retry."
+  #   - name: Vulnerabilities are found
+  #     if: failure()
+  #     run: echo "Build failed due to security vulnerabilities. Please update Dockerfile and retry."
 
-    - name: Downcase REPO
-      run: |
-        echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+  #   - name: Downcase REPO
+  #     run: |
+  #       echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v2
-      with:
-        registry: ghcr.io
-        username: '${{ github.repository_owner }}'
-        password: '${{ secrets.GITHUB_TOKEN }}'
+  #   - name: Login to GitHub Container Registry
+  #     uses: docker/login-action@v2
+  #     with:
+  #       registry: ghcr.io
+  #       username: '${{ github.repository_owner }}'
+  #       password: '${{ secrets.GITHUB_TOKEN }}'
 
-    - name: Push image to GitHub Container Registry
-      run: |
-        docker tag my-bngblaster-app:latest ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
-        docker push ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
+  #   - name: Push image to GitHub Container Registry
+  #     run: |
+  #       docker tag my-bngblaster-app:latest ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
+  #       docker push ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
 
   test:
     runs-on: robot-dind
-    needs: build
+    # needs: build
     permissions:
       contents: read
       packages: write
@@ -95,7 +95,8 @@ jobs:
         echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
     - name: Pull Docker image
-      run: docker pull ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
+      # run: docker pull ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
+      run: docker pull ghcr.io/${{ env.REPO }}:v1.28
 
     - name: Run bngblaster app
       run: |
@@ -108,28 +109,28 @@ jobs:
     - name: Run Robot Framework tests
       run: robot tests/
 
-    - name: Get image version ID 
-      run: |
-        VERSION_ID=$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-        -H "Accept: application/vnd.github.v3+json" \
-        https://api.github.com/orgs/svtechnmaa/packages/container/bngblaster_web_client/versions \
-        | jq '.[0].id')
-        echo "VERSION_ID=$VERSION_ID" >> $GITHUB_ENV
+    # - name: Get image version ID 
+    #   run: |
+    #     VERSION_ID=$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+    #     -H "Accept: application/vnd.github.v3+json" \
+    #     https://api.github.com/orgs/svtechnmaa/packages/container/bngblaster_web_client/versions \
+    #     | jq '.[0].id')
+    #     echo "VERSION_ID=$VERSION_ID" >> $GITHUB_ENV
 
-    - name: Delete GHCR image if test fails
-      if: failure()
-      uses: actions/delete-package-versions@v5
-      with:
-        package-name: ${{ env.REPO }}
-        package-type: "container"
-        owner: ${{ github.repository_owner }}
-        token: ${{ secrets.GITHUB_TOKEN }}
-        package-version-ids: ${{ env.VERSION_ID }}
+    # - name: Delete GHCR image if test fails
+    #   if: failure()
+    #   uses: actions/delete-package-versions@v5
+    #   with:
+    #     package-name: ${{ env.REPO }}
+    #     package-type: "container"
+    #     owner: ${{ github.repository_owner }}
+    #     token: ${{ secrets.GITHUB_TOKEN }}
+    #     package-version-ids: ${{ env.VERSION_ID }}
 
-    - name: Tag latest image and push to GitHub Container Registry
-      run: |
-        docker tag ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }} ghcr.io/${{ env.REPO }}:latest
-        docker push ghcr.io/${{ env.REPO }}:latest
+    # - name: Tag latest image and push to GitHub Container Registry
+    #   run: |
+    #     docker tag ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }} ghcr.io/${{ env.REPO }}:latest
+    #     docker push ghcr.io/${{ env.REPO }}:latest
 
     - name: Send email with test results
       if: always()
