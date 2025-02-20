@@ -8,6 +8,10 @@ on:
     branches:
       - test
 
+env:
+  GIT_USER_NAME: "svtechnmaa"
+  GIT_USER_EMAIL: "nmaa@svtech.com.vn"
+
 jobs:
   build:
     runs-on: ubuntu-dind
@@ -126,70 +130,96 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         package-version-ids: ${{ env.VERSION_ID }}
 
+    - name: 'Upload robot test result'
+      if: always()
+      uses: actions/upload-artifact@v4.6.0
+      with:
+        name: robot-test-result
+        path: ./result.html
+
     - name: Tag latest image and push to GitHub Container Registry
       run: |
         docker tag ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }} ghcr.io/${{ env.REPO }}:latest
         docker push ghcr.io/${{ env.REPO }}:latest
-
-    - name: Send email with test results
-      if: always()
-      uses: dawidd6/action-send-mail@v3
+   
+  update: 
+    needs: test
+    runs-on: ubuntu-dind
+    steps:
+    - name: Install Helm
+      uses: azure/setup-helm@v3
       with:
-        server_address: smtp.gmail.com
-        server_port: 465
-        username: ${{ secrets.MAIL_USERNAME }}
-        password: ${{ secrets.MAIL_PASSWORD }}
-        subject: "Test Result for BNGBLASTER App"
-        body: |
-          Robot Test Result: ${{ job.status }} 
-          Committer: ${{ github.actor }} 
-        to: ${{ secrets.MAIL_USERNAME }} 
-        from: workflow of svtechnmaa/bngblaster_web_client
-      
-    # - name: Install Helm
-    #   uses: azure/setup-helm@v3
-    #   with:
-    #     version: 'latest'
-    # - name: Setup Python
-    #   uses: actions/setup-python@v5.3.0
-    #   with:
-    #     python-version: "3.13"
+        version: 'latest'
+    - name: Setup Python
+      uses: actions/setup-python@v5.3.0
+      with:
+        python-version: "3.13"
     
-    # - name: Clone charts Repository
-    #   uses: actions/checkout@v3
-    #   with:
-    #     repository: '${{ github.repository_owner }}/charts'
-    #     ref: 'fix/tag'
+    - name: Clone charts Repository
+      uses: actions/checkout@v3
+      with:
+        repository: '${{ github.repository_owner }}/charts'
+        ref: 'main'
+        path: charts
 
-    # - name: Clone stack_charts Repository
-    #   uses: actions/checkout@v3
-    #   with:
-    #     repository: '${{ github.repository_owner }}/stacked_charts'
-    #     ref: 'fix/tag'
-    #     token: '${{ secrets.PUSH_TOKEN }}'
-    # - name: Clone SVTECH_CI_utilities Repository
-    #   uses: actions/checkout@v3
-    #   with:
-    #     repository: '$${{ github.repository_owner }}/SVTECH_CI_utilities'
-    #     ref: 'dev-jenkins'
-    #     token: '${{ secrets.PUSH_TOKEN }}'
+    - name: Clone stack_charts Repository
+      uses: actions/checkout@v3
+      with:
+        repository: '${{ github.repository_owner }}/stacked_charts'
+        ref: 'master'
+        token: '${{ secrets.PUSH_TOKEN }}'
+        path: stacked_charts
 
-    # - name: Update image version in helm chart
-    #   run: |
-    #     sed -i '/^  repository: svtechnmaa\/bngblaster_web_client/{N;s/  tag: .*/  tag: '"v1.$github.run_number"'/}' charts/kubernetes/bngblaster/values.yaml
-    #     python3 SVTECH_CI_utilities/auto_testing/python_script/public_helmchart_release.py --BUILD_VARS_PATH='.' --ID='.' --GITHUB_TOKEN=${{secrets.PUSH_TOKEN}} --OWNER=svtechnmaa --charts_string=bngblaster --REPO=charts
-                                              
-    #     ARTIFACTHUB_PATH="charts/artifacthub"
-    #     helm repo index $ARTIFACTHUB_PATH
-        
-    #     # cd charts/
-    #     # git add .
-    #     # git commit -m "no-ci: Update BNGBlaster image version to v1.$github.run_number"
-    #     # git remote set-url origin https://svtechnmaa:${{secrets.PUSH_TOKEN}}@github.com/svtechnmaa/charts.git
-    #     # git push origin $HELMCHART_TAG
+    - name: Clone SVTECH_CI_utilities Repository
+      uses: actions/checkout@v3
+      with:
+        repository: '$${{ github.repository_owner }}/SVTECH_CI_utilities'
+        ref: 'dev-jenkins'
+        token: '${{ secrets.PUSH_TOKEN }}'
+        path: SVTECH_CI_utilities
 
-    #     # cd stacked_charts
-    #     # git add .
-    #     # git commit -m "no-ci: Update BNGBlaster image version to v1.$github.run_number" 
-    #     # git remote set-url origin https://svtechnmaa:${{secrets.PUSH_TOKEN}}@github.com/svtechnmaa/stacked_charts.git
-    #     # git push origin $CONTAINER_REPO_TAG
+    - name: Import GPG key
+      uses: crazy-max/ghaction-import-gpg@v6.2.0
+      with:
+        gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+        git_user_signingkey: true
+        git_commit_gpgsign: true
+    
+    - name: Modify image version in charts
+      run: |
+        sed -i '/^  repository: svtechnmaa\/bngblaster_web_client/{N;s/  tag: .*/  tag: '"v1.$github.run_number"'/}' charts/kubernetes/bngblaster/values.yaml
+    
+    - name: Update image version in charts
+      run: |
+        cd charts
+        helm repo index artifacthub
+
+        if [[ `git diff --name-only` ]]; then  
+          git config user.name "${{ env.GIT_USER_NAME }}"
+          git config user.email "${{ env.GIT_USER_EMAIL }}"
+          git config user.signingkey ${{ secrets.GPG_KEY_ID }}
+
+          git add .
+          git commit -S -m "no-ci: Update BNGBlaster image version to v1.$github.run_number"
+          git remote set-url origin https://svtechnmaa:${{secrets.PUSH_TOKEN}}@github.com/svtechnmaa/charts.git
+          git push origin main
+        else 
+          echo "No changes to commit" 
+        fi
+
+    - name: Modify image version in stack_charts
+      run: |
+        pip install requests pyyaml
+        python3 SVTECH_CI_utilities/auto_testing/python_script/public_helmchart_release.py --BUILD_VARS_PATH='.' --ID='.' --GITHUB_TOKEN=${{secrets.PUSH_TOKEN}} --OWNER=svtechnmaa --charts_string=bngblaster --REPO=charts
+    
+    - name: Update image version in stack_charts
+      run: |
+        cd stacked_charts
+        if [[ `git diff --name-only` ]]; then 
+          git add .
+          git commit -S -m "no-ci: Update BNGBlaster image version to v1.$github.run_number" 
+          git remote set-url origin https://svtechnmaa:${{secrets.PUSH_TOKEN}}@github.com/svtechnmaa/stacked_charts.git
+          git push origin master
+        else 
+          echo "No changes to commit" 
+        fi
