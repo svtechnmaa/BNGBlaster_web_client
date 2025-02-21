@@ -153,14 +153,15 @@ jobs:
         python-version: "3.13"
     
     - name: Clone charts Repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: '${{ github.repository_owner }}/charts'
         ref: 'main'
+        token: ${{ secrets.PUSH_TOKEN }}
         path: charts
 
     - name: Clone stack_charts Repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: '${{ github.repository_owner }}/stacked_charts'
         ref: 'master'
@@ -168,7 +169,7 @@ jobs:
         path: stacked_charts
 
     - name: Clone SVTECH_CI_utilities Repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: '${{ github.repository_owner }}/SVTECH_CI_utilities'
         ref: 'dev-jenkins'
@@ -190,7 +191,6 @@ jobs:
       env:
         GIT_USER_NAME: "svtechnmaa"
         GIT_USER_EMAIL: "nmaa@svtech.com.vn"
-
       run: |
         cd charts
         helm repo index artifacthub
@@ -227,7 +227,6 @@ jobs:
           git config user.email "${{ env.GIT_USER_EMAIL }}"
           git config commit.gpgSign true
           git config user.signingkey ${{ secrets.GPG_KEY_ID }}
-
 
           git add .
           git commit -S -m "no-ci: Update BNGBlaster image version to v1.$github.run_number" 
