@@ -185,7 +185,7 @@ jobs:
     
     - name: Modify image version in charts
       run: |
-        sed -i '/^  repository: svtechnmaa\/bngblaster_web_client/{N;s/  tag: .*/  tag: '"v1.$github.run_number"'/}' charts/kubernetes/bngblaster/values.yaml
+        sed -i '/^  repository: svtechnmaa\/bngblaster_web_client/{N;s/  tag: .*/  tag: '"v1.${{ github.run_number}}"'/}' charts/kubernetes/bngblaster/values.yaml
     
     - name: Update image version in charts
       env:
@@ -202,7 +202,7 @@ jobs:
           git config user.signingkey ${{ secrets.GPG_KEY_ID }}
 
           git add .
-          git commit --no-verify -m "no-ci: Update BNGBlaster image version to v1.$github.run_number"
+          git commit --no-verify -m "no-ci: Update BNGBlaster image version to v1.${{ github.run_number}}"
           # git remote set-url origin https://svtechnmaa:${{secrets.PUSH_TOKEN}}@github.com/svtechnmaa/charts.git
           git push origin main
         else 
@@ -212,7 +212,7 @@ jobs:
     - name: Modify image version in stack_charts
       run: |
         pip install requests pyyaml
-        python3 SVTECH_CI_utilities/auto_testing/python_script/public_helmchart_release.py --BUILD_VARS_PATH='.' --ID='.' --GITHUB_TOKEN=${{secrets.PUSH_TOKEN}} --OWNER=svtechnmaa --charts_string=bngblaster --REPO=charts
+        python3 SVTECH_CI_utilities/auto_testing/python_script/public_helmchart_release.py --BUILD_VARS_PATH='.' --ID='.' --GITHUB_TOKEN=${{secrets.PUSH_TOKEN}} --OWNER=${{ github.repository_owner}} --charts_string=bngblaster --REPO=charts
     
     - name: Update image version in stack_charts
       env:
