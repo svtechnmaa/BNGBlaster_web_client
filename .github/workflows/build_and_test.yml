@@ -41,7 +41,6 @@ jobs:
     ## build with flag --no-cache ?
     - name: Build Docker image
       run: docker build -t my-bngblaster-app .
-
     # - name: Scan Docker image
     #   id: scan_image
     #   uses: aquasecurity/trivy-action@0.28.0
