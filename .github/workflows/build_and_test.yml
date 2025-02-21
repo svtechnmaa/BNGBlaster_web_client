@@ -201,8 +201,8 @@ jobs:
           git config commit.gpgSign true
 
           git add .
-          git commit -S -m "no-ci: Update BNGBlaster image version to v1.$github.run_number"
-          git remote set-url origin https://svtechnmaa:${{secrets.PUSH_TOKEN}}@github.com/svtechnmaa/charts.git
+          git commit --no-verify -m "no-ci: Update BNGBlaster image version to v1.$github.run_number"
+          # git remote set-url origin https://svtechnmaa:${{secrets.PUSH_TOKEN}}@github.com/svtechnmaa/charts.git
           git push origin main
         else 
           echo "No changes to commit" 
@@ -222,10 +222,10 @@ jobs:
           git config user.email "${{ env.GIT_USER_EMAIL }}"
           git config user.signingkey ${{ secrets.GPG_KEY_ID }}
           git config commit.gpgSign true
-          
+
           git add .
           git commit -S -m "no-ci: Update BNGBlaster image version to v1.$github.run_number" 
-          git remote set-url origin https://svtechnmaa:${{secrets.PUSH_TOKEN}}@github.com/svtechnmaa/stacked_charts.git
+          # git remote set-url origin https://svtechnmaa:${{secrets.PUSH_TOKEN}}@github.com/svtechnmaa/stacked_charts.git
           git push origin master
         else 
           echo "No changes to commit" 
