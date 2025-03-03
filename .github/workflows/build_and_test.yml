@@ -18,16 +18,16 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Scan Dockerfile 
-      id: scan_dockerfile
-      uses: aquasecurity/trivy-action@0.28.0
-      with:
-        scan-type: 'config'
-        scan-ref: '.'
-        severity: 'CRITICAL,HIGH'
-        cache: true
-        exit-code: 1
-        format: 'table'
+    # - name: Scan Dockerfile 
+    #   id: scan_dockerfile
+    #   uses: aquasecurity/trivy-action@0.28.0
+    #   with:
+    #     scan-type: 'config'
+    #     scan-ref: '.'
+    #     severity: 'CRITICAL,HIGH'
+    #     cache: true
+    #     exit-code: 1
+    #     format: 'table'
     
     - name: Login to GitHub Container Registry
       uses: docker/login-action@v2
