@@ -72,6 +72,7 @@ jobs:
     - name: Wait and check container status
       run: |
         sleep 20
+        docker ps -a
         # STATUS=$(docker inspect --format='{{.State.Status}}' bngblaster-container)
         # echo "Container status: $STATUS"
         # if [ "$STATUS" = "running" ]; then
