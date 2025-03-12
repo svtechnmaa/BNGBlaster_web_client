@@ -39,11 +39,6 @@ jobs:
         format: 'table'
         # cache-dir: .trivy
         output: 'dockerfile_scanning_result.json'
-       
-    - name: List file in BNGBlaster_web_client/BNGBlaster_web_client/.cache/trivy
-      run: |
-        echo ${{ github.workspace }}
-        ls ${{ github.workspace }}/.cache/trivy
 
     - name: Login to GitHub Container Registry
       uses: docker/login-action@v2
