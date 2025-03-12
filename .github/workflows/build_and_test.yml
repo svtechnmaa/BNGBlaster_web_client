@@ -34,7 +34,7 @@ jobs:
 
     - id: run_and_check_container_status
       name: Run BNGBlaster app
-      uses: ./.github/actions/run_docker_container
+      uses: svtechnmaa/.github/actions/run_docker_container@main
       with:
         imageName: '${{ env.IMAGE_NAME }}'
         containerName: '${{ env.CONTAINER_NAME }}'
@@ -50,18 +50,7 @@ jobs:
     - name: Push image to GitHub Container Registry
       run: |
         docker tag ${{ env.IMAGE_NAME }}:latest ghcr.io/${{ env.REPO }}:${{ env.IMAGE_TAG }}
-        docker push ghcr.io/${{ env.REPO }}:${{ env.IMAGE_TAG }}
-
-    # - name: Set up Docker Buildx
-    #   uses: docker/setup-buildx-action@v3
-      
-    # - name: Build and push image to ghcr.io
-    #   run: |
-    #     docker buildx build \
-    #       --cache-from=type=registry,ref=ghcr.io/${{ env.REPO }}:cache \
-    #       --cache-to=type=registry,ref=ghcr.io/${{ env.REPO }}:cache,mode=max \
-    #       --push \
-    #       --tag ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }} . 
+        docker push ghcr.io/${{ env.REPO }}:${{ env.IMAGE_TAG }} 
 
   test:
     runs-on: robot-dind
@@ -85,11 +74,11 @@ jobs:
         echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
     - name: Pull Docker image
-      run: docker pull ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
+      run: docker pull ghcr.io/${{ env.REPO }}:${{ env.IMAGE_TAG }}
 
     - id: run_and_check_container_status
-      name: Run Tender app
-      uses: ./.github/actions/run_docker_container
+      name: Run BNGBlaster app
+      uses: svtechnmaa/.github/actions/run_docker_container@main
       with:
         imageName: 'ghcr.io/${{ env.REPO }}:${{ env.IMAGE_TAG }}'
         containerName: '${{ env.CONTAINER_NAME }}'
@@ -108,7 +97,7 @@ jobs:
 
         VERSION_ID=$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
         "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions" \
-        | jq -r '.[] | select(.metadata.container.tags[] == "v1.${{ github.run_number }}") | .id')
+        | jq -r '.[] | select(.metadata.container.tags[] == "v1.${{ env.IMAGE_TAG }}") | .id')
 
         echo "VERSION_ID=$VERSION_ID" >> $GITHUB_ENV
         echo "Package version ID: $VERSION_ID"
