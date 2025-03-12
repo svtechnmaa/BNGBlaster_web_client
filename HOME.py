@@ -12,7 +12,7 @@ import streamlit_authenticator as stauth
 from streamlit_ace import st_ace
 from streamlit_authenticator.utilities.hasher import Hasher
 # from streamlit_tree_select import tree_select #pip install streamlit-tree-select
-st.set_page_config(layout= 'wide', page_title= 'BNG Blaster', page_icon= ':cityscape:')
+st.set_page_config(layout= 'wide', page_title= 'BNGBlaster', page_icon= ':b:')
 font_css = """
 <style>
 button[data-baseweb="tab"] > div[data-testid="stMarkdownContainer"] > p {
@@ -58,6 +58,7 @@ authenticator = stauth.Authenticate(
 colx, coly, colz = st.columns([1,1.8,1])
 with coly:
     st.image('./images/home.png', output_format= 'JPEG')
+    st.logo('./images/svtech-logo.png', size= 'large', link = 'https://www.svtech.com/')
     name, authentication_status, username = authenticator.login('main', fields = {'Form name': ':pushpin: :orange[LOGIN]'})
 if authentication_status:
     st.session_state.user= username
@@ -585,7 +586,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                 st.write(":fire: :violet[**INSTANCE RUNNING**]")
                 select_running_instance={}
                 for i in list_instance_running_from_blaster:
-                    exec(f"""select_running_instance['{i}'] = st.checkbox(f"*{i}*")""") 
+                    exec(f"""select_running_instance['{i}'] = st.checkbox(f":orange[*{i}*]")""") 
                 select_running_instance_cb = [] # List select checkbox
                 for i in select_running_instance.keys():
                     if select_running_instance[i]:
@@ -593,16 +594,16 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
         with  st.expander(":material/graphic_eq: :violet[**INSTANCE EXISTED CONFIG**]"):
             for i in list_instance_avail_from_blaster:
                 with st.container(border=True):
-                    col1, col2= st.columns([2,1])
+                    col1, col2= st.columns([1,1])
                     with col1:
                         st.write(f":orange[**Instance :**] *{i}*")
                     with col2:
-                        with st.popover(f":green[CONFIG EXISTED]", use_container_width=True):
+                        with st.popover(f":blue[:material/visibility: **CONFIG**]", use_container_width=True):
                             view_config_avail_sc,  view_config_avail_ct = CALL_API_BLASTER(ip, port, i, 'GET', payload_start, '/config.json')
                             if view_config_avail_sc==200:
                                 try:
                                     config_avail = json.loads(view_config_avail_ct)
-                                    st.write(config_avail)
+                                    st.code(json.dumps(config_avail, indent=2), language='json')
                                 except Exception as e:
                                     st.error(':blue[Instance %s have json syntax error %s]'%(i,e), icon="🔥")
                                     continue
@@ -612,7 +613,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
             with st.container(border=True, height= 300):
                 st.write(":fire: :violet[**GRAPH**]")
                 for i in select_running_instance_cb:
-                    with st.popover(f":material/timeline: *{i}*", use_container_width=True):
+                    with st.popover(f":orange[:material/timeline: *{i}*]", use_container_width=True):
                         col_realtime, col_graph= st.columns([1,1])
                         with col_realtime:
                             with st.container(border= True, height=600):
@@ -814,7 +815,7 @@ if st.session_state.p1:
                         blaster_new_port = st.text_input(':green[NEW BLASTER PORT] ',8001, placeholder = 'Typing your PORT')
                         blaster_new_user = st.text_input(':green[NEW BLASTER USERNAME] ', placeholder = 'Typing your USERNAME')
                         blaster_new_passwd = st.text_input(':green[NEW BLASTER PASSWORD] ', placeholder = 'Typing your PASSWORD', type='password')
-                        if st.button(":orange[**ADD NEW BLASTER**]"):
+                        if st.button(":orange[:material/add: **ADD NEW BLASTER**]"):
                             # conn = sqlite_connect_to_db(db_name)
                             # sqlite_insert_user(conn, user, user_class)
                             db = DatabaseConnection()
@@ -860,7 +861,7 @@ except Exception as e:
         error = True
 if st.session_state.p1:
     with col31:
-        if st.button("**SELECT**", type= 'primary'):
+        if st.button(":material/login: **SELECT**", type= 'primary'):
             if error:
                 st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= True, False, False, False, False
                 st.rerun()
@@ -1123,7 +1124,7 @@ if st.session_state.p3:
                             #     st.error('Upload file with .yaml or .yml , please. No accept other types ', icon="🚨")
                     if instance_name:
                         dict_export_file[instance_name] = dict_input
-                        st.download_button(':green[DATA_FORMAT]', '---\n'+yaml.dump(dict_export_file, indent = 2, encoding= None), disabled= st.session_state.create_instance)
+                        st.download_button(':material/schema: DATA_FORMAT', '---\n'+yaml.dump(dict_export_file, indent = 2, encoding= None), disabled= st.session_state.create_instance)
             with st.popover(":material/visibility: :blue[**REVIEW**]", use_container_width=True):
                 environment = Environment(loader=FileSystemLoader(f"{path_templates}"))
                 template = environment.get_template(f"{select_template}")
@@ -1233,7 +1234,7 @@ if st.session_state.p3:
                         placeholder= '*Edit your config*')
                 col141, col151, col161 = st.columns([1,4,1])
                 with col141:
-                    if st.button('**SAVE**', type= 'primary', use_container_width=True):
+                    if st.button(':material/save: **SAVE**', type= 'primary', use_container_width=True):
                         st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False,False, True, False, False
                         try: 
                             json.loads(edit_json)
@@ -1243,7 +1244,7 @@ if st.session_state.p3:
                         except Exception as e:
                             st.error('Error json %s'%e, icon="🚨")
                 with col161:
-                    if st.button('**DELETE**', use_container_width=True):
+                    if st.button(':material/delete: **DELETE**', use_container_width=True):
                         st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, True, False, False
                         delete_config(path_configs, edit_instance)
                 if edit_json != "":
@@ -1396,7 +1397,7 @@ if st.session_state.p3:
             col14, col15, col16 = st.columns([1,4,1])
             if os.path.exists('%s/%s.yml'%(path_configs,edit_instance)):
                 with col14:
-                    if st.button('**SAVE**', type= 'primary', disabled = st.session_state.edit_instance, use_container_width=True):
+                    if st.button(':material/save: **SAVE**', type= 'primary', disabled = st.session_state.edit_instance, use_container_width=True):
                         st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False,False, True, False, False
                         if "" not in edit_dict_input.values():
                             streams_save={}
@@ -1445,7 +1446,7 @@ if st.session_state.p3:
                         else:
                             st.toast(':red[Have parameters empty, fill us before save, please]', icon="🚨")
                 with col16:
-                    if st.button('**DELETE**', use_container_width=True):
+                    if st.button(':material/delete: **DELETE**', use_container_width=True):
                         st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, True, False, False
                         delete_config(path_configs, edit_instance)
                 if edit_content != "":
@@ -1501,12 +1502,12 @@ if st.session_state.p3:
                             height=350)
                         col100, col101, col102 =st.columns([1,2,1])
                         with col100:
-                            if st.button("SAVE", type = 'primary', use_container_width= True):
+                            if st.button(":material/save: SAVE", type = 'primary', use_container_width= True):
                                 with open(f"{path_templates}/{template_edit}", "w") as write:
                                     write.write(edit_template_text)
                                 st.toast(f':blue[Save your template **{template_edit}** successfully]', icon="🔥")
                         with col102:
-                            if st.button("DELETE", use_container_width= True):
+                            if st.button(":material/delete: DELETE", use_container_width= True):
                                 os.remove(f"{path_templates}/{template_edit}")
                                 st.info(':blue[Delete successfully]', icon="🔥")
                                 st.rerun()
@@ -1555,7 +1556,7 @@ if st.session_state.p3:
                                     write.write(edit_template_text)
                                 st.toast(f':blue[Save your template **{template_edit}** successfully]', icon="🔥")
                         with col102:
-                            if st.button("DELETE", use_container_width= True):
+                            if st.button(":material/delete: DELETE", use_container_width= True):
                                 os.remove(f"{path_templates_interfaces}/{template_edit}.j2")
                                 st.info(':blue[Delete successfully]', icon="🔥")
                                 st.rerun()
@@ -1599,12 +1600,12 @@ if st.session_state.p3:
                             height=350)
                         col100, col101, col102 =st.columns([1,2,1])
                         with col100:
-                            if st.button("SAVE", use_container_width=True, type = 'primary'):
+                            if st.button(":material/save: SAVE", use_container_width=True, type = 'primary'):
                                 with open(f"{path_templates_streams}/{template_edit}.j2", "w") as write:
                                     write.write(edit_template_text)
                                 st.toast(f':blue[Save your template **{template_edit}** successfully]', icon="🔥")
                         with col102:
-                            if st.button("DELETE", use_container_width= True):
+                            if st.button(":material/delete: DELETE", use_container_width= True):
                                 os.remove(f"{path_templates_streams}/{template_edit}.j2")
                                 st.info(':blue[Delete successfully]', icon="🔥")
                                 st.rerun()
@@ -1666,7 +1667,7 @@ if st.session_state.p3:
                                 else:
                                     st.warning("Name wrong syntax", icon="🔥")
                                     st.session_state.save_template= True
-                    if st.button("**SAVE**", type= 'primary', disabled= st.session_state.save_template):
+                    if st.button(":material/save: **SAVE**", type= 'primary', disabled= st.session_state.save_template):
                         if output_str != "":
                             with open(f"{path_templates}/{name_template}.j2", 'w') as file:
                                 file.write(output_str)
@@ -1731,7 +1732,7 @@ if st.session_state.p3:
                                 else:
                                     st.warning("Name wrong syntax", icon="🔥")
                                     st.session_state.save_template= True
-                    if st.button("**SAVE**", type= 'primary', disabled= st.session_state.save_template):
+                    if st.button(":material/save: **SAVE**", type= 'primary', disabled= st.session_state.save_template):
                         if output_str != "":
                             with open(f"{path_templates_interfaces}/{name_template}.j2", 'w') as file:
                                 file.write(output_str)
@@ -1796,7 +1797,7 @@ if st.session_state.p3:
                                 else:
                                     st.warning("Name wrong syntax", icon="🔥")
                                     st.session_state.save_template= True
-                    if st.button("**SAVE**", type= 'primary', disabled= st.session_state.save_template):
+                    if st.button(":material/save: **SAVE**", type= 'primary', disabled= st.session_state.save_template):
                         if streams_output_str != "":
                             with open(f"{path_templates_streams}/{name_template}.j2", 'w') as file:
                                 file.write(streams_output_str)
@@ -1868,7 +1869,7 @@ if st.session_state.p4:
                 with st.container(border= True):
                     instance= st.selectbox(':orange[Select your instance]?', list_instance, placeholder = 'Select one instance')
             with col20:
-                with st.popover(":material/library_books: CONFIG", use_container_width=True):
+                with st.popover(":blue[:material/visibility: **CONFIG**]", use_container_width=True):
                     st.info(":violet[Content of **%s.json**]"%instance, icon="🔥")
                     with open('%s/%s.json'%(path_configs, instance), 'r') as file_show:
                         data= file_show.read()
@@ -2199,7 +2200,7 @@ if dict_user_db[st.session_state.user] == 'admin' and st.session_state.p2:
             col1, col2= st.columns([1,1])
             with col1:
                 with st.container(border=True):
-                    st.write(":orange[**DELETE**]")
+                    st.write(":orange[:material/delete: **DELETE**]")
                     # conn = sqlite_connect_to_db(db_name)
                     db = DatabaseConnection()
                     conn= db.connection
