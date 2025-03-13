@@ -39,14 +39,27 @@ jobs:
         --cache-from=type=registry,ref=ghcr.io/${{ env.REPO }}:cache \
         --load \
         --tag ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }} . 
-        sleep 20
+
+    - name: Run bngblaster app
+      run: |
+        docker run -d --name bngblaster-container -p 8505:8505 ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
+        sleep 10
 
     - name: Check container status
       run: |
         docker ps -a
         docker images
+        STATUS=$(docker inspect --format='{{.State.Status}}' bngblaster-container)
+        echo "Container status: $STATUS"
+        if [ "$STATUS" != "running" ]; then
+          echo "Container failed to start!"
+          docker logs bngblaster-container
+          exit 1
+        fi
+        echo "Container is running successfully!"
 
     - name: Push image
+      if: success()
       run: |
         docker buildx build \
         --cache-from=type=registry,ref=ghcr.io/${{ env.REPO }}:cache \
@@ -81,10 +94,21 @@ jobs:
     - name: Run bngblaster app
       run: |
         docker run -d --name bngblaster-container -p 8505:8505 ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
-        sleep 20
+        sleep 10
 
     - name: Check container status
-      run: docker inspect bngblaster-container
+      run: |
+        docker ps -a
+        docker images
+        STATUS=$(docker inspect --format='{{.State.Status}}' bngblaster-container)
+        echo "Container status: $STATUS"
+        if [ "$STATUS" != "running" ]; then
+          echo "Container failed to start!"
+          docker logs bngblaster-container
+          exit 1
+        else
+          echo "Container is running successfully!"
+        fi
 
     - name: Run Robot Framework tests
       run: robot tests/
