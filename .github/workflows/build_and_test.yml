@@ -35,7 +35,7 @@ jobs:
 
     - name: Run bngblaster app
       run: |
-        docker run -d --name bngblaster-container -p my-bngblaster-app:latest
+        docker run -d --name bngblaster-container -p 8505:8505 my-bngblaster-app:latest
         sleep 20
         docker ps -a
 
