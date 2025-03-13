@@ -3,10 +3,10 @@ name: Build and Test BNGBLASTER App
 on:
   push:
     branches:
-      - kien
+      - main
   pull_request:
     branches:
-      - kien
+      - main
 
 jobs:
   build:
@@ -43,7 +43,7 @@ jobs:
     - name: Run bngblaster app
       run: |
         docker run -d --name bngblaster-container -p 8505:8505 ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
-        sleep 10
+        sleep 15
 
     - name: Check container status
       run: |
@@ -94,7 +94,7 @@ jobs:
     - name: Run bngblaster app
       run: |
         docker run -d --name bngblaster-container -p 8505:8505 ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
-        sleep 10
+        sleep 15
 
     - name: Check container status
       run: |
@@ -134,8 +134,11 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4.6.0
       with:
-        name: robot-test-report
-        path: ./report.html
+        name: robot-test-result-#${{ github.run_number }}
+        path: |
+          ./output.xml
+          ./log.html
+          ./report.html
 
     - name: Tag latest image and push to GitHub Container Registry
       run: |

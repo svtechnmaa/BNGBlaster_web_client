@@ -3,10 +3,10 @@ name: Scan Dockerfile and Image
 on:
   push:
     branches:
-      - kien
+      - main
   pull_request:
     branches:
-      - kien
+      - main
 
 jobs:
   scan:
@@ -28,7 +28,6 @@ jobs:
           trivy-cache-${{ runner.os }}
 
     - name: Scan Dockerfile 
-      id: scan_dockerfile
       uses: aquasecurity/trivy-action@0.28.0
       with:
         scan-type: 'config'
@@ -60,7 +59,6 @@ jobs:
           --tag ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }} . 
 
     - name: Scan Docker image
-      id: scan_image
       uses: aquasecurity/trivy-action@0.28.0
       with:
         scan-type: 'image'
