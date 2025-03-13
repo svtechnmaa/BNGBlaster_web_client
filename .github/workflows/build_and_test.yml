@@ -6,7 +6,7 @@ on:
       - main
   pull_request:
     branches:
-      - main 
+      - main
 
 jobs:
   build:
@@ -30,39 +30,42 @@ jobs:
       run: |
         echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
-    # - name: Scan Dockerfile 
-    #   id: scan_dockerfile
-    #   uses: aquasecurity/trivy-action@0.28.0
-    #   with:
-    #     scan-type: 'config'
-    #     scan-ref: '.'
-    #     severity: 'CRITICAL,HIGH'
-    #     cache: true
-    #     exit-code: 1
-    #     format: 'table'
-
-    - name: Build Docker image
-      run: docker build --cache-from ghcr.io/${{ env.REPO }}:latest -t my-bngblaster-app:latest .
-      
-    # - name: Scan Docker image
-    #   id: scan_image
-    #   uses: aquasecurity/trivy-action@0.28.0
-    #   with:
-    #     scan-type: 'image'
-    #     scan-ref: 'my-bngblaster-app:latest'
-    #     severity: 'CRITICAL,HIGH'
-    #     cache: true
-    #     exit-code: 1
-    #     format: 'table'
-    
-    - name: Vulnerabilities are found
-      if: failure()
-      run: echo "Build failed due to security vulnerabilities. Please update Dockerfile and retry."
-
-    - name: Push image to GitHub Container Registry
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+        
+    - name: Build image
       run: |
-        docker tag my-bngblaster-app:latest ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
-        docker push ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
+        docker buildx build \
+        --cache-from=type=registry,ref=ghcr.io/${{ env.REPO }}:cache \
+        --load \
+        --tag ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }} . 
+
+    - name: Run bngblaster app
+      run: |
+        docker run -d --name bngblaster-container -p 8505:8505 ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
+        sleep 15
+
+    - name: Check container status
+      run: |
+        docker ps -a
+        docker images
+        STATUS=$(docker inspect --format='{{.State.Status}}' bngblaster-container)
+        echo "Container status: $STATUS"
+        if [ "$STATUS" != "running" ]; then
+          echo "Container failed to start!"
+          docker logs bngblaster-container
+          exit 1
+        fi
+        echo "Container is running successfully!"
+
+    - name: Push image
+      if: success()
+      run: |
+        docker buildx build \
+        --cache-from=type=registry,ref=ghcr.io/${{ env.REPO }}:cache \
+        --cache-to=type=registry,ref=ghcr.io/${{ env.REPO }}:cache,mode=max \
+        --push \
+        --tag ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }} . 
 
   test:
     runs-on: robot-dind
@@ -91,38 +94,51 @@ jobs:
     - name: Run bngblaster app
       run: |
         docker run -d --name bngblaster-container -p 8505:8505 ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
-        sleep 10  # Give the container some time to start
+        sleep 15
 
     - name: Check container status
-      run: docker inspect bngblaster-container
+      run: |
+        docker ps -a
+        docker images
+        STATUS=$(docker inspect --format='{{.State.Status}}' bngblaster-container)
+        echo "Container status: $STATUS"
+        if [ "$STATUS" != "running" ]; then
+          echo "Container failed to start!"
+          docker logs bngblaster-container
+          exit 1
+        else
+          echo "Container is running successfully!"
+        fi
 
     - name: Run Robot Framework tests
       run: robot tests/
 
-    - name: Get image version ID 
-      run: |
-        VERSION_ID=$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-        -H "Accept: application/vnd.github.v3+json" \
-        https://api.github.com/orgs/svtechnmaa/packages/container/bngblaster_web_client/versions \
-        | jq '.[0].id')
-        echo "VERSION_ID=$VERSION_ID" >> $GITHUB_ENV
-
-    - name: Delete GHCR image if test fails
+    - name: Delete image if test fail
       if: failure()
-      uses: actions/delete-package-versions@v5
-      with:
-        package-name: ${{ env.REPO }}
-        package-type: "container"
-        owner: ${{ github.repository_owner }}
-        token: ${{ secrets.GITHUB_TOKEN }}
-        package-version-ids: ${{ env.VERSION_ID }}
+      run: |
+        REPO_NAME=$(echo ${{ env.REPO }} | cut -d'/' -f2)
+        echo "Repo name: $REPO_NAME"
+
+        VERSION_ID=$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+        "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions" \
+        | jq -r '.[] | select(.metadata.container.tags[] == "v1.${{ github.run_number }}") | .id')
+
+        echo "VERSION_ID=$VERSION_ID" >> $GITHUB_ENV
+        echo "Package version ID: $VERSION_ID"
+
+        curl -X DELETE -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+        -H "Accept: application/vnd.github.v3+json" \
+        "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions/$VERSION_ID"
 
     - name: 'Upload robot test result'
       if: always()
       uses: actions/upload-artifact@v4.6.0
       with:
-        name: robot-test-report
-        path: ./report.html
+        name: robot-test-result-#${{ github.run_number }}
+        path: |
+          ./output.xml
+          ./log.html
+          ./report.html
 
     - name: Tag latest image and push to GitHub Container Registry
       run: |
