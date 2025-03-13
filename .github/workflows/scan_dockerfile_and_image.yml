@@ -10,7 +10,7 @@ on:
 
 jobs:
   scan:
-    runs-on: robot-dind
+    runs-on: ubuntu-dind
     permissions:
       contents: read
       packages: write
@@ -36,42 +36,33 @@ jobs:
         cache: true
         format: 'table'
         output: 'dockerfile_scanning_result.json'
-
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v2
-      with:
-        registry: ghcr.io
-        username: '${{ github.repository_owner }}'
-        password: '${{ secrets.GITHUB_TOKEN }}'
   
     - name: Downcase REPO
       run: |
         echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
   
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-      
     - name: Build image
-      run: |
-        docker buildx build \
-          --cache-from=type=registry,ref=ghcr.io/${{ env.REPO }}:cache \
-          --load \
-          --tag ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }} . 
+      run: docker build -t bngblaster-app .
 
     - name: Scan Docker image
       uses: aquasecurity/trivy-action@0.28.0
       with:
         scan-type: 'image'
-        scan-ref: 'ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}'
+        scan-ref: 'bngblaster-app:latest'
         severity: 'CRITICAL,HIGH'
         cache: true
         format: 'table'
         output: 'image_scanning_result.json'
 
-    - name: Show Dockerfile scan results in logs
+    - name: Show results for Dockerfile scanning
       run: |
-        echo "##[command] Show Dockerfile scanning result"
+        echo "##[command] Show results for Dockerfile scanning"
         cat dockerfile_scanning_result.json
+
+    - name: Show results for Image scanning
+      run: |
+        echo "##[command] Show results for Image scanning"
+        cat image_scanning_result.json
 
     - name: Upload Dockerfile scan results as artifact
       if: always()
@@ -79,12 +70,7 @@ jobs:
       with:
         name: Dockerfile scanning result
         path: dockerfile_scanning_result.json
-
-    - name: Show Image scanning results in logs
-      run: |
-        echo "##[command] Show Image scanning result"
-        cat image_scanning_result.json
-
+        
     - name: Upload Image scanning results as artifact
       if: always()
       uses: actions/upload-artifact@v4
