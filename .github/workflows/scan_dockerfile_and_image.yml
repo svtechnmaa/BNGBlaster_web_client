@@ -3,14 +3,14 @@ name: Scan Dockerfile and Image
 on:
   push:
     branches:
-      - kien
+      - main
   pull_request:
     branches:
-      - kien
+      - main
 
 jobs:
   scan:
-    runs-on: robot-dind
+    runs-on: ubuntu-dind
     permissions:
       contents: read
       packages: write
@@ -54,10 +54,15 @@ jobs:
         format: 'table'
         output: 'image_scanning_result.json'
 
-    - name: Show Dockerfile scan results in logs
+    - name: Show results for Dockerfile scanning
       run: |
-        echo "##[command] Show Dockerfile scanning result"
+        echo "##[command] Show results for Dockerfile scanning"
         cat dockerfile_scanning_result.json
+
+    - name: Show results for Image scanning
+      run: |
+        echo "##[command] Show results for Image scanning"
+        cat image_scanning_result.json
 
     - name: Upload Dockerfile scan results as artifact
       if: always()
@@ -65,12 +70,7 @@ jobs:
       with:
         name: Dockerfile scanning result
         path: dockerfile_scanning_result.json
-
-    - name: Show Image scanning results in logs
-      run: |
-        echo "##[command] Show Image scanning result"
-        cat image_scanning_result.json
-
+        
     - name: Upload Image scanning results as artifact
       if: always()
       uses: actions/upload-artifact@v4

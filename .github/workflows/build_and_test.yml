@@ -3,10 +3,10 @@ name: Build and Test BNGBLASTER App
 on:
   push:
     branches:
-      - kien
+      - main
   pull_request:
     branches:
-      - kien
+      - main
 
 jobs:
   build:
