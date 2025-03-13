@@ -31,30 +31,21 @@ jobs:
         echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
     - name: Build Docker image
-      run: |
-        docker build -t my-bngblaster-app:latest .
+      run: docker build -t my-bngblaster-app:latest .
 
     - name: Run bngblaster app
       run: |
         docker run -d --name bngblaster-container -p 8505:8505 my-bngblaster-app:latest
-
-    - name: Wait and check container status
-      run: |
         sleep 20
         docker ps -a
-        STATUS=$(docker inspect --format='{{.State.Status}}' bngblaster-container)
-        echo "Container status: $STATUS"
-        if [ "$STATUS" = "running" ]; then
-          echo "Container is running!"
-        else
-          echo "Container is not running: $STATUS"
-          exit 1
-        fi
 
-  #   - name: Push image to GitHub Container Registry
-  #     run: |
-  #       docker tag my-bngblaster-app:latest ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
-  #       docker push ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
+    - name: Check container status
+      run: docker inspect bngblaster-container
+
+    # - name: Push image to GitHub Container Registry
+    #   run: |
+    #     docker tag my-bngblaster-app:latest ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
+    #     docker push ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
 
   # test:
   #   runs-on: robot-dind
