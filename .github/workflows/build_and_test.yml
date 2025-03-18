@@ -35,7 +35,7 @@ jobs:
 
     - name: Build image
       run: |
-        docker buildx build --platform linux/amd64 \
+        docker buildx build \
           --cache-from=type=registry,ref=ghcr.io/${{ env.REPO }}:cache \
           --load \
           --tag ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }} .
@@ -61,7 +61,7 @@ jobs:
     - name: Build and push image to ghcr.io
       if: success()
       run: |
-        docker buildx build --platform linux/amd64 \
+        docker buildx build \
           --cache-from=type=registry,ref=ghcr.io/${{ env.REPO }}:cache \
           --cache-to=type=registry,ref=ghcr.io/${{ env.REPO }}:cache,mode=max \
           --push \
@@ -134,7 +134,7 @@ jobs:
       if: success()
       run: |
         docker buildx imagetools create -t ghcr.io/${{ env.REPO }}:latest ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
-        docker buildx imagetools inspect ghcr.io/akatsukyy/bngblaster_web_client:latest
+        docker buildx imagetools inspect ghcr.io/${{ env.REPO }}:latest
 
     - name: 'Upload robot test result'
       if: always()
