@@ -3,10 +3,10 @@ name: Build and Test BNGBLASTER App
 on:
   push:
     branches:
-      - main
+      - kien
   pull_request:
     branches:
-      - main
+      - kien
 
 jobs:
   build:
@@ -30,8 +30,15 @@ jobs:
       run: |
         echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
         
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
     - name: Build image
-      run: docker build -t ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }} .
+      run: |
+        docker buildx build --platform linux/amd64 \
+          --cache-from=type=registry,ref=ghcr.io/${{ env.REPO }}:cache \
+          --load \
+          --tag ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }} .
 
     - name: Run bngblaster app
       run: |
@@ -51,9 +58,14 @@ jobs:
         fi
         echo "Container is running successfully!"
 
-    - name: Push image
+    - name: Build and push image to ghcr.io
       if: success()
-      run: docker push ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
+      run: |
+        docker buildx build --platform linux/amd64 \
+          --cache-from=type=registry,ref=ghcr.io/${{ env.REPO }}:cache \
+          --cache-to=type=registry,ref=ghcr.io/${{ env.REPO }}:cache,mode=max \
+          --push \
+          --tag ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }} . 
 
   test:
     runs-on: robot-dind
@@ -118,6 +130,12 @@ jobs:
         -H "Accept: application/vnd.github.v3+json" \
         "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions/$VERSION_ID"
 
+    - name: Tag latest image and push to GitHub Container Registry
+      if: success()
+      run: |
+        docker buildx imagetools create -t ghcr.io/${{ env.REPO }}:latest ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
+        docker buildx imagetools inspect ghcr.io/akatsukyy/bngblaster_web_client:latest
+
     - name: 'Upload robot test result'
       if: always()
       uses: actions/upload-artifact@v4.6.0
@@ -127,11 +145,6 @@ jobs:
           ./output.xml
           ./log.html
           ./report.html
-
-    - name: Tag latest image and push to GitHub Container Registry
-      run: |
-        docker tag ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }} ghcr.io/${{ env.REPO }}:latest
-        docker push ghcr.io/${{ env.REPO }}:latest
    
   update: 
     needs: test
