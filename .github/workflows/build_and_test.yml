@@ -61,9 +61,9 @@ jobs:
     - name: Build and push image to ghcr.io
       if: success()
       run: |
-        docker buildx build \
+        docker buildx build --platform linux/amd64 \
           --cache-from=type=registry,ref=ghcr.io/${{ env.REPO }}:cache \
-          --cache-to=type=registry,ref=ghcr.io/${{ env.REPO }}:cache,mode=max \
+          --cache-to=type=registry,ref=ghcr.io/${{ env.REPO }}:cache \
           --push \
           --tag ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }} . 
 
