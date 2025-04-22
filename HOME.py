@@ -427,20 +427,24 @@ def execute_remote_command(host, username, command):
         return None
 def execute_remote_command_use_passwd(host, username, passwd , command):
     import paramiko
+    import time
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     try:
         # Connect to the remote server
         client.connect(host, username=username, password=passwd)
         # Execute the command to check network interfaces
+        print('Command: %s send to %s'%(command, host))
         stdin, stdout, stderr = client.exec_command(f'{command}')
+        time.sleep(0.01)
         stdin.write(passwd + "\n")
+        time.sleep(0.01)
         stdin.flush()
         # Read the command output
         output = stdout.read().decode()
         error = stderr.read().decode()
         if output:
-            print("execute_remote_command_use_passwd() error %s"%output)
+            print("execute_remote_command_use_passwd() output %s"%output)
             return output
         if error:
             print("execute_remote_command_use_passwd() error %s"%error)
@@ -490,6 +494,93 @@ def find_sub_interface(host, username, password, interface):
     else:
         print('Do not have already sub-interface')
         return 0
+def find_unused_vlans(hostname, username, password, interface): # Function find unsued vlan of one interface (range vlan from 1-4094)
+    import paramiko
+    # Create an SSH client
+    client = paramiko.SSHClient()
+    # Automatically add untrusted hosts (not recommended for production)
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    try:
+        # Connect to the remote server
+        client.connect(hostname, username=username, password=password)
+        # Execute the command to check network interfaces
+        # stdin, stdout, stderr = client.exec_command("sudo -S netstat -i | grep -e ens -e eth")
+        stdin, stdout, stderr = client.exec_command("ip link show | grep '@%s' | awk -F '@' '{print $1}' | awk -F '.' '{print $2}'"%interface)
+        stdin.write(password + "\n")
+        stdin.flush()
+        # Read the command output
+        output = stdout.read().decode()
+        error = stderr.read().decode()
+        # Assuming VLANs are numbered from 2 to 4094
+        all_vlans = set(map(str, range(1, 4095)))
+        # unused_vlans = all_vlans - used_vlans
+        if output:
+            line = output.split('\n')
+            list_vlan_temp = []
+            for i in line:
+                list_vlan_temp.append(i)
+            return sorted(all_vlans - set(list_vlan_temp))   #Return list vlan unused
+        else:
+            return sorted(all_vlans) # Return list vlan unused
+        if error:
+            print(error)
+    finally:
+        # Close the connection
+        client.close()
+def find_used_vlans(hostname, username, password, interface): # Function find unsued vlan of one interface (range vlan from 1-4094)
+    import paramiko
+    # Create an SSH client
+    client = paramiko.SSHClient()
+    # Automatically add untrusted hosts (not recommended for production)
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    try:
+        # Connect to the remote server
+        client.connect(hostname, username=username, password=password)
+        # Execute the command to check network interfaces
+        # stdin, stdout, stderr = client.exec_command("sudo -S netstat -i | grep -e ens -e eth")
+        stdin, stdout, stderr = client.exec_command("ip link show | grep '@%s' | awk -F '@' '{print $1}' | awk -F '.' '{print $2}'"%interface)
+        stdin.write(password + "\n")
+        stdin.flush()
+        # Read the command output
+        output = stdout.read().decode()
+        error = stderr.read().decode()
+        # used_vlans
+        if output:
+            line = output.split('\n')
+            list_vlan_temp = []
+            for i in line:
+                if i == "":
+                    continue
+                else:
+                    list_vlan_temp.append(i)
+            return sorted(set(list_vlan_temp))   #Return list vlan used
+        else:
+            return ['null']
+        if error:
+            print(error)
+    finally:
+        # Close the connection
+        client.close()
+def find_and_split_line_from_file(file_path, search_string):
+    try:
+        last_matching_line = None
+        with open(file_path, 'r') as file:
+            for line in file:
+                if search_string in line:
+                    last_matching_line = line.strip()  # Store the last matching line
+
+        if last_matching_line is not None:
+            # Split the last matching line into components
+            components = last_matching_line.split()  # You can specify a delimiter if needed
+            return components
+        else:
+            return None  # Return None if the string is not found
+    except FileNotFoundError:
+        print(f"The file {file_path} was not found.")
+        return None
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
 def find_interface(hostname, username, password):
     import paramiko
     # Create an SSH client
@@ -500,7 +591,8 @@ def find_interface(hostname, username, password):
         # Connect to the remote server
         client.connect(hostname, username=username, password=password)
         # Execute the command to check network interfaces
-        stdin, stdout, stderr = client.exec_command("sudo -S netstat -i | grep -e ens -e eth")
+        # stdin, stdout, stderr = client.exec_command("sudo -S netstat -i | grep -e ens -e eth")
+        stdin, stdout, stderr = client.exec_command("sudo -S netstat -i | grep -e ens")
         stdin.write(password + "\n")
         stdin.flush()
         # Read the command output
@@ -538,7 +630,7 @@ def filter_dict(data: dict, extract):
         return shadow_data
     except (IndexError, KeyError, AttributeError, TypeError):
         return None
-@st.experimental_dialog("Confirmation")
+@st.dialog("Confirmation")
 def delete_config(path_configs, instance):
     st.write(f":orange[Are you sure for deleting?]")
     col1, col2 = st.columns([1,6])
@@ -579,18 +671,39 @@ def GET_ALL_INTANCES_BLASTER(server,port):
 ################## Function for blaster-status ############################################
 def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_avail_from_blaster):
     with st.container(border=True):
-        st.subheader(f':sunny: :green[BNG-BLASTER [{ip}] STATUS]')
-        col_select, col_display= st.columns([2.5,5])
+        bscol1, bscol2 = st.columns([1,2])
+        with bscol1:
+            st.subheader(f':sunny: :green[BNG-BLASTER [{ip}] STATUS]')
+        with bscol2:
+            with st.container(border=True, height=50):
+                # Note: dict_blaster_db_format is var global
+                list_int_server = find_interface(ip, dict_blaster_db_format[ip]['user'], dict_blaster_db_format[ip]['passwd'])
+                for i in list_int_server:
+                    st.write(':green[ :material/share: Interface **%s** used vlan: **%s**]'%(i, find_used_vlans(ip, dict_blaster_db_format[ip]['user'], dict_blaster_db_format[ip]['passwd'], i)))
+        col_select, col_display= st.columns([1,2])
         with col_select:
             with st.container(border=True, height= 300):
                 st.write(":fire: :violet[**INSTANCE RUNNING**]")
                 select_running_instance={}
                 for i in list_instance_running_from_blaster:
-                    exec(f"""select_running_instance['{i}'] = st.checkbox(f":orange[*{i}*]")""") 
+                    col111, col112= st.columns([1,1], border= True)
+                    with col111:
+                        exec(f"""select_running_instance['{i}'] = st.checkbox(f":orange[*{i}*]")""") 
+                    with col112:
+                        time_start = find_and_split_line_from_file('auth.log', 'RUN START instance %s'%i)
+                        if time_start != None:
+                            st.write("*:orange[ :material/sound_sampler: %s]*"%time_start[0])  
+                        else:
+                            st.write("*:orange[ :material/sound_sampler: None]*")
+                        time_stop = find_and_split_line_from_file('auth.log', 'RUN STOP instance %s'%i)
+                        if time_start != None:
+                            st.write("*:orange[ :material/stop_circle: %s]*"%time_stop[0])  
+                        else:
+                            st.write("*:orange[ :material/stop_circle: None]*")
                 select_running_instance_cb = [] # List select checkbox
                 for i in select_running_instance.keys():
                     if select_running_instance[i]:
-                        select_running_instance_cb.append(i)      
+                        select_running_instance_cb.append(i)    
         with  st.expander(":material/graphic_eq: :violet[**INSTANCE EXISTED CONFIG**]"):
             for i in list_instance_avail_from_blaster:
                 with st.container(border=True):
@@ -990,7 +1103,8 @@ if st.session_state.p3:
                                                         with col_int1:
                                                             interface = st.selectbox(f":green[interface]", find_interface(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd']), key = f"{s}/{var}/{i}/interface" )
                                                         with col_int2:
-                                                            vlan = st.text_input(f":green[vlan]", key=f"{s}/{var}/{i}/vlan")
+                                                            # vlan = st.text_input(f":green[vlan]", key=f"{s}/{var}/{i}/vlan")
+                                                            vlan = st.selectbox(f":green[vlan]", find_unused_vlans(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd'], interface),key=f"{s}/{var}/{i}/vlan")
                                                 if vlan == "":
                                                     exec(f"""{s}_content['{var}']= interface """)
                                                 else:
@@ -1025,7 +1139,8 @@ if st.session_state.p3:
                                                         with col_int1:
                                                             interface = st.selectbox(f":green[interface]", find_interface(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd']), key =f"{s}/{var}/{i}/interface" )
                                                         with col_int2:
-                                                            vlan = st.text_input(f":green[vlan]", key=f"{s}/{var}/{i}/vlan")
+                                                            # vlan = st.text_input(f":green[vlan]", key=f"{s}/{var}/{i}/vlan")
+                                                            vlan = st.selectbox(f":green[vlan]", find_unused_vlans(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd'], interface),key=f"{s}/{var}/{i}/vlan")
                                                 if vlan == "":
                                                     exec(f"""{s}_content['{var}']= interface """)
                                                 else:
@@ -1836,6 +1951,7 @@ if st.session_state.p3:
                                                 with open('%s/%s.json'%(path_configs,name_json_config), mode= 'w', encoding= 'utf-8') as json_config:
                                                     json.dump(yaml.safe_load(convert_json), json_config, indent=2)
                                                 st.success("Config save successfully", icon="🔥")
+                                                log_authorize(st.session_state.user, f'Create new json {name_json_config}')
                                 except Exception as e:
                                     with col2:
                                         st.error(f"Can not yaml dump content, check error {e}", icon="🚨")
@@ -1863,7 +1979,7 @@ if st.session_state.p4:
     col4, col5=st.columns([1.5,1])
     with col4:
         with st.container(border= True):
-            st.subheader(':sunny: :green[TEST MANAGEMENT]')
+            st.subheader(':sunny: :green[CONFIG MANAGEMENT [%s JSONs]]'%len(list_json))
             col19, col20 =st.columns([2,1])
             with col19:
                 with st.container(border= True):
@@ -1873,11 +1989,24 @@ if st.session_state.p4:
                     st.info(":violet[Content of **%s.json**]"%instance, icon="🔥")
                     with open('%s/%s.json'%(path_configs, instance), 'r') as file_show:
                         data= file_show.read()
+                    data_json=json.loads(data)    
                     st.code(data)
                     if st.button(':material/edit: **EDIT**', use_container_width=True):
                         st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, True, False, False
                         log_authorize(st.session_state.user, 'Change RUN to PRE-RUN for EDIT')
                         st.rerun()
+                with st.container(border= True):
+                    try:
+                        temp_list_nw=[]
+                        for i in range(len(data_json['interfaces']['network'])):
+                            temp_list_nw.append(data_json['interfaces']['network'][i]['interface'])
+                        st.info(':material/info: Instance **%s** use network interface *%s*'%(instance, temp_list_nw))
+                        temp_list_acc=[]
+                        for i in range(len(data_json['interfaces']['access'])):
+                            temp_list_acc.append(data_json['interfaces']['access'][i]['interface'])
+                        st.info(':material/info: Instance **%s** use access interface *%s*'%(instance, temp_list_acc))
+                    except Exception as e:
+                        print('[RUN] Json config dont have network or access interface, error %s'%e)
             instance_exist_st, instance_exist_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'GET', payload_start)
             if "started" in str(instance_exist_ct):
                 st.session_state.button_start= True
@@ -1954,10 +2083,11 @@ if st.session_state.p4:
                 with col19:
                     st.session_state.button_start= False
                     st.session_state.button_stop= True
-                    if instance in list_instance_avail_from_blaster:
-                        st.warning(f'Instance **{instance}** can start but its config will be overrided', icon="🔥")
-                    else:
-                        st.info("You can start this instance", icon="🔥")
+                    with st.container(border= True):
+                        if instance in list_instance_avail_from_blaster:
+                            st.warning(f'Instance **{instance}** can start but its config will be overrided', icon="🔥")
+                        else:
+                            st.info("You can start this instance", icon="🔥")
             with col19:
                 if st.button('**START** :material/sound_sampler: ', type = 'primary',use_container_width=True, disabled= st.session_state.button_start):
                     # Get list interface "ens" from config and send remote set bng-blaster server
@@ -1982,11 +2112,12 @@ if st.session_state.p4:
                                             continue
                                 else:
                                     continue
-                        # st.write(int_list)
                         for y in int_list:
                             if "." in y:
                                 execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), "sudo modprobe 8021q")
+                                time.sleep(0.02)
                                 execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo ip link add link {y.split('.')[0]} name {y} type vlan id {y.split('.')[1]}")
+                                time.sleep(0.02)
                                 execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo ip link set dev {y} up")
                     else:
                         list_inf = []
@@ -2006,7 +2137,9 @@ if st.session_state.p4:
                             if '.' in i:
                                 # st.toast(i)
                                 execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), "sudo -S modprobe 8021q")
+                                time.sleep(0.02)
                                 execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo -S ip link add link {i.split('.')[0]} name {i} type vlan id {i.split('.')[1]}")
+                                time.sleep(0.02)
                                 execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo -S ip link set dev {i} up")
                     try:
                         exist_sc, exist_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'GET', payload_start)
