@@ -35,12 +35,12 @@ def is_valid_name_instance(s):
     pattern = r'^[A-Za-z_][A-Za-z0-9_]*$'
     return bool(re.match(pattern, s))
 # Function for log action
-def log_authorize(user, action):
+def log_authorize(user, server , action):
     from datetime import datetime, timezone, timedelta # Datetime
     timestamp = datetime.now(timezone(timedelta(hours=+7), 'ICT')).strftime("%d/%m/%Y_%H:%M:%S")
     with open('auth.log', 'a') as session:
         session.write('\n')
-        session.write(f"{timestamp}_{user} : {action}")
+        session.write(f"{timestamp}_{user}_{server} : {action}")
 
 # hashed_passwords = Hasher(['xxx']).generate()
 # print(hashed_passwords)
@@ -644,7 +644,7 @@ def delete_config(path_configs, instance):
             if os.path.exists('%s/%s_interfaces.yml'%(path_configs,instance)):
                 os.remove(f"{path_configs}/{instance}_interfaces.yml")
             st.toast(':blue[Delete instance %s successfully]'%instance, icon="🔥")
-            log_authorize(st.session_state.user, f'DELETE instance {instance}')
+            log_authorize(st.session_state.user,blaster_server['ip'], f'DELETE instance {instance}')
             time.sleep(1)
             st.rerun()
     with col2:
@@ -671,35 +671,43 @@ def GET_ALL_INTANCES_BLASTER(server,port):
 ################## Function for blaster-status ############################################
 def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_avail_from_blaster):
     with st.container(border=True):
-        bscol1, bscol2 = st.columns([1,2])
+        bscol1, bscol2 = st.columns([1,2], border=True)
         with bscol1:
             st.subheader(f':sunny: :green[BNG-BLASTER [{ip}] STATUS]')
         with bscol2:
-            with st.container(border=True, height=50):
-                # Note: dict_blaster_db_format is var global
-                list_int_server = find_interface(ip, dict_blaster_db_format[ip]['user'], dict_blaster_db_format[ip]['passwd'])
-                for i in list_int_server:
-                    st.write(':green[ :material/share: Interface **%s** used vlan: **%s**]'%(i, find_used_vlans(ip, dict_blaster_db_format[ip]['user'], dict_blaster_db_format[ip]['passwd'], i)))
+            # Note: dict_blaster_db_format is var global
+            list_int_server = find_interface(ip, dict_blaster_db_format[ip]['user'], dict_blaster_db_format[ip]['passwd'])
+            for i in list_int_server:
+                st.write(':green[ :material/share: *Interface %s used vlan: %s*]'%(i, find_used_vlans(ip, dict_blaster_db_format[ip]['user'], dict_blaster_db_format[ip]['passwd'], i)))
         col_select, col_display= st.columns([1,2])
         with col_select:
-            with st.container(border=True, height= 300):
+            with st.container(border=True):
                 st.write(":fire: :violet[**INSTANCE RUNNING**]")
+            with st.container(border=True, height= 400):   
                 select_running_instance={}
                 for i in list_instance_running_from_blaster:
-                    col111, col112= st.columns([1,1], border= True)
+                    col111, col112= st.columns([4,1], border= True)
                     with col111:
                         exec(f"""select_running_instance['{i}'] = st.checkbox(f":orange[*{i}*]")""") 
                     with col112:
-                        time_start = find_and_split_line_from_file('auth.log', 'RUN START instance %s'%i)
-                        try:
-                            st.write("*:orange[ :material/sound_sampler: %s]*"%time_start[0])  
-                        except:
-                            st.write("*:orange[ :material/sound_sampler: None]*")
-                        time_stop = find_and_split_line_from_file('auth.log', 'RUN STOP instance %s'%i)
-                        try:
-                            st.write("*:orange[ :material/stop_circle: %s]*"%time_stop[0])  
-                        except:
-                            st.write("*:orange[ :material/stop_circle: None]*")
+                        with st.popover(':orange[:material/access_time:]', use_container_width=True):
+                        # with st.container(border=True):
+                            time_start = find_and_split_line_from_file('auth.log', 'RUN START instance %s'%i)
+                            st.info(":blue[**:material/sound_sampler: LAST START**]")
+                            try:
+                                st.write(":orange[ :material/sound_sampler: *%s*]"%time_start[0].split('_')[0:3])
+                                st.write(":orange[ :material/dns: *%s*]"%time_start[0].split('_')[3])
+                            except:
+                                st.write(":orange[ :material/sound_sampler: *None*]")
+                                st.write(":orange[ :material/dns: *None*]")
+                            time_stop = find_and_split_line_from_file('auth.log', 'RUN STOP instance %s'%i)
+                            st.info(":blue[**:material/stop_circle: LAST STOP**]")
+                            try:
+                                st.write(":orange[ :material/stop_circle:*%s*]"%time_stop[0].split('_')[0:3])
+                                st.write(":orange[ :material/dns: *%s*]"%time_stop[0].split('_')[3])
+                            except:
+                                st.write(":orange[ :material/stop_circle: *None*]")
+                                st.write(":orange[ :material/dns: *None*]")
                 select_running_instance_cb = [] # List select checkbox
                 for i in select_running_instance.keys():
                     if select_running_instance[i]:
@@ -723,8 +731,9 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                 # st.dataframe(list_instance_avail_from_blaster, use_container_width= True)
                 # st.dataframe(list_instance_avail_from_blaster, use_container_width= True, column_config={"value": "instance-name"})
         with col_display:
-            with st.container(border=True, height= 300):
+            with st.container(border=True):
                 st.write(":fire: :violet[**GRAPH**]")
+            with st.container(border=True, height= 400):
                 for i in select_running_instance_cb:
                     with st.popover(f":orange[:material/timeline: *{i}*]", use_container_width=True):
                         col_realtime, col_graph= st.columns([1,1])
@@ -940,7 +949,7 @@ if st.session_state.p1:
                             st.info(":green[Add successfully]")
                             time.sleep(2)
                             st.rerun()
-            log_authorize(st.session_state.user, f'Select BNG-Blaster {st.session_state.ip_blaster}')
+            log_authorize(st.session_state.user, st.session_state.ip_blaster , f'Select BNG-Blaster {st.session_state.ip_blaster}')
 ################################ LIST ALL INSTANCES (RUNNING +STOP) SERVER #############
 blaster_server = {
     'ip': st.session_state.ip_blaster,
@@ -962,14 +971,14 @@ try:
         for j in list_instance_avail_from_blaster:
             if j == "uploads":
                 list_instance_avail_from_blaster.pop(list_instance_avail_from_blaster.index("uploads"))
-        log_authorize(st.session_state.user, f'Success get BNG-Blaster_{st.session_state.ip_blaster} info')
+        log_authorize(st.session_state.user,blaster_server['ip'], f'Success get BNG-Blaster_{st.session_state.ip_blaster} info')
     else:
         st.error('Can not get list-instance from server', icon="🚨")
 except Exception as e:
     e1,e2,e3= st.columns([1,2,1])
     with e2:
         st.error(f"Can't get info from your BNG-Blaster server. Choose other Server available", icon="🚨")
-        log_authorize(st.session_state.user, f'Fail get BNG-Blaster_{st.session_state.ip_blaster} info')
+        log_authorize(st.session_state.user,blaster_server['ip'], f'Fail get BNG-Blaster_{st.session_state.ip_blaster} info')
         print(f"Check your bng-blaster server.Error **{e}**")
         error = True
 if st.session_state.p1:
@@ -989,14 +998,14 @@ if st.session_state.p2:
             gif('./images/one.gif')
             if st.button(':material/first_page: **PRE-RUN**', use_container_width=True):
                 st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, True, False, False
-                log_authorize(st.session_state.user, 'Select PRE-RUN page')
+                log_authorize(st.session_state.user,blaster_server['ip'], 'Select PRE-RUN page')
                 st.rerun()
     with gif4:
         with st.container(border= True):
             gif('./images/two.gif')
             if st.button(':material/all_inclusive:  **RUN**', use_container_width=True):
                 st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, True, False
-                log_authorize(st.session_state.user, 'Select RUN page')
+                log_authorize(st.session_state.user,blaster_server['ip'], 'Select RUN page')
                 st.rerun()
     with gif6:
         with st.container(border= True):
@@ -1004,7 +1013,7 @@ if st.session_state.p2:
             # if st.button(':chart_with_upwards_trend:  **REPORT**', disabled= True, use_container_width=True):
             if st.button(':material/insights:  **REPORT**', use_container_width=True):
                 st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, False, True
-                log_authorize(st.session_state.user, 'Select REPORT page')
+                log_authorize(st.session_state.user,blaster_server['ip'], 'Select REPORT page')
                 st.rerun()
 if st.session_state.p3:
     st.session_state.create_instance = True
@@ -1013,12 +1022,12 @@ if st.session_state.p3:
     with col52:
         if st.button(':material/widgets:', use_container_width=True):
             st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, True, False, False, False
-            log_authorize(st.session_state.user, 'Return HOME')
+            log_authorize(st.session_state.user,blaster_server['ip'], 'Return HOME')
             st.rerun()
     with col53:
         if st.button(':material/all_inclusive: ', use_container_width=True):
             st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, True, False
-            log_authorize(st.session_state.user, 'Change RUN page')
+            log_authorize(st.session_state.user,blaster_server['ip'], 'Change RUN page')
             st.rerun()
     tab1, tab2, tab3, tab4 = st.tabs([":material/note_add: CREATE", ":material/edit_note: MODIFY", ":material/publish: JSON_IMPORT", ":material/note_alt: TEMPLATE"])
     with tab1:
@@ -1040,6 +1049,7 @@ if st.session_state.p3:
             with col21:
                 with st.container(border= True):
                     select_template= st.selectbox(':orange[Select your template]?', list_templates, placeholder = 'Select one template')
+                    log_authorize(st.session_state.user,blaster_server['ip'], f'Select template {select_template}')
             with col22:
                 with st.popover(":material/visibility: :blue[**VIEW**]", use_container_width=True):
                     st.info(":violet[Content of **%s template**]"%select_template, icon="🔥")
@@ -1227,7 +1237,7 @@ if st.session_state.p3:
                                             dict_input.pop(pop[i])
                                         dict_input['template']= select_template # Save mapping config: template
                                         st.info(':blue[Import variables successfully]', icon="🔥")
-                                        log_authorize(st.session_state.user, 'IMPORT yaml file')
+                                        log_authorize(st.session_state.user,blaster_server['ip'], 'IMPORT yaml file')
                                     else:
                                         list_var_lack= set(list_var).difference(set(list(dict_input.keys())))
                                         st.error(f'Data lack of vars **{list_var_lack}**', icon="🚨")
@@ -1292,7 +1302,7 @@ if st.session_state.p3:
                             file_data_interfaces.write('---\n')
                             file_data_interfaces.write(str_interfaces)
                     st.info(':blue[Create successfully]', icon="🔥")
-                    log_authorize(st.session_state.user, f'CREATE intance {instance_name}')
+                    log_authorize(st.session_state.user,blaster_server['ip'], f'CREATE intance {instance_name}')
                     time.sleep(3)
                     st.rerun()
                 else:
@@ -1306,6 +1316,7 @@ if st.session_state.p3:
             edit_list_var=[]
             with st.container(border=True):
                 edit_instance= st.selectbox(':orange[Select your instance for modifing]?', list_instance, placeholder = 'Select one instance')
+                log_authorize(st.session_state.user,blaster_server['ip'], f'Edit config {edit_instance}')
             if os.path.exists('%s/%s.yml'%(path_configs,edit_instance)):
                 try:
                     with open("%s/%s.yml"%(path_configs,edit_instance) , 'r') as file_data:
@@ -1557,7 +1568,7 @@ if st.session_state.p3:
                                     streams_data.write('---\n')
                                     streams_data.write(yaml.dump(streams_save))
                             st.toast(':blue[Save instance %s successfully]'%edit_instance, icon="🔥")
-                            log_authorize(st.session_state.user, f'Edit and save instance {edit_instance}')
+                            log_authorize(st.session_state.user,blaster_server['ip'], f'Edit and save instance {edit_instance}')
                         else:
                             st.toast(':red[Have parameters empty, fill us before save, please]', icon="🚨")
                 with col16:
@@ -1592,7 +1603,7 @@ if st.session_state.p3:
                                     with open(f"{path_templates}/{protocols_file_import.name}", 'w') as jinja:
                                         jinja.write(string_data)
                                         st.info(':blue[Upload template %s successfully]'%protocols_file_import.name, icon="🔥")
-                                        log_authorize(st.session_state.user, f'Import protocols template file {protocols_file_import.name}')
+                                        log_authorize(st.session_state.user,blaster_server['ip'], f'Import protocols template file {protocols_file_import.name}')
                                 else:
                                     st.error('Duplicate name file, change your file name and try again', icon="🚨")
                             else:
@@ -1641,7 +1652,7 @@ if st.session_state.p3:
                                     with open(f"{path_templates_interfaces}/{protocols_file_import.name}", 'w') as jinja:
                                         jinja.write(string_data)
                                         st.info(':blue[Upload template %s successfully]'%protocols_file_import.name, icon="🔥")
-                                        log_authorize(st.session_state.user, f'Import interfaces template file {protocols_file_import.name}')
+                                        log_authorize(st.session_state.user,blaster_server['ip'], f'Import interfaces template file {protocols_file_import.name}')
                                 else:
                                     st.error('Duplicate name file, change your file name and try again', icon="🚨")
                             else:
@@ -1690,7 +1701,7 @@ if st.session_state.p3:
                                     with open(f"{path_templates_streams}/{streams_file_import.name}", 'w') as jinja:
                                         jinja.write(string_data)
                                         st.info(':blue[Upload template %s successfully]'%streams_file_import.name, icon="🔥")
-                                        log_authorize(st.session_state.user, f'Import template file {streams_file_import.name}')
+                                        log_authorize(st.session_state.user,blaster_server['ip'], f'Import template file {streams_file_import.name}')
                                 else:
                                     st.error('Duplicate name file, change your file name and try again', icon="🚨")
                             else:
@@ -1951,7 +1962,7 @@ if st.session_state.p3:
                                                 with open('%s/%s.json'%(path_configs,name_json_config), mode= 'w', encoding= 'utf-8') as json_config:
                                                     json.dump(yaml.safe_load(convert_json), json_config, indent=2)
                                                 st.success("Config save successfully", icon="🔥")
-                                                log_authorize(st.session_state.user, f'Create new json {name_json_config}')
+                                                log_authorize(st.session_state.user,blaster_server['ip'], f'Create new json {name_json_config}')
                                 except Exception as e:
                                     with col2:
                                         st.error(f"Can not yaml dump content, check error {e}", icon="🚨")
@@ -1980,10 +1991,10 @@ if st.session_state.p4:
     with col4:
         with st.container(border= True):
             st.subheader(':sunny: :green[CONFIG MANAGEMENT [%s JSONs]]'%len(list_json))
-            col19, col20 =st.columns([2,1])
+            col19, col20 =st.columns([1.3,1])
             with col19:
                 with st.container(border= True):
-                    instance= st.selectbox(':orange[Select your instance]?', list_instance, placeholder = 'Select one instance')
+                    instance= st.selectbox(':orange[:material/done: Select your instance]?', list_instance, placeholder = 'Select one instance')
             with col20:
                 with st.popover(":blue[:material/visibility: **CONFIG**]", use_container_width=True):
                     st.info(":violet[Content of **%s.json**]"%instance, icon="🔥")
@@ -1993,7 +2004,7 @@ if st.session_state.p4:
                     st.code(data)
                     if st.button(':material/edit: **EDIT**', use_container_width=True):
                         st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, True, False, False
-                        log_authorize(st.session_state.user, 'Change RUN to PRE-RUN for EDIT')
+                        log_authorize(st.session_state.user,blaster_server['ip'], 'Change RUN to PRE-RUN for EDIT')
                         st.rerun()
                 with st.container(border= True):
                     try:
@@ -2042,7 +2053,7 @@ if st.session_state.p4:
                                                 push_file_to_server_by_ftp(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd'],f"{path_bgp_update}/{name_bgp_update}.bgp", f'/var/bngblaster/uploads/{name_bgp_update}.bgp')
                                                 adv_sc, adv_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'POST', payload_command_bgp_raw_update, '/_command')
                                                 st.info(':blue[Advertise sucessfully]', icon="🔥")
-                                                log_authorize(st.session_state.user, f'Advertise BGP route {prefix} num {num_prefix}')
+                                                log_authorize(st.session_state.user,blaster_server['ip'], f'Advertise BGP route {prefix} num {num_prefix}')
                                             else:
                                                 st.error(":violet[Wrong prefix]", icon="🔥")
                                         else:
@@ -2072,7 +2083,7 @@ if st.session_state.p4:
                                                 push_file_to_server_by_ftp(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']]['user'],dict_blaster_db_format[blaster_server['ip']]['passwd'] ,f"{path_bgp_update}/{name_bgp_update_wd}.bgp", f'/var/bngblaster/uploads/{name_bgp_update_wd}.bgp')
                                                 wd_sc, wd_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'POST', payload_command_bgp_raw_update_wd, '/_command')
                                                 st.info(':blue[Withdraw sucessfully]', icon="🔥")
-                                                log_authorize(st.session_state.user, f'Withdraw BGP route {prefix_wd} num {num_prefix_wd}')
+                                                log_authorize(st.session_state.user,blaster_server['ip'], f'Withdraw BGP route {prefix_wd} num {num_prefix_wd}')
                                             else:
                                                 st.error(":violet[Wrong prefix]", icon="🔥")
                                         else:
@@ -2180,7 +2191,7 @@ if st.session_state.p4:
                         else: 
                             print('Create instance on blaster didnt sucessfully')
                     st.session_state.button_stop= False
-                    log_authorize(st.session_state.user, f'RUN START instance {instance}')
+                    log_authorize(st.session_state.user,blaster_server['ip'], f'RUN START instance {instance}')
                     time.sleep(1)
                     st.rerun()
                 # with st.container(border= True):
@@ -2188,7 +2199,7 @@ if st.session_state.p4:
                     stop_sc, stop_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'POST', payload_stop, '/_stop')
                     # st.write(stop_sc, stop_ct)
                     st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, True, False
-                    log_authorize(st.session_state.user, f'RUN STOP instance {instance}')
+                    log_authorize(st.session_state.user,blaster_server['ip'], f'RUN STOP instance {instance}')
                     
                     stop_pg = st.progress(0)
                     for percent_complete3 in range(100):
@@ -2230,12 +2241,12 @@ if st.session_state.p5:
         # if st.button('◀️'):
         if st.button(':material/widgets: ', use_container_width=True):
             st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, True, False, False, False
-            log_authorize(st.session_state.user, 'REPORT return HOME')
+            log_authorize(st.session_state.user,blaster_server['ip'], 'REPORT return HOME')
             st.rerun()
     with col63:
         if st.button(':material/all_inclusive:', use_container_width=True):
             st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, True, False
-            log_authorize(st.session_state.user, 'REPORT return RUN')
+            log_authorize(st.session_state.user,blaster_server['ip'], 'REPORT return RUN')
             st.rerun()
     blaster_status(blaster_server['ip'],blaster_server['port'],list_instance_running_from_blaster, list_instance_avail_from_blaster) # call function display status of blaster server
     # instance_running= ['bgp_linhnt','bras_pppoe_linhnt','bras_pppoe_hoand']
