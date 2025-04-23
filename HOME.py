@@ -691,14 +691,14 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                         exec(f"""select_running_instance['{i}'] = st.checkbox(f":orange[*{i}*]")""") 
                     with col112:
                         time_start = find_and_split_line_from_file('auth.log', 'RUN START instance %s'%i)
-                        if time_start != None:
+                        try:
                             st.write("*:orange[ :material/sound_sampler: %s]*"%time_start[0])  
-                        else:
+                        except:
                             st.write("*:orange[ :material/sound_sampler: None]*")
                         time_stop = find_and_split_line_from_file('auth.log', 'RUN STOP instance %s'%i)
-                        if time_start != None:
+                        try:
                             st.write("*:orange[ :material/stop_circle: %s]*"%time_stop[0])  
-                        else:
+                        except:
                             st.write("*:orange[ :material/stop_circle: None]*")
                 select_running_instance_cb = [] # List select checkbox
                 for i in select_running_instance.keys():
