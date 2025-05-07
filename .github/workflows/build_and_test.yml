@@ -255,16 +255,19 @@ jobs:
         RELEASE_IMAGE_TAG: v${{ steps.semantic.outputs.new_release_version }}
 
     - name: Install Helm
+      if: steps.semantic.outputs.new_release_published == 'true'
       uses: azure/setup-helm@v3
       with:
         version: 'latest'
 
     - name: Setup Python
+      if: steps.semantic.outputs.new_release_published == 'true'
       uses: actions/setup-python@v5.3.0
       with:
         python-version: "3.13"
     
     - name: Clone charts Repository
+      if: steps.semantic.outputs.new_release_published == 'true'
       uses: actions/checkout@v4
       with:
         repository: '${{ github.repository_owner }}/charts'
@@ -273,6 +276,7 @@ jobs:
         path: charts
 
     - name: Clone stack_charts Repository
+      if: steps.semantic.outputs.new_release_published == 'true'
       uses: actions/checkout@v4
       with:
         repository: '${{ github.repository_owner }}/stacked_charts'
@@ -281,6 +285,7 @@ jobs:
         path: stacked_charts
 
     - name: Clone SVTECH_CI_utilities Repository
+      if: steps.semantic.outputs.new_release_published == 'true'
       uses: actions/checkout@v4
       with:
         repository: '${{ github.repository_owner }}/SVTECH_CI_utilities'
@@ -289,6 +294,7 @@ jobs:
         path: SVTECH_CI_utilities
 
     - name: Import GPG key
+      if: steps.semantic.outputs.new_release_published == 'true'
       uses: crazy-max/ghaction-import-gpg@v6.2.0
       with:
         gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
@@ -296,17 +302,20 @@ jobs:
         # git_commit_gpgsign: true
     
     - name: Modify image version in charts
+      if: steps.semantic.outputs.new_release_published == 'true'
       run: |
         sed -i '/^  repository: svtechnmaa\/bngblaster_web_client/{N;s/  tag: .*/  tag: '"${{ env.RELEASE_IMAGE_TAG }}"'/}' charts/kubernetes/bngblaster/values.yaml
       env:
         RELEASE_IMAGE_TAG: v${{ steps.semantic.outputs.new_release_version }}
 
     - name: Modify image version in stack_charts
+      if: steps.semantic.outputs.new_release_published == 'true'
       run: |
         pip install requests pyyaml
         python3 SVTECH_CI_utilities/auto_testing/python_script/public_helmchart_release.py --BUILD_VARS_PATH='.' --ID='.' --GITHUB_TOKEN=${{secrets.PUSH_TOKEN}} --OWNER=${{ github.repository_owner}} --charts_string=bngblaster --REPO=charts
 
     - name: Update image version in charts
+      if: steps.semantic.outputs.new_release_published == 'true'
       env:
         GIT_USER_NAME: "svtechnmaa"
         GIT_USER_EMAIL: "nmaa@svtech.com.vn"
@@ -330,6 +339,7 @@ jobs:
         fi
     
     - name: Update image version in stack_charts
+      if: steps.semantic.outputs.new_release_published == 'true'
       env:
         GIT_USER_NAME: "svtechnmaa"
         GIT_USER_EMAIL: "nmaa@svtech.com.vn"

@@ -921,7 +921,291 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                 # add_acc_pps_df = pd.DataFrame([[filter_dict(data_acc_int, 'access-interfaces.%s.tx-pps'%j), filter_dict(data_acc_int, 'access-interfaces.0.rx-pps')]], columns=(["access_tx_pps", "access_rx_pps"]))
                                 # eval(f'acc_int_chart_{i}_pps.add_rows(add_acc_pps_df)')
                         # time.sleep(0.5)
+def list_all_paths(nested_structure, current_path=None):
+    """
+    Lists all paths in a nested structure of dictionaries and lists.
 
+    :param nested_structure: The nested structure (dict or list) to search through.
+    :param current_path: The current path being constructed (used for recursion).
+    :return: A list of paths, where each path is represented as a list of keys/indices.
+    """
+    if current_path is None:
+        current_path = []
+
+    paths = []
+
+    if isinstance(nested_structure, dict):
+        for key, value in nested_structure.items():
+            new_path = current_path + [key]  # Extend the current path with the new key
+            if isinstance(value, (dict, list)):
+                paths.extend(list_all_paths(value, new_path))  # Recur for nested structures
+            else:
+                paths.append(new_path)  # Add the path to the list if it's a leaf node
+    elif isinstance(nested_structure, list):
+        for index, item in enumerate(nested_structure):
+            new_path = current_path + [index]  # Extend the current path with the new index
+            if isinstance(item, (dict, list)):
+                paths.extend(list_all_paths(item, new_path))  # Recur for nested structures
+            else:
+                paths.append(new_path)  # Add the path to the list if it's a leaf node
+
+    return paths
+def pop_empty_structures(nested_structure):
+    """
+    Removes keys with empty string values, empty dictionaries, and empty lists
+    from a nested structure of dictionaries and lists.
+    Also removes empty strings, empty dicts, and empty lists from lists.
+    :param nested_structure: The nested structure (dict or list) to modify in place.
+    """
+    if isinstance(nested_structure, dict):
+        # Identify keys to pop where value is empty string, empty dict, or empty list
+        keys_to_pop = [key for key, value in nested_structure.items() if value == "" or value == {} or value == []]
+        for key in keys_to_pop:
+            nested_structure.pop(key)
+        # Recurse for remaining values
+        for key, value in list(nested_structure.items()):  # Use list() to avoid RuntimeError
+            pop_empty_structures(value)
+    elif isinstance(nested_structure, list):
+        # Remove empty string, empty dict, empty list from list in place
+        nested_structure[:] = [item for item in nested_structure if not (item == "" or item == {} or item == [])]
+        # Recurse over remaining items
+        for item in nested_structure:
+            pop_empty_structures(item)
+def copy_dict_with_empty_values(nested_structure):
+    """
+    Creates a copy of a nested dictionary with all values set to empty strings.
+
+    :param nested_structure: The nested structure (dict or list) to copy.
+    :return: A new nested structure with the same keys but empty string values.
+    """
+    if isinstance(nested_structure, dict):
+        # Create a new dictionary with the same keys and empty string values
+        new_dict = {key: copy_dict_with_empty_values(value) for key, value in nested_structure.items()}
+        return new_dict
+    elif isinstance(nested_structure, list):
+        # Create a new list with the same length, filled with empty strings
+        return [copy_dict_with_empty_values(item) for item in nested_structure]
+    else:
+        # For non-dict and non-list values, return an empty string
+        return ""
+def find_all_paths_by_key(d, target_key, path=None):
+    if path is None:
+        path = []
+    paths = []
+    if isinstance(d, dict):
+        for key, value in d.items():
+            current_path = path + [key]
+            if key == target_key:
+                paths.append(current_path)
+            # Recur into the dictionary or list
+            paths.extend(find_all_paths_by_key(value, target_key, current_path))
+
+    elif isinstance(d, list):
+        for index, item in enumerate(d):
+            current_path = path + [index]
+            paths.extend(find_all_paths_by_key(item, target_key, current_path))
+
+    return paths
+def find_deepest_element(d, path=None, depth=0, max_depth=0, deepest_element=None):
+    if path is None:
+        path = []
+
+    if isinstance(d, dict):
+        for key, value in d.items():
+            current_path = path + [key]
+            current_depth = depth + 1
+            
+            if isinstance(value, (dict, list)):
+                # Recur into the dictionary or list
+                deepest_element, max_depth = find_deepest_element(value, current_path, current_depth, max_depth, deepest_element)
+            else:
+                # Check if this is the deepest element found so far
+                if current_depth > max_depth:
+                    max_depth = current_depth
+                    deepest_element = (current_path, value)
+
+    elif isinstance(d, list):
+        for index, item in enumerate(d):
+            current_path = path + [index]
+            deepest_element, max_depth = find_deepest_element(item, current_path, depth, max_depth, deepest_element)
+
+    return deepest_element, max_depth
+# deepest_element, max_depth = find_deepest_element(data)
+def list_to_string(list, connector):
+    string = ''
+    for x in list:
+        if isinstance(x,str):
+            if x.find('-') == -1:
+                string += x+'%s'%connector
+            else:
+                string += x.replace('-', '_') +'%s'%connector
+        else:
+            string += str(x) +'%s'%connector
+    return string
+def convert_str_to_int(data):
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if isinstance(value, str) and value.isdigit():
+                data[key] = int(value)
+            else:
+                convert_str_to_int(value)
+    elif isinstance(data, list):
+        for item in data:
+            convert_str_to_int(item)
+def convert_str_to_bool(data):
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if isinstance(value, str) and (value == 'True' or value == 'False' or value == 'true' or value == 'false'):
+                data[key] = bool(value)
+            else:
+                convert_str_to_bool(value)
+    elif isinstance(data, list):
+        for item in data:
+            convert_str_to_bool(item)
+def dict_selection_part_UI(data, key_up_level, number_column, number_key=0, indices=[]):
+    with eval("col%s"%number_column):
+        with st.container(border=True):
+            selection= st.multiselect(
+                ":green[:material/add: Level %s]"%number_column,
+                data.keys(),
+                key="%s_%s_%s_%s"%(num_col,number_key,key_up_level, list_to_string(indices,'_'))
+            )
+            for i in selection:
+                indices.append(i)
+                with st.container(border=True):
+                    if isinstance(data[i], dict):
+                        with eval("col%s"%(number_column+1)):
+                            # st.write(":violet[:material/add: OPTIONS OF **%s/%s**]"%(key_up_level.upper(),i.upper()))
+                            st.write(":violet[:material/account_tree: **%s**]"%(indices))
+                            dict_selection_part_UI(data[i], i, (number_column+1), "%s_%s"%(number_key,i), indices)
+                    elif isinstance(data[i], list):
+                        with eval("col%s"%(number_column+1)):
+                            with st.container(border=True):
+                                varload = list_to_string(indices, '___') # for using in command below
+                                # st.write(':violet[:material/add: LIST OF **%s/%s**]'%(key_up_level.upper(),i.upper()))
+                                st.write(':violet[:material/account_tree: **%s**]'%(indices))
+                                exec("num_%s = st.number_input(':blue[:material/add: Number **%s/%s**]', min_value=1, max_value=100, step=1, key= '%s_%s_%s')"%(varload,key_up_level,i, key_up_level,number_key,i))
+                                access_var=""
+                                for ind in indices:
+                                    access_var += "['%s']"%ind
+                            for p in eval("range(num_%s)"%varload):
+                                indices.append(p)
+                                st.write(":orange[:material/add: **%s/%s** number **%s** :]"%(key_up_level,i,p))
+                                dict_selection_part_UI(data[i][0], "%s_%s"%(i,p), number_column+1, "%s_%s"%(i,p), indices)
+                                indices.pop(indices.index(p))
+                    elif isinstance(data[i], str):
+                        with eval("col%s"%(number_column)):
+                            if data[i].find(':') != -1 and (data[i].split(':')[0]).find(',') != -1: # Condition for recognize "1, 1:10"
+                                with st.container(border=True):
+                                    varload = list_to_string(indices, '___') # for using in command below
+                                    start= int(data[i].split(',')[1].split(':')[0])
+                                    end= int(data[i].split(',')[1].split(':')[1])
+                                    list_input= list(range(start, end))
+                                    exec("%s=st.selectbox(':orange[:material/add: Choose **%s** (default=%s)]', range(%s,%s), index=%s, key= 'sb1_%s_%s_%s')"%(varload,i, data[i].split(',')[0], start, end, list_input.index(int(data[i].split(',')[0])) ,i,number_key,i ))
+                            else:
+                                with st.container(border=True):
+                                    if data[i] == "": # Condition for recognize empty ""
+                                        varload = list_to_string(indices, '___') # for using in command below
+                                        exec("%s=st.text_input(':orange[:material/add: Typing **%s**]', key='%s_%s')"%(varload, i,number_key,i ))
+                                    elif data[i].find(',') != -1 and (data[i].split(',')[0]).find(':') != -1 and (data[i].split(',')[1]).find(':') != -1: # Condition for recognize empty "1:1 , N:1"
+                                        varload = list_to_string(indices, '___') # for using in command below
+                                        exec("%s=st.selectbox(':orange[:material/add: Choose **%s**]', data[i].split(','), key='%s_%s')"%(varload, i,number_key,i))
+                                    elif data[i] == 'interface_auto':
+                                        st.write(':orange[:material/add: Select **interface**]')
+                                        varload = list_to_string(indices, '___') # for using in command below
+                                        intf,vlan =st.columns([1,1])
+                                        with intf:
+                                            with st.container(border=True):
+                                                interface = st.selectbox(f":green[:material/share: interface]", find_interface(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd']), key = 'intf_%s_%s'%(indices,number_key) )
+                                        with vlan:
+                                            with st.container(border=True):
+                                                vlan = st.selectbox(f":green[:material/link: vlan]", find_unused_vlans(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd'], interface),key = 'vlan_%s_%s'%(indices,number_key))
+                                        exec("%s= '%s.%s' "%(varload,interface,vlan))
+                                    elif data[i] == 'ipv4_mask':
+                                        st.write(':orange[:material/add: Select **%s**]'%i, key= 'txt'+list_to_string(indices, '/'))
+                                        varload = list_to_string(indices, '___') # for using in command below
+                                        with st.popover(':green[:material/open_in_full: ipv4 with mask]', use_container_width=True):
+                                            with st.container(border=True):
+                                                o1 = st.selectbox(f":green[Octet1]", range(0,256), key='o1'+list_to_string(indices, '_'))
+                                            with st.container(border=True):
+                                                o2 = st.selectbox(f":green[Octet2]", range(0,256), key='o2'+list_to_string(indices, '_'))
+                                            with st.container(border=True):
+                                                o3 = st.selectbox(f":green[Octet3]", range(0,256), key='o3'+list_to_string(indices, '_'))
+                                            with st.container(border=True):
+                                                o4 = st.selectbox(f":green[Octet4]", range(0,256), key='o4'+list_to_string(indices, '_'))
+                                            with st.container(border=True):
+                                                mask = st.selectbox(f":green[SubnetMask]", range(0,33), index= 32, key='mask'+list_to_string(indices, '_'))
+                                        exec("%s= '%s.%s.%s.%s/%s' "%(varload,o1,o2,o3,o4,mask))
+                                    elif data[i] == 'ipv4':
+                                        st.write(':orange[:material/add: Select **%s**]'%i, key= 'txt'+list_to_string(indices, '/'))
+                                        varload = list_to_string(indices, '___') # for using in command below
+                                        with st.popover(':green[:material/open_in_full: ipv4]', use_container_width=True):
+                                            with st.container(border=True):
+                                                o1 = st.selectbox(f":green[Octet1]", range(0,256), key='o1'+list_to_string(indices, '_'))
+                                            with st.container(border=True):
+                                                o2 = st.selectbox(f":green[Octet2]", range(0,256), key='o2'+list_to_string(indices, '_'))
+                                            with st.container(border=True):
+                                                o3 = st.selectbox(f":green[Octet3]", range(0,256), key='o3'+list_to_string(indices, '_'))
+                                            with st.container(border=True):
+                                                o4 = st.selectbox(f":green[Octet4]", range(0,256), key='o4'+list_to_string(indices, '_'))
+                                        exec("%s= '%s.%s.%s.%s' "%(varload,o1,o2,o3,o4))
+                                    elif data[i] == 'ipv6':
+                                        st.write(':orange[:material/add: Select **%s**]'%i, key= 'txt'+list_to_string(indices, '/'))
+                                        varload = list_to_string(indices, '___') # for using in command below
+                                        with st.popover(':green[:material/open_in_full: ipv6]', use_container_width=True):
+                                            ipv6_selection= list(range(0,10)) + ['a','b','c','d','e','f']
+                                            exec("%s = '' "%varload)
+                                            for octet in range(1,9):
+                                                st.write('**:orange[:material/add: Select octet %s]**'%octet)
+                                                ipv61,ipv62,ipv63,ipv64=st.columns([1,1,1,1])
+                                                with ipv61:
+                                                    exec("o%s_1 = st.selectbox(f':green[Fist]', ipv6_selection, index=0, key='o%s_1_' + list_to_string(indices, '_'))"%(octet, octet))
+                                                with ipv62:
+                                                    exec("o%s_2 = st.selectbox(f':green[Second]', ipv6_selection, index=0,key='o%s_2_' +list_to_string(indices, '_'))"%(octet, octet))
+                                                with ipv63:
+                                                    exec("o%s_3 = st.selectbox(f':green[Third]', ipv6_selection, index=0,key='o%s_3_' +list_to_string(indices, '_'))"%(octet, octet))
+                                                with ipv64:
+                                                    exec("o%s_4 = st.selectbox(f':green[Fourth]', ipv6_selection, index=0,key='o%s_4_' +list_to_string(indices, '_'))"%(octet, octet))
+                                                exec("temp = str(o%s_1) + str(o%s_2) + str(o%s_3) + str(o%s_4)"%(octet,octet,octet,octet))
+                                                if octet != 8:
+                                                    exec("%s += str(temp)+ ':' "%varload)
+                                                else:
+                                                    exec("%s += str(temp) "%varload)
+                                    elif data[i] == 'ipv6_mask':
+                                        st.write(':orange[:material/add: Select **%s**]'%i, key= 'txt'+list_to_string(indices, '/'))
+                                        varload = list_to_string(indices, '___') # for using in command below
+                                        with st.popover(':green[:material/open_in_full: ipv6 with mask]', use_container_width=True):
+                                            ipv6_selection= list(range(0,10)) + ['a','b','c','d','e','f']
+                                            exec("%s = '' "%varload)
+                                            for octet in range(1,9):
+                                                st.write('**:orange[:material/add: Select octet %s]**'%octet)
+                                                ipv61,ipv62,ipv63,ipv64=st.columns([1,1,1,1])
+                                                with ipv61:
+                                                    exec("o%s_1 = st.selectbox(f':green[Fist]', ipv6_selection, index=0, key='o%s_1_' + list_to_string(indices, '_'))"%(octet, octet))
+                                                with ipv62:
+                                                    exec("o%s_2 = st.selectbox(f':green[Second]', ipv6_selection, index=0,key='o%s_2_' +list_to_string(indices, '_'))"%(octet, octet))
+                                                with ipv63:
+                                                    exec("o%s_3 = st.selectbox(f':green[Third]', ipv6_selection, index=0,key='o%s_3_' +list_to_string(indices, '_'))"%(octet, octet))
+                                                with ipv64:
+                                                    exec("o%s_4 = st.selectbox(f':green[Fourth]', ipv6_selection, index=0,key='o%s_4_' +list_to_string(indices, '_'))"%(octet, octet))
+                                                exec("temp = str(o%s_1) + str(o%s_2) + str(o%s_3) + str(o%s_4)"%(octet,octet,octet,octet))
+                                                if octet != 8:
+                                                    exec("%s += str(temp)+ ':' "%varload)
+                                                else:
+                                                    exec("%s += str(temp) "%varload)
+                                            st.write('**:orange[:material/add: Mask]**')
+                                            ipv6_mask= st.selectbox(f':green[Choose ipv6 mask]', range(0,129), index=128 , key='ipv6_mask' +list_to_string(indices, '_'))
+                                            exec("%s += '/'+ str(ipv6_mask) "%varload)
+                                    else:
+                                        varload = list_to_string(indices, '___') # for using in command below
+                                        exec("%s=st.selectbox(':orange[:material/add: Choose **%s**]', data[i].split(','), key='%s_%s')"%(varload, i,number_key,i))
+                    else:
+                        st.write(data[i])   
+                indices.pop(indices.index(i))  
+    dict_var_locals=locals() # Get list vars local functions
+    for i in dict_var_locals.keys():
+        if '___' in i:
+            dict_var[i] = dict_var_locals[i]
 ################################ Start PAGE #############################################
 if st.session_state.p1:
     col30,col31,col33= st.columns([2,3,2])
@@ -1029,8 +1313,8 @@ if st.session_state.p3:
             st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, True, False
             log_authorize(st.session_state.user,blaster_server['ip'], 'Change RUN page')
             st.rerun()
-    tab1, tab2, tab3, tab4 = st.tabs([":material/note_add: CREATE", ":material/edit_note: MODIFY", ":material/publish: JSON_IMPORT", ":material/note_alt: TEMPLATE"])
-    with tab1:
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([":material/note_add: CREATE BY SELECTION",":material/note_add: CREATE BY TEMPLATE", ":material/edit_note: MODIFY", ":material/publish: JSON_IMPORT", ":material/note_alt: TEMPLATE"])
+    with tab2:
         with st.container(border= True):
             st.subheader(':sunny: :green[**CREATE YOUR CONFIG**]')
             st.write(':violet[**YOUR INSTANCE NAME**]')
@@ -1051,7 +1335,7 @@ if st.session_state.p3:
                     select_template= st.selectbox(':orange[Select your template]?', list_templates, placeholder = 'Select one template')
                     log_authorize(st.session_state.user,blaster_server['ip'], f'Select template {select_template}')
             with col22:
-                with st.popover(":material/visibility: :blue[**VIEW**]", use_container_width=True):
+                with st.popover(":material/visibility: :green[**VIEW**]", use_container_width=True):
                     st.info(":violet[Content of **%s template**]"%select_template, icon="🔥")
                     with open('%s/%s'%(path_templates,select_template), 'r') as file_template:
                         data= file_template.read()
@@ -1250,7 +1534,7 @@ if st.session_state.p3:
                     if instance_name:
                         dict_export_file[instance_name] = dict_input
                         st.download_button(':material/schema: DATA_FORMAT', '---\n'+yaml.dump(dict_export_file, indent = 2, encoding= None), disabled= st.session_state.create_instance)
-            with st.popover(":material/visibility: :blue[**REVIEW**]", use_container_width=True):
+            with st.popover(":material/visibility: :green[**REVIEW**]", use_container_width=True):
                 environment = Environment(loader=FileSystemLoader(f"{path_templates}"))
                 template = environment.get_template(f"{select_template}")
                 if str_streams== "streams:":
@@ -1308,7 +1592,7 @@ if st.session_state.p3:
                 else:
                     for i in dict_check.keys():
                         st.error(f'Input **{i}** wrong, check IP format before create, please', icon="🚨")    
-    with tab2:
+    with tab3:
         with st.container(border= True):
             st.subheader(':sunny: :green[**MODIFY YOUR CONFIG**]')
             st.write(':violet[**YOUR INSTANCE NAME**]')
@@ -1374,9 +1658,9 @@ if st.session_state.p3:
                         st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, True, False, False
                         delete_config(path_configs, edit_instance)
                 if edit_json != "":
-                    with st.popover(":green[**REVIEW JSON**]", use_container_width=True):
+                    with st.popover(":green[**:material/preview: REVIEW JSON**]", use_container_width=True):
                         # st.json(yaml.safe_load(edit_content))
-                        st.json(edit_json)
+                        st.code(json.dumps(json.loads(edit_json), indent=2))
             if os.path.exists('%s/%s_interfaces.yml'%(path_configs,edit_instance)):
                 with open('%s/%s_interfaces.yml'%(path_configs,edit_instance), mode= 'r') as interfaces:
                     edit_interfaces_input= yaml.safe_load(interfaces.read())
@@ -1580,7 +1864,7 @@ if st.session_state.p3:
                         # st.json(yaml.safe_load(edit_content))
                         st.code(edit_content)
     if dict_user_db[st.session_state.user] == 'admin' or dict_user_db[st.session_state.user] == 'admin1':
-        with tab4:
+        with tab5:
             with st.container(border= True):
                 st.subheader(':sunny: :green[YOUR SELECTION]')
                 import_radio = st.radio(
@@ -1930,7 +2214,7 @@ if st.session_state.p3:
                             st.code(streams_output_str)
                         else:
                             st.error("Select above first", icon="🚨")
-    with tab3:
+    with tab4:
         col1, col2 = st.columns([2,2])
         with col1:
             with st.container(border=True):
@@ -1975,6 +2259,105 @@ if st.session_state.p3:
                     # st.write(list_json)
                 else:
                     st.error('Import File', icon="🚨")
+    with tab1:
+        with st.container(border= True):
+            st.subheader(':sunny: :green[**CREATE YOUR CONFIG**]')
+            with st.container(border= True):
+                st.write(':violet[**:material/account_circle: YOUR INSTANCE NAME**]')
+                with st.container(border=True):
+                    select_instance_name = st.text_input(':orange[Name of your instance] ', placeholder = 'Typing your instance name', key='create_by_selection')
+                    if is_valid_name_instance(select_instance_name):
+                        if select_instance_name + '.json' not in list_json:
+                            st.info(':blue[Your instance\'s name can be use]', icon="🔥")
+                            st.session_state.create_instance= False
+                        else:
+                            st.error('Your instance was duplicate, choose other name', icon="🚨")
+                    else:
+                        st.error('Instance name is null or wrong syntax', icon="🔥")
+            with open('all_conf.yaml', 'r') as file_template:
+                try:
+                    data=yaml.safe_load(file_template) # This dict is library of bngblaster
+                except yaml.YAMLError as exc:
+                    st.error(exc)
+            load_data=copy_dict_with_empty_values(data) # This dict is library of bngblaster
+            dict_var={} # Var for save value from UI
+            ##################### Value of columns dynamic to deep elements of dict ######################
+            _, num_col= find_deepest_element(data)
+            var_col=""
+            for i in range(num_col):
+                if i == (num_col-1):
+                    var_col += "col%s"%i
+                else:
+                    var_col += "col%s"%i + ','
+            x=''
+            for i in range(num_col):
+                if i == 0:
+                    x += "0.8"
+                else:
+                    x += ",1"
+            x='[%s]'%x # This var for modify scale column
+            exec("%s =st.columns(%s, border=True)"%(var_col,x))
+            with col0:
+                st.write(":violet[:material/account_tree: **[BNGBlaster Configs]**]")
+                dict_selection_part_UI(data,"", 0)
+            # st.write(dict_var)
+            if dict_var:
+                #For process len(list of dict)
+                for i,v in dict_var.items(): 
+                    if "num_" in i:
+                        path_ext= i.split("num_")[1]
+                        path= path_ext.split('___')
+                        path.remove("")
+                        for k in path:
+                            if k.find('_') != -1:
+                                path[path.index(k)]=k.replace('_','-')
+                        str_path=""
+                        for o in path:
+                            if isinstance(o, int):
+                                str_path += "[%s]"%o
+                            else:
+                                str_path += "['%s']"%o
+                        for u in range(v-1):
+                            exec("copy%s = data%s"%(u, str_path))
+                            exec("copy_empty= copy_dict_with_empty_values(copy%s)"%u)
+                            exec("load_data%s.extend(copy_empty)"%(str_path)) # Extend number element list of dict
+                #For process input of elements UI
+                for i,v in dict_var.items(): 
+                    if "num_" not in i:
+                        path= i.split('___')
+                        path.remove("")
+                        # st.write(path)
+                        for k in path:
+                            if k.find('_') != -1:
+                                path[path.index(k)]=k.replace('_','-')
+                            try:
+                                path[path.index(k)]=int(k)
+                            except Exception as e:
+                                # print(e)
+                                continue
+                        str_path=""
+                        for o in path:
+                            if isinstance(o, int):
+                                str_path += "[%s]"%o
+                            else:
+                                str_path += "['%s']"%o
+                        exec("load_data%s= '%s'"%(str_path, v))
+                        # st.write("load_data%s= '%s'"%(str_path, v))
+            for i in range(num_col+1): # For remove emptry dict, list, str
+                pop_empty_structures(load_data)
+            with st.popover(':green[**:material/visibility: REVIEW**]', use_container_width=True):
+                convert_str_to_int(load_data)
+                convert_str_to_bool(load_data)
+                st.code(json.dumps(load_data, indent=2))
+            if st.button(':material/add: **CREATE INSTANCE**', type= 'primary', disabled = st.session_state.create_instance, key= 'btn_create_by_selection'):
+                st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4,st.session_state.p5= False,False, True, False, False
+                # if "" not in dict_input.values():
+                with open('%s/%s.json'%(path_configs,select_instance_name), mode= 'w', encoding= 'utf-8') as config:
+                    json.dump(load_data, config, indent=2)
+                st.info(':blue[Create successfully]', icon="🔥")
+                log_authorize(st.session_state.user,blaster_server['ip'], f'CREATE intance {instance_name}')
+                time.sleep(3)
+                st.rerun()
 if st.session_state.p4:
     st.title(':material/all_inclusive: :rainbow[RUN BLASTER]')
     col41, col42 ,col43 =st.columns([19,0.9,0.9])
