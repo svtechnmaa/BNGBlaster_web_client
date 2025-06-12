@@ -1,10 +1,12 @@
 import streamlit as st
 # import string
+import copy
 import os, re
 import time
 import requests
 import json, yaml
 import subprocess
+import shutil
 from io import StringIO
 from jinja2 import Environment, FileSystemLoader
 import pandas as pd
@@ -29,6 +31,34 @@ if 'p1' not in st.session_state:
     st.session_state.p4= False
     st.session_state.p5= False
     st.session_state.user = ''
+def write_dict_to_yaml(data_dict, file_path):
+    """
+    Write a dictionary to a YAML file.
+    Parameters:
+    data_dict (dict): The dictionary to write to the YAML file.
+    file_path (str): The path to the YAML file where the data will be written.
+    """
+    with open(file_path, 'w') as file:
+        yaml.dump(data_dict, file, default_flow_style=False)
+def copy_and_rename_file(source_path, destination_path, new_name):
+    """Copies a file and renames the copy.
+
+    Args:
+        source_path: Path to the source file.
+        destination_path: Path to the destination directory.
+        new_name: The new name for the copied file.
+    """
+    # Copy the file
+    shutil.copy(source_path, destination_path)
+
+    # Construct the full path to the copied file
+    copied_file_path = os.path.join(destination_path, os.path.basename(source_path))
+
+    # Construct the full path to the renamed file
+    renamed_file_path = os.path.join(destination_path, new_name)
+
+    # Rename the copied file
+    os.rename(copied_file_path, renamed_file_path)
 def is_valid_name_instance(s):
     # Regular expression to match only letters, numbers, and underscores,
     # and not start with a number
@@ -921,6 +951,80 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                 # add_acc_pps_df = pd.DataFrame([[filter_dict(data_acc_int, 'access-interfaces.%s.tx-pps'%j), filter_dict(data_acc_int, 'access-interfaces.0.rx-pps')]], columns=(["access_tx_pps", "access_rx_pps"]))
                                 # eval(f'acc_int_chart_{i}_pps.add_rows(add_acc_pps_df)')
                         # time.sleep(0.5)
+#################### Function for copy dict by path ####################################
+def get_value_by_path(root, path):
+    current = root
+    for key in path:
+        if isinstance(current, dict) and key in current:
+            current = current[key]
+        elif isinstance(current, list) and isinstance(key, int) and key < len(current):
+            current = current[key]
+        else:
+            # Path does not exist
+            return None
+    return current
+def pick_elements_by_multipath(data, paths):
+    """
+    Recursively keep only elements at exact specified multiple paths in a nested dict or list of dicts,
+    removing all other elements.
+    """
+
+    def merge_values(a, b):
+        if isinstance(a, dict) and isinstance(b, dict):
+            merged = a.copy()
+            for k in b:
+                if k in merged:
+                    merged[k] = merge_values(merged[k], b[k])
+                else:
+                    merged[k] = b[k]
+            return merged
+        return b  # Overwrite otherwise
+
+    if not paths or data is None:
+        return {} if isinstance(data, dict) else []
+
+    if isinstance(data, dict):
+        result = {}
+        grouped_paths = {}
+        for path in paths:
+            if not path:
+                continue
+            key = path[0]
+            grouped_paths.setdefault(key, []).append(path[1:])
+        for key, subpaths in grouped_paths.items():
+            if key in data:
+                if any(subpaths):  # not all empty
+                    value = pick_elements_by_multipath(data[key], subpaths)
+                else:
+                    value = data[key]
+                if key in result:
+                    result[key] = merge_values(result[key], value)
+                else:
+                    result[key] = value
+        return result
+
+    elif isinstance(data, list):
+        index_paths = {}
+        for path in paths:
+            if not path:
+                continue
+            try:
+                index = int(path[0])
+            except (ValueError, TypeError):
+                continue
+            index_paths.setdefault(index, []).append(path[1:])
+        
+        result = []
+        for i in sorted(index_paths):
+            if 0 <= i < len(data):
+                if any(index_paths[i]):
+                    value = pick_elements_by_multipath(data[i], index_paths[i])
+                else:
+                    value = data[i]
+                result.append(value)
+        return result
+
+    return data
 def list_all_paths(nested_structure, current_path=None):
     """
     Lists all paths in a nested structure of dictionaries and lists.
@@ -948,6 +1052,28 @@ def list_all_paths(nested_structure, current_path=None):
                 paths.extend(list_all_paths(item, new_path))  # Recur for nested structures
             else:
                 paths.append(new_path)  # Add the path to the list if it's a leaf node
+
+    return paths
+def find_list_paths(data, current_path=None):
+    if current_path is None:
+        current_path = []
+
+    paths = []
+
+    if isinstance(data, dict):
+        for key, value in data.items():
+            new_path = current_path + [key]
+            if isinstance(value, list):
+                paths.append(new_path)
+                for i, item in enumerate(value):
+                    paths.extend(find_list_paths(item, new_path + [i]))
+            elif isinstance(value, dict):
+                paths.extend(find_list_paths(value, new_path))
+
+    elif isinstance(data, list):
+        for i, item in enumerate(data):
+            new_path = current_path + [i]
+            paths.extend(find_list_paths(item, new_path))
 
     return paths
 def pop_empty_structures(nested_structure):
@@ -1031,6 +1157,7 @@ def find_deepest_element(d, path=None, depth=0, max_depth=0, deepest_element=Non
 
     return deepest_element, max_depth
 # deepest_element, max_depth = find_deepest_element(data)
+########################################################################################
 def list_to_string(list, connector):
     string = ''
     for x in list:
@@ -1055,13 +1182,29 @@ def convert_str_to_int(data):
 def convert_str_to_bool(data):
     if isinstance(data, dict):
         for key, value in data.items():
-            if isinstance(value, str) and (value == 'True' or value == 'False' or value == 'true' or value == 'false'):
-                data[key] = bool(value)
+            if isinstance(value, str) and (value == 'False' or value == 'false'):
+                data[key] = False
+            elif isinstance(value, str) and (value == 'True' or value == 'true'):
+                data[key] = True
             else:
                 convert_str_to_bool(value)
     elif isinstance(data, list):
         for item in data:
             convert_str_to_bool(item)
+def check_stub_dict(data):
+    # Check if the input is a dictionary
+    if not isinstance(data, dict):
+        return False
+    
+    # Iterate through the dictionary items
+    for key, value in data.items():
+        # Check if the value is a dictionary
+        if isinstance(value, dict):
+            return False  # Found a nested dictionary
+        # Check if the value is a list
+        elif isinstance(value, list):
+            return False  # Found a list, which is not allowed
+    return True  # No nested dictionaries or lists
 def dict_selection_part_UI(data, key_up_level, number_column, number_key=0, indices=[]):
     with eval("col%s"%number_column):
         with st.container(border=True):
@@ -1206,6 +1349,341 @@ def dict_selection_part_UI(data, key_up_level, number_column, number_key=0, indi
     for i in dict_var_locals.keys():
         if '___' in i:
             dict_var[i] = dict_var_locals[i]
+def dict_selection_part_UI_new(data, key_up_level, number_column, number_key=0, indices=[]):
+    with eval("col%s"%number_column):
+        with st.container(border=True):
+            #### Pop element is attribute
+            list_options=[]
+            for e in data.keys():
+                if '__' not in e:
+                    list_options.append(e)
+            selection= st.multiselect(
+                ":green[:material/add: Level %s]"%number_column,
+                list_options,
+                key="%s_%s_%s_%s"%(num_col,number_key,key_up_level, list_to_string(indices,'_'))
+            )
+            for i in selection:
+                indices.append(i)
+                with st.container(border=True):
+                    if isinstance(data[i], dict):
+                        if '__value' not in data[i].keys():
+                            with eval("col%s"%(number_column+1)):
+                                # st.write(":violet[:material/add: OPTIONS OF **%s/%s**]"%(key_up_level.upper(),i.upper()))
+                                st.write(":violet[:material/account_tree: **%s**]"%(indices))
+                                dict_selection_part_UI_new(data= data[i], key_up_level= i, number_column=(number_column+1), number_key="%s_%s"%(number_key,i), indices=indices)
+                        else:
+                            widget_type = data[i]["__widget"]
+                            label = data[i]["__label"]
+                            value = data[i]["__value"]
+                            options = data[i]["__options"]
+                            full_key = f"{list_to_string(indices, '_')}_{i}"
+                            if widget_type == "text_input":
+                                varload = list_to_string(indices, '___') # for using in command below
+                                exec("%s = st.text_input(':orange[:material/add: **%s**]', value=value, key=full_key)"%(varload, label))
+                            elif widget_type == "selectbox":
+                                varload = list_to_string(indices, '___') # for using in command below
+                                index = options.index(value) if value in options else 0
+                                exec("%s = st.selectbox(':orange[:material/add: **%s**]', options=options, index=index, key=full_key)"%(varload, label))
+                            elif widget_type == "multiselect":
+                                varload = list_to_string(indices, '___') # for using in command below
+                                exec("%s = st.multiselect(':orange[:material/add: **%s**]', options=options, default=value or [], key=full_key)"%(varload,label))
+                            elif widget_type == "checkbox":
+                                varload = list_to_string(indices, '___') # for using in command below
+                                exec("%s = st.checkbox(':orange[:material/add: **%s**]', value=bool(value), key=full_key)"%(varload,label))
+                            elif widget_type == "number_input":
+                                varload = list_to_string(indices, '___') # for using in command below
+                                min_value = options['__min']
+                                max_value = options['__max']
+                                step = options['__step']
+                                exec("%s = st.number_input(':orange[:material/add: **%s**]', min_value=min_value, max_value=max_value, value=value or 0, step=step, key=full_key)"%(varload, label))
+                            elif widget_type == "text_area":
+                                varload = list_to_string(indices, '___') # for using in command below
+                                exec("%s=st.text_area(':orange[:material/add: **%s**]', value=value or '', key=full_key)"%(varload,label))
+                            elif widget_type == "file_uploader":
+                                varload = list_to_string(indices, '___') # for using in command below
+                                exec("%s = st.file_uploader(':orange[:material/add: **%s**]', key=full_key).name"%(varload,label))
+                            elif widget_type == "slider":
+                                varload = list_to_string(indices, '___') # for using in command below
+                                min_value = options['__min']
+                                max_value = options['__max']
+                                exec("%s = st.slider(':orange[:material/add: **%s**]', min_value=min_value, max_value=max_value, value=value or 0, key=full_key)"%(varload,label))
+                            elif widget_type == "customize":
+                                if data[i]['__datatype'] == 'interface_auto':
+                                    st.write(':orange[:material/add: **%s**]'%data[i]['__label'])
+                                    varload = list_to_string(indices, '___') # for using in command below
+                                    intf,vlan =st.columns([1,1])
+                                    with intf:
+                                        interface = st.selectbox(f":green[:material/share: interface]", find_interface(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd']), key = 'intf_%s_%s'%(indices,number_key) )
+                                    with vlan:
+                                        vlan = st.selectbox(f":green[:material/link: vlan]", find_unused_vlans(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd'], interface),key = 'vlan_%s_%s'%(indices,number_key))
+                                    exec("%s= '%s.%s' "%(varload,interface,vlan))
+                                elif data[i]['__datatype'] == 'ipv4_mask':
+                                    st.write(':orange[:material/add: **%s**]'%data[i]['__label'], key= 'txt'+list_to_string(indices, '/'))
+                                    varload = list_to_string(indices, '___') # for using in command below
+                                    with st.popover(':green[:material/open_in_full: ipv4 with mask]', use_container_width=True):
+                                        with st.container(border=True):
+                                            o1 = st.selectbox(f":green[Octet1]", range(0,256), key='o1'+list_to_string(indices, '_'))
+                                        with st.container(border=True):
+                                            o2 = st.selectbox(f":green[Octet2]", range(0,256), key='o2'+list_to_string(indices, '_'))
+                                        with st.container(border=True):
+                                            o3 = st.selectbox(f":green[Octet3]", range(0,256), key='o3'+list_to_string(indices, '_'))
+                                        with st.container(border=True):
+                                            o4 = st.selectbox(f":green[Octet4]", range(0,256), key='o4'+list_to_string(indices, '_'))
+                                        with st.container(border=True):
+                                            mask = st.selectbox(f":green[SubnetMask]", range(0,33), index= 32, key='mask'+list_to_string(indices, '_'))
+                                    exec("%s= '%s.%s.%s.%s/%s' "%(varload,o1,o2,o3,o4,mask))
+                                elif data[i]['__datatype'] == 'ipv4':
+                                    st.write(':orange[:material/add: **%s**]'%data[i]['__label'], key= 'txt'+list_to_string(indices, '/'))
+                                    varload = list_to_string(indices, '___') # for using in command below
+                                    with st.popover(':green[:material/open_in_full: ipv4]', use_container_width=True):
+                                        with st.container(border=True):
+                                            o1 = st.selectbox(f":green[Octet1]", range(0,256), key='o1'+list_to_string(indices, '_'))
+                                        with st.container(border=True):
+                                            o2 = st.selectbox(f":green[Octet2]", range(0,256), key='o2'+list_to_string(indices, '_'))
+                                        with st.container(border=True):
+                                            o3 = st.selectbox(f":green[Octet3]", range(0,256), key='o3'+list_to_string(indices, '_'))
+                                        with st.container(border=True):
+                                            o4 = st.selectbox(f":green[Octet4]", range(0,256), key='o4'+list_to_string(indices, '_'))
+                                    exec("%s= '%s.%s.%s.%s' "%(varload,o1,o2,o3,o4))
+                                elif data[i]['__datatype'] == 'ipv6':
+                                    st.write(':orange[:material/add: **%s**]'%data[i]['__label'], key= 'txt'+list_to_string(indices, '/'))
+                                    varload = list_to_string(indices, '___') # for using in command below
+                                    with st.popover(':green[:material/open_in_full: ipv6]', use_container_width=True):
+                                        ipv6_selection= list(range(0,10)) + ['a','b','c','d','e','f']
+                                        exec("%s = '' "%varload)
+                                        for octet in range(1,9):
+                                            st.write('**:orange[:material/add: Select octet %s]**'%octet)
+                                            ipv61,ipv62,ipv63,ipv64=st.columns([1,1,1,1])
+                                            with ipv61:
+                                                exec("o%s_1 = st.selectbox(f':green[Fist]', ipv6_selection, index=0, key='o%s_1_' + list_to_string(indices, '_'))"%(octet, octet))
+                                            with ipv62:
+                                                exec("o%s_2 = st.selectbox(f':green[Second]', ipv6_selection, index=0,key='o%s_2_' +list_to_string(indices, '_'))"%(octet, octet))
+                                            with ipv63:
+                                                exec("o%s_3 = st.selectbox(f':green[Third]', ipv6_selection, index=0,key='o%s_3_' +list_to_string(indices, '_'))"%(octet, octet))
+                                            with ipv64:
+                                                exec("o%s_4 = st.selectbox(f':green[Fourth]', ipv6_selection, index=0,key='o%s_4_' +list_to_string(indices, '_'))"%(octet, octet))
+                                            exec("temp = str(o%s_1) + str(o%s_2) + str(o%s_3) + str(o%s_4)"%(octet,octet,octet,octet))
+                                            if octet != 8:
+                                                exec("%s += str(temp)+ ':' "%varload)
+                                            else:
+                                                exec("%s += str(temp) "%varload)
+                                elif data[i]['__datatype'] == 'ipv6_mask':
+                                    st.write(':orange[:material/add: **%s**]'%data[i]['__label'], key= 'txt'+list_to_string(indices, '/'))
+                                    varload = list_to_string(indices, '___') # for using in command below
+                                    with st.popover(':green[:material/open_in_full: ipv6 with mask]', use_container_width=True):
+                                        ipv6_selection= list(range(0,10)) + ['a','b','c','d','e','f']
+                                        exec("%s = '' "%varload)
+                                        for octet in range(1,9):
+                                            st.write('**:orange[:material/add: Select octet %s]**'%octet)
+                                            ipv61,ipv62,ipv63,ipv64=st.columns([1,1,1,1])
+                                            with ipv61:
+                                                exec("o%s_1 = st.selectbox(f':green[Fist]', ipv6_selection, index=0, key='o%s_1_' + list_to_string(indices, '_'))"%(octet, octet))
+                                            with ipv62:
+                                                exec("o%s_2 = st.selectbox(f':green[Second]', ipv6_selection, index=0,key='o%s_2_' +list_to_string(indices, '_'))"%(octet, octet))
+                                            with ipv63:
+                                                exec("o%s_3 = st.selectbox(f':green[Third]', ipv6_selection, index=0,key='o%s_3_' +list_to_string(indices, '_'))"%(octet, octet))
+                                            with ipv64:
+                                                exec("o%s_4 = st.selectbox(f':green[Fourth]', ipv6_selection, index=0,key='o%s_4_' +list_to_string(indices, '_'))"%(octet, octet))
+                                            exec("temp = str(o%s_1) + str(o%s_2) + str(o%s_3) + str(o%s_4)"%(octet,octet,octet,octet))
+                                            if octet != 8:
+                                                exec("%s += str(temp)+ ':' "%varload)
+                                            else:
+                                                exec("%s += str(temp) "%varload)
+                                        st.write('**:orange[:material/add: Mask]**')
+                                        ipv6_mask= st.selectbox(f':green[Choose ipv6 mask]', range(0,129), index=128 , key='ipv6_mask' +list_to_string(indices, '_'))
+                                        exec("%s += '/'+ str(ipv6_mask) "%varload)
+                                else:
+                                    varload = list_to_string(indices, '___') # for using in command below
+                                    exec("%s=st.selectbox(':orange[:material/add: Choose **%s**]', data[i].split(','), key='%s_%s')"%(varload, i,number_key,i))
+                            else:
+                                st.warning(f"Unsupported widget type: {widget_type} (field: {key})")
+                    elif isinstance(data[i], list):
+                        with eval("col%s"%(number_column+1)):
+                            with st.container(border=True):
+                                varload = list_to_string(indices, '___') # for using in command below
+                                st.write(':violet[:material/account_tree: **%s**]'%(indices))
+                                exec("num_%s = st.number_input(':blue[:material/add: Number **%s/%s**]', min_value=1, max_value=100, step=1, key= '%s_%s_%s')"%(varload,key_up_level,i, key_up_level,number_key,i))
+                                access_var=""
+                                for ind in indices:
+                                    access_var += "['%s']"%ind
+                            for p in eval("range(num_%s)"%varload):
+                                indices.append(p)
+                                st.write(":orange[:material/add: **%s/%s** number **%s** :]"%(key_up_level,i,p))
+                                dict_selection_part_UI_new(data[i][0], "%s_%s"%(i,p), number_column+1, "%s_%s"%(i,p), indices)
+                                indices.pop(indices.index(p))
+                    else:
+                        st.write(data[i])   
+                indices.pop(indices.index(i))  
+    dict_var_locals=locals() # Get list vars local functions
+    for i in dict_var_locals.keys():
+        if '___' in i:
+            dict_var[i] = dict_var_locals[i]
+def dict_selection_part_UI_edit(data, key_up_level, number_column, number_key=0, indices=[]):
+    with eval("col%s"%number_column):
+        with st.container(border=True):
+            #### Pop element is attribute
+            list_options=[]
+            for e in data.keys():
+                if '__' not in e:
+                    list_options.append(e)
+            selection= st.multiselect(
+                ":green[:material/add: Level %s]"%number_column,
+                list_options,
+                list(data.keys()),
+                key="%s_%s_%s_%s"%(num_col,number_key,key_up_level, list_to_string(indices,'_'))
+            )
+            for i in selection:
+                indices.append(i)
+                with st.container(border=True):
+                    if isinstance(data[i], dict):
+                        if '__value' not in data[i].keys():
+                            with eval("col%s"%(number_column+1)):
+                                # st.write(":violet[:material/add: OPTIONS OF **%s/%s**]"%(key_up_level.upper(),i.upper()))
+                                st.write(":violet[:material/account_tree: **%s**]"%(indices))
+                                dict_selection_part_UI_edit(data= data[i], key_up_level= i, number_column=(number_column+1), number_key="%s_%s"%(number_key,i), indices=indices)
+                        else:
+                            widget_type = data[i]["__widget"]
+                            label = data[i]["__label"]
+                            value = data[i]["__value"]
+                            options = data[i]["__options"]
+                            full_key = f"{list_to_string(indices, '_')}_{i}"
+                            if widget_type == "text_input":
+                                varload = list_to_string(indices, '___') # for using in command below
+                                exec("%s = st.text_input(':orange[:material/add: **%s**]', value=value, key=full_key)"%(varload, label))
+                            elif widget_type == "selectbox":
+                                varload = list_to_string(indices, '___') # for using in command below
+                                index = options.index(value) if value in options else 0
+                                exec("%s = st.selectbox(':orange[:material/add: **%s**]', options=options, index=index, key=full_key)"%(varload, label))
+                            elif widget_type == "multiselect":
+                                varload = list_to_string(indices, '___') # for using in command below
+                                exec("%s = st.multiselect(':orange[:material/add: **%s**]', options=options, default=value or [], key=full_key)"%(varload,label))
+                            elif widget_type == "checkbox":
+                                varload = list_to_string(indices, '___') # for using in command below
+                                exec("%s = st.checkbox(':orange[:material/add: **%s**]', value=bool(value), key=full_key)"%(varload,label))
+                            elif widget_type == "number_input":
+                                varload = list_to_string(indices, '___') # for using in command below
+                                min_value = options['__min']
+                                max_value = options['__max']
+                                step = options['__step']
+                                exec("%s = st.number_input(':orange[:material/add: **%s**]', min_value=min_value, max_value=max_value, value=value or 0, step=step, key=full_key)"%(varload, label))
+                            elif widget_type == "text_area":
+                                varload = list_to_string(indices, '___') # for using in command below
+                                exec("%s=st.text_area(':orange[:material/add: **%s**]', value=value or '', key=full_key)"%(varload,label))
+                            elif widget_type == "file_uploader":
+                                varload = list_to_string(indices, '___') # for using in command below
+                                exec("%s = st.file_uploader(':orange[:material/add: **%s**]', key=full_key).name"%(varload,label))
+                            elif widget_type == "slider":
+                                varload = list_to_string(indices, '___') # for using in command below
+                                min_value = options['__min']
+                                max_value = options['__max']
+                                exec("%s = st.slider(':orange[:material/add: **%s**]', min_value=min_value, max_value=max_value, value=value or 0, key=full_key)"%(varload,label))
+                            elif widget_type == "customize":
+                                if data[i]['__datatype'] == 'interface_auto':
+                                    st.write(':orange[:material/add: **%s**]'%data[i]['__label'])
+                                    varload = list_to_string(indices, '___') # for using in command below
+                                    intf,vlan =st.columns([1,1])
+                                    with intf:
+                                        interface = st.selectbox(f":green[:material/share: interface]", find_interface(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd']), key = 'intf_%s_%s'%(indices,number_key) )
+                                    with vlan:
+                                        vlan = st.selectbox(f":green[:material/link: vlan]", find_unused_vlans(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd'], interface),key = 'vlan_%s_%s'%(indices,number_key))
+                                    exec("%s= '%s.%s' "%(varload,interface,vlan))
+                                elif data[i]['__datatype'] == 'ipv4_mask':
+                                    st.write(':orange[:material/add: **%s**]'%data[i]['__label'], key= 'txt'+list_to_string(indices, '/'))
+                                    varload = list_to_string(indices, '___') # for using in command below
+                                    with st.popover(':green[:material/open_in_full: ipv4 with mask]', use_container_width=True):
+                                        with st.container(border=True):
+                                            o1 = st.selectbox(f":green[Octet1]", range(0,256), key='o1'+list_to_string(indices, '_'))
+                                        with st.container(border=True):
+                                            o2 = st.selectbox(f":green[Octet2]", range(0,256), key='o2'+list_to_string(indices, '_'))
+                                        with st.container(border=True):
+                                            o3 = st.selectbox(f":green[Octet3]", range(0,256), key='o3'+list_to_string(indices, '_'))
+                                        with st.container(border=True):
+                                            o4 = st.selectbox(f":green[Octet4]", range(0,256), key='o4'+list_to_string(indices, '_'))
+                                        with st.container(border=True):
+                                            mask = st.selectbox(f":green[SubnetMask]", range(0,33), index= 32, key='mask'+list_to_string(indices, '_'))
+                                    exec("%s= '%s.%s.%s.%s/%s' "%(varload,o1,o2,o3,o4,mask))
+                                elif data[i]['__datatype'] == 'ipv4':
+                                    st.write(':orange[:material/add: **%s**]'%data[i]['__label'], key= 'txt'+list_to_string(indices, '/'))
+                                    varload = list_to_string(indices, '___') # for using in command below
+                                    with st.popover(':green[:material/open_in_full: ipv4]', use_container_width=True):
+                                        with st.container(border=True):
+                                            o1 = st.selectbox(f":green[Octet1]", range(0,256), key='o1'+list_to_string(indices, '_'))
+                                        with st.container(border=True):
+                                            o2 = st.selectbox(f":green[Octet2]", range(0,256), key='o2'+list_to_string(indices, '_'))
+                                        with st.container(border=True):
+                                            o3 = st.selectbox(f":green[Octet3]", range(0,256), key='o3'+list_to_string(indices, '_'))
+                                        with st.container(border=True):
+                                            o4 = st.selectbox(f":green[Octet4]", range(0,256), key='o4'+list_to_string(indices, '_'))
+                                    exec("%s= '%s.%s.%s.%s' "%(varload,o1,o2,o3,o4))
+                                elif data[i]['__datatype'] == 'ipv6':
+                                    st.write(':orange[:material/add: **%s**]'%data[i]['__label'], key= 'txt'+list_to_string(indices, '/'))
+                                    varload = list_to_string(indices, '___') # for using in command below
+                                    with st.popover(':green[:material/open_in_full: ipv6]', use_container_width=True):
+                                        ipv6_selection= list(range(0,10)) + ['a','b','c','d','e','f']
+                                        exec("%s = '' "%varload)
+                                        for octet in range(1,9):
+                                            st.write('**:orange[:material/add: Select octet %s]**'%octet)
+                                            ipv61,ipv62,ipv63,ipv64=st.columns([1,1,1,1])
+                                            with ipv61:
+                                                exec("o%s_1 = st.selectbox(f':green[Fist]', ipv6_selection, index=0, key='o%s_1_' + list_to_string(indices, '_'))"%(octet, octet))
+                                            with ipv62:
+                                                exec("o%s_2 = st.selectbox(f':green[Second]', ipv6_selection, index=0,key='o%s_2_' +list_to_string(indices, '_'))"%(octet, octet))
+                                            with ipv63:
+                                                exec("o%s_3 = st.selectbox(f':green[Third]', ipv6_selection, index=0,key='o%s_3_' +list_to_string(indices, '_'))"%(octet, octet))
+                                            with ipv64:
+                                                exec("o%s_4 = st.selectbox(f':green[Fourth]', ipv6_selection, index=0,key='o%s_4_' +list_to_string(indices, '_'))"%(octet, octet))
+                                            exec("temp = str(o%s_1) + str(o%s_2) + str(o%s_3) + str(o%s_4)"%(octet,octet,octet,octet))
+                                            if octet != 8:
+                                                exec("%s += str(temp)+ ':' "%varload)
+                                            else:
+                                                exec("%s += str(temp) "%varload)
+                                elif data[i]['__datatype'] == 'ipv6_mask':
+                                    st.write(':orange[:material/add: **%s**]'%data[i]['__label'], key= 'txt'+list_to_string(indices, '/'))
+                                    varload = list_to_string(indices, '___') # for using in command below
+                                    with st.popover(':green[:material/open_in_full: ipv6 with mask]', use_container_width=True):
+                                        ipv6_selection= list(range(0,10)) + ['a','b','c','d','e','f']
+                                        exec("%s = '' "%varload)
+                                        for octet in range(1,9):
+                                            st.write('**:orange[:material/add: Select octet %s]**'%octet)
+                                            ipv61,ipv62,ipv63,ipv64=st.columns([1,1,1,1])
+                                            with ipv61:
+                                                exec("o%s_1 = st.selectbox(f':green[Fist]', ipv6_selection, index=0, key='o%s_1_' + list_to_string(indices, '_'))"%(octet, octet))
+                                            with ipv62:
+                                                exec("o%s_2 = st.selectbox(f':green[Second]', ipv6_selection, index=0,key='o%s_2_' +list_to_string(indices, '_'))"%(octet, octet))
+                                            with ipv63:
+                                                exec("o%s_3 = st.selectbox(f':green[Third]', ipv6_selection, index=0,key='o%s_3_' +list_to_string(indices, '_'))"%(octet, octet))
+                                            with ipv64:
+                                                exec("o%s_4 = st.selectbox(f':green[Fourth]', ipv6_selection, index=0,key='o%s_4_' +list_to_string(indices, '_'))"%(octet, octet))
+                                            exec("temp = str(o%s_1) + str(o%s_2) + str(o%s_3) + str(o%s_4)"%(octet,octet,octet,octet))
+                                            if octet != 8:
+                                                exec("%s += str(temp)+ ':' "%varload)
+                                            else:
+                                                exec("%s += str(temp) "%varload)
+                                        st.write('**:orange[:material/add: Mask]**')
+                                        ipv6_mask= st.selectbox(f':green[Choose ipv6 mask]', range(0,129), index=128 , key='ipv6_mask' +list_to_string(indices, '_'))
+                                        exec("%s += '/'+ str(ipv6_mask) "%varload)
+                                else:
+                                    varload = list_to_string(indices, '___') # for using in command below
+                                    exec("%s=st.selectbox(':orange[:material/add: Choose **%s**]', data[i].split(','), key='%s_%s')"%(varload, i,number_key,i))
+                            else:
+                                st.warning(f"Unsupported widget type: {widget_type} (field: {key})")
+                    elif isinstance(data[i], list):
+                        with eval("col%s"%(number_column+1)):
+                            for num_list in range(len(data[i])):
+                                with st.container(border=True):
+                                    # st.write(':violet[:material/add: LIST OF **%s/%s**]'%(key_up_level.upper(),i.upper()))
+                                    st.write(':violet[:material/account_tree: **%s**]'%(indices))
+                                    indices.append(num_list)
+                                    st.write(":orange[:material/add: **%s/%s** number **%s** :]"%(key_up_level,i,num_list))
+                                    dict_selection_part_UI_edit(data=data[i][num_list], key_up_level="%s_%s"%(i,num_list), number_column=number_column+1, number_key="%s_%s"%(i,num_list), indices=indices)
+                                    indices.pop(indices.index(num_list))
+                    else:
+                        st.write(':orange[:material/check: **%s** =] :green[%s]'%(i, data[i]))  
+                indices.pop(indices.index(i))  
+    dict_var_locals=locals() # Get list vars local functions
+    for i in dict_var_locals.keys():
+        if '___' in i:
+            dict_var[i] = dict_var_locals[i]
 ################################ Start PAGE #############################################
 if st.session_state.p1:
     col30,col31,col33= st.columns([2,3,2])
@@ -1313,908 +1791,909 @@ if st.session_state.p3:
             st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, True, False
             log_authorize(st.session_state.user,blaster_server['ip'], 'Change RUN page')
             st.rerun()
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([":material/note_add: CREATE BY SELECTION",":material/note_add: CREATE BY TEMPLATE", ":material/edit_note: MODIFY", ":material/publish: JSON_IMPORT", ":material/note_alt: TEMPLATE"])
+    # tab1, tab2, tab3, tab4, tab5= st.tabs([":material/edit_note: CREATE/EDIT BY SELECTION", ":material/note_add: CREATE BY TEMPLATE", ":material/edit_note: MODIFY", ":material/publish: JSON_IMPORT", ":material/note_alt: TEMPLATE"])
+    tab1, tab2= st.tabs([":material/edit_note: CREATE/EDIT BY SELECTION",":material/publish: JSON_IMPORT"])
+    # with tab2:
+    #     with st.container(border= True):
+    #         st.subheader(':sunny: :green[**CREATE YOUR CONFIG**]')
+    #         st.write(':violet[**YOUR INSTANCE NAME**]')
+    #         with st.container(border=True):
+    #             instance_name = st.text_input(':orange[Name of your instance] ', placeholder = 'Typing your instance name')
+    #             if is_valid_name_instance(instance_name):
+    #                 if instance_name + '.json' not in list_json:
+    #                     st.info(':blue[Your instance\'s name can be use]', icon="🔥")
+    #                     st.session_state.create_instance= False
+    #                 else:
+    #                     st.error('Your instance was duplicate, choose other name', icon="🚨")
+    #             else:
+    #                 st.error('Instance name is null or wrong syntax', icon="🔥")
+    #         st.write(':violet[**SELECT YOUR PROTOCOLS TEMPLATES**]')
+    #         col21, col22 = st.columns([4.2,1])
+    #         with col21:
+    #             with st.container(border= True):
+    #                 select_template= st.selectbox(':orange[Select your template]?', list_templates, placeholder = 'Select one template')
+    #                 log_authorize(st.session_state.user,blaster_server['ip'], f'Select template {select_template}')
+    #         with col22:
+    #             with st.popover(":material/visibility: :green[**VIEW**]", use_container_width=True):
+    #                 st.info(":violet[Content of **%s template**]"%select_template, icon="🔥")
+    #                 with open('%s/%s'%(path_templates,select_template), 'r') as file_template:
+    #                     data= file_template.read()
+    #                 st.code(data)
+    #         col23, col24 = st.columns([2,1])
+    #         with col23:
+    #             with st.container(border= True):
+    #                 st.write(':violet[**FILL YOUR VARIABLES BELOW**]')
+    #                 list_var = get_variables_jinja_file(f'{path_templates}/{select_template}')
+    #                 list_var.sort()
+    #                 dict_input={}
+    #                 index=int(len(list_var)/3)
+    #                 col1, col2, col3 = st.columns([1,1,1])
+    #                 with col1:
+    #                     with st.container(border= True):
+    #                         for i in list_var[0:index+1]:
+    #                             exec(f"""dict_input['{i}'] = st.text_input(f':orange[**{i}**] ', placeholder = f'Typing {i}')""")
+    #                             # st.warning('%s is null, fill it'%i, icon="🚨")
+    #                 with col2:
+    #                     with st.container(border= True):
+    #                         for i in list_var[index+1:2*index+1]:
+    #                             exec(f"""dict_input['{i}'] = st.text_input(f':orange[**{i}**] ', placeholder = f'Typing {i}')""")
+    #                             # st.warning('%s is null, fill it'%i, icon="🚨")
+    #                 with col3:
+    #                     with st.container(border= True):
+    #                         for i in list_var[2*index+1:len(list_var)]:
+    #                             exec(f"""dict_input['{i}'] = st.text_input(f':orange[**{i}**] ', placeholder = f'Typing {i}')""")
+    #                             # st.warning('%s is null, fill it'%i, icon="🚨")
+    #                 # st.divider()
+    #                 dict_check = {}
+    #                 for d in list_var:
+    #                     if d.endswith("address") or d.endswith("gateway") or d.endswith("gate"):
+    #                         if is_valid_ip(dict_input[d]):
+    #                             continue
+    #                         else:
+    #                             dict_check[d]= False
+    #         with st.container(border= True):
+    #             st.write(':violet[**INTERFACES ENABLE**]')
+    #             str_interfaces_pre=""
+    #             list_interfaces_templates = list(dict_interfaces_templates.keys())
+    #             index_list_interfaces_templates = int(len(list_interfaces_templates)/2)
+    #             col1, col2 = st.columns([1,1])
+    #             with col1:
+    #                 for s in list_interfaces_templates[0:index_list_interfaces_templates+1]:
+    #                     with st.container(border= True):
+    #                         exec(f"{s}_cb = st.checkbox(':orange[**{s}**]')")
+    #                         if eval(f"{s}_cb"):
+    #                             exec(f"num_{s} = st.number_input(':orange[*Number {s}*]', value=1)")
+    #                             for i in eval(f"range(num_{s})"):
+    #                                 with st.popover(f":blue[{s}_{i}]", use_container_width=True):
+    #                                     exec(f"list_var_{i} = get_variables_jinja_file(f'{path_templates_interfaces}/{s}.j2')")
+    #                                     exec(f"{s}_content = dict()")
+    #                                     for var in eval(f"list_var_{i}"):
+    #                                         if var.endswith('interface'):
+    #                                             with st.container(border= True):
+    #                                                 st.write(f":orange[{s}/{i}/**{var}**]")
+    #                                                 with st.container(border= True):
+    #                                                     col_int1, col_int2 = st.columns([1.2,1])
+    #                                                     with col_int1:
+    #                                                         interface = st.selectbox(f":green[interface]", find_interface(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd']), key = f"{s}/{var}/{i}/interface" )
+    #                                                     with col_int2:
+    #                                                         # vlan = st.text_input(f":green[vlan]", key=f"{s}/{var}/{i}/vlan")
+    #                                                         vlan = st.selectbox(f":green[vlan]", find_unused_vlans(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd'], interface),key=f"{s}/{var}/{i}/vlan")
+    #                                             if vlan == "":
+    #                                                 exec(f"""{s}_content['{var}']= interface """)
+    #                                             else:
+    #                                                 exec(f"""{s}_content['{var}']= interface +'.'+ vlan""")
+    #                                         else:
+    #                                             with st.container(border= True):
+    #                                                 exec(f"""{s}_content['{var}'] = st.text_input(f":orange[{s}/{i}/**{var}**]")""")
+    #                                     environment = Environment(loader=FileSystemLoader(f"{path_templates_interfaces}"))
+    #                                     template = environment.get_template(f"{s}.j2")
+    #                                     content= template.render(eval(f"{s}_content"))
+    #                                     if i==0:
+    #                                         str_interfaces_pre += "\n" + content
+    #                                     else:
+    #                                         content1 = "\n".join(content.split("\n")[1:])
+    #                                         str_interfaces_pre += "\n" + content1
+    #             with col2:
+    #                 for s in list_interfaces_templates[index_list_interfaces_templates+1:len(list_interfaces_templates)]:
+    #                     with st.container(border= True):
+    #                         exec(f"{s}_cb = st.checkbox(':orange[**{s}**]')")
+    #                         if eval(f"{s}_cb"):
+    #                             exec(f"num_{s} = st.number_input(':orange[*Number {s}*]', value=1)")
+    #                             for i in eval(f"range(num_{s})"):
+    #                                 with st.popover(f":blue[{s}_{i}]", use_container_width=True):
+    #                                     exec(f"list_var_{i} = get_variables_jinja_file(f'{path_templates_interfaces}/{s}.j2')")
+    #                                     exec(f"{s}_content = dict()")
+    #                                     for var in eval(f"list_var_{i}"):
+    #                                         if var.endswith('interface'):
+    #                                             with st.container(border= True):
+    #                                                 st.write(f":orange[{s}/{i}/**{var}**]")
+    #                                                 with st.container(border= True):
+    #                                                     col_int1, col_int2 = st.columns([1.2,1])
+    #                                                     with col_int1:
+    #                                                         interface = st.selectbox(f":green[interface]", find_interface(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd']), key =f"{s}/{var}/{i}/interface" )
+    #                                                     with col_int2:
+    #                                                         # vlan = st.text_input(f":green[vlan]", key=f"{s}/{var}/{i}/vlan")
+    #                                                         vlan = st.selectbox(f":green[vlan]", find_unused_vlans(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd'], interface),key=f"{s}/{var}/{i}/vlan")
+    #                                             if vlan == "":
+    #                                                 exec(f"""{s}_content['{var}']= interface """)
+    #                                             else:
+    #                                                 exec(f"""{s}_content['{var}']= interface +'.'+ vlan""")
+    #                                         else:
+    #                                             with st.container(border= True):
+    #                                                 exec(f"""{s}_content['{var}'] = st.text_input(f":orange[{s}/{i}/**{var}**]")""")
+    #                                     environment = Environment(loader=FileSystemLoader(f"{path_templates_interfaces}"))
+    #                                     template = environment.get_template(f"{s}.j2")
+    #                                     content= template.render(eval(f"{s}_content"))
+    #                                     if i==0:
+    #                                         str_interfaces_pre += "\n" + content
+    #                                     else:
+    #                                         content1 = "\n".join(content.split("\n")[1:])
+    #                                         str_interfaces_pre += "\n" + content1
+    #         str_interfaces_pre1 = "\n  ".join(str_interfaces_pre.split("\n")[0:])
+    #         str_interfaces = "interfaces:"+ str_interfaces_pre1
+    #         # st.code(str_interfaces)
+    #         with st.container(border= True):
+    #             st.write(':violet[**STREAMS ENABLE**]')
+    #             str_streams_pre=""
+    #             list_streams_templates = list(dict_streams_templates.keys())
+    #             index_list_streams_templates = int(len(list_streams_templates)/2)
+    #             col1, col2 = st.columns([1,1])
+    #             with col1:
+    #                 for s in list_streams_templates[0:index_list_streams_templates+1]:
+    #                     with st.container(border= True):
+    #                         exec(f"{s}_cb = st.checkbox(':orange[**{s}**]')")
+    #                         if eval(f"{s}_cb"):
+    #                             exec(f"num_{s} = st.number_input(':orange[*Number {s}*]', value=1)")
+    #                             for i in eval(f"range(num_{s})"):
+    #                                 with st.popover(f":blue[{s}_{i}]", use_container_width=True):
+    #                                     exec(f"list_var_{i} = get_variables_jinja_file(f'{path_templates_streams}/{s}.j2')")
+    #                                     exec(f"{s}_content = dict()")
+    #                                     for var in eval(f"list_var_{i}"):
+    #                                         exec(f"""{s}_content['{var}'] = st.text_input(f":orange[{s}/stream_{i}/**{var}**]")""")
+    #                                     environment = Environment(loader=FileSystemLoader(f"{path_templates_streams}"))
+    #                                     template = environment.get_template(f"{s}.j2")
+    #                                     content= template.render(eval(f"{s}_content"))
+    #                                     str_streams_pre += "\n" + content
+    #             with col2:
+    #                 for s in list_streams_templates[index_list_streams_templates+1:len(list_streams_templates)]:
+    #                     with st.container(border= True):
+    #                         exec(f"{s}_cb = st.checkbox(':orange[**{s}**]')")
+    #                         if eval(f"{s}_cb"):
+    #                             exec(f"num_{s} = st.number_input(':orange[*Number {s}*]', value=1)")
+    #                             for i in eval(f"range(num_{s})"):
+    #                                 with st.popover(f":blue[{s}_{i}]", use_container_width=True):
+    #                                     exec(f"list_var_{i} = get_variables_jinja_file(f'{path_templates_streams}/{s}.j2')")
+    #                                     exec(f"{s}_content = dict()")
+    #                                     for var in eval(f"list_var_{i}"):
+    #                                         exec(f"""{s}_content['{var}'] = st.text_input(f":orange[{s}/stream_{i}/**{var}**]")""")
+    #                                     environment = Environment(loader=FileSystemLoader(f"{path_templates_streams}"))
+    #                                     template = environment.get_template(f"{s}.j2")
+    #                                     content= template.render(eval(f"{s}_content"))
+    #                                     str_streams_pre += "\n" + content
+    #         str_streams = "streams:"+ str_streams_pre     
+    #         with col24:
+    #             with st.container(border= True):
+    #                 st.write(':violet[**OR IMPORT YOUR VARIABLES WITH YAML FORMAT**]')
+    #                 dict_export_file={}
+    #                 with st.container(border= True):
+    #                     data_import = st.file_uploader(":orange[CHOOSE YOUR YAML FILE]", accept_multiple_files=False, disabled= st.session_state.create_instance)
+    #                     if data_import:
+    #                         # if data_import.name[-4:] == '.yml' or data_import.name[-5:] == '.yaml':
+    #                         stringio = StringIO(data_import.getvalue().decode("utf-8"))
+    #                         string_data = stringio.read()
+    #                         try:
+    #                             convert_yaml = yaml.load(string_data, Loader=yaml.FullLoader)
+    #                         except Exception as e:
+    #                             st.error(f"Can not read yaml content, check error {e}")
+    #                         # st.write(list(convert_yaml.keys())[0])
+    #                         if list(convert_yaml.keys())[0] == instance_name: 
+    #                             dict_input = convert_yaml.get(instance_name)
+    #                             # st.write(import_dict_input)
+    #                             if '' not in dict_input.values():
+    #                                 if set(list_var).issubset(set(list(dict_input.keys()))):
+    #                                     # Pop items no need
+    #                                     pop=[]
+    #                                     for e in list(dict_input.keys()):
+    #                                         if e not in list_var:
+    #                                             pop.append(e)
+    #                                     for i in range(len(pop)):
+    #                                         dict_input.pop(pop[i])
+    #                                     dict_input['template']= select_template # Save mapping config: template
+    #                                     st.info(':blue[Import variables successfully]', icon="🔥")
+    #                                     log_authorize(st.session_state.user,blaster_server['ip'], 'IMPORT yaml file')
+    #                                 else:
+    #                                     list_var_lack= set(list_var).difference(set(list(dict_input.keys())))
+    #                                     st.error(f'Data lack of vars **{list_var_lack}**', icon="🚨")
+    #                             else:
+    #                                 st.error('Have values empty', icon="🚨")
+    #                         else:
+    #                             st.error('Could not change intance-name', icon="🚨")
+    #                         # else:
+    #                         #     st.error('Upload file with .yaml or .yml , please. No accept other types ', icon="🚨")
+    #                 if instance_name:
+    #                     dict_export_file[instance_name] = dict_input
+    #                     st.download_button(':material/schema: DATA_FORMAT', '---\n'+yaml.dump(dict_export_file, indent = 2, encoding= None), disabled= st.session_state.create_instance)
+    #         with st.popover(":material/visibility: :green[**REVIEW**]", use_container_width=True):
+    #             environment = Environment(loader=FileSystemLoader(f"{path_templates}"))
+    #             template = environment.get_template(f"{select_template}")
+    #             if str_streams== "streams:":
+    #                 if str_interfaces =="interfaces:":
+    #                     review_content= template.render(dict_input)
+    #                 else:
+    #                     review_content= template.render(dict_input) + '\n' + str_interfaces
+    #             else:
+    #                 if str_interfaces =="interfaces:":
+    #                     review_content= template.render(dict_input) + '\n' + str_streams
+    #                 else:
+    #                     review_content= template.render(dict_input) + '\n' + str_interfaces + '\n' + str_streams
+    #                 # review_content= template.render(dict_input) + '\n' + str_streams
+    #             st.code(review_content)
+    #         if st.button(':material/add: **CREATE INSTANCE**', type= 'primary', disabled = st.session_state.create_instance):
+    #             st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4,st.session_state.p5= False,False, True, False, False
+    #             # if "" not in dict_input.values():
+    #             if len(list(dict_check.keys())) == 0:
+    #                 environment = Environment(loader=FileSystemLoader(f"{path_templates}"))
+    #                 template = environment.get_template(f"{select_template}")
+    #                 if str_streams== "streams:":
+    #                     if str_interfaces =="interfaces:":
+    #                         content= template.render(dict_input)
+    #                     else:
+    #                         content= template.render(dict_input) + '\n' + str_interfaces
+    #                 else:
+    #                     if str_interfaces =="interfaces:":
+    #                         content= template.render(dict_input) + '\n' + str_streams
+    #                     else:
+    #                         content= template.render(dict_input) + '\n' + str_interfaces + '\n' + str_streams
+    #                 with open('%s/%s.json'%(path_configs,instance_name), mode= 'w', encoding= 'utf-8') as config:
+    #                     # config.write(content)
+    #                     json.dump(yaml.safe_load(content), config, indent=2)
+    #                 dict_data, dict_data_input={}, {} # Build dict of data
+    #                 for i in dict_input.keys():
+    #                     dict_data_input.update({i: dict_input[i]})
+    #                 dict_data_input['template']= select_template # Save mapping config: template
+    #                 dict_data[instance_name]= dict_data_input
+    #                 with open('%s/%s.yml'%(path_configs,instance_name), mode= 'w', encoding= 'utf-8') as file_data:
+    #                     file_data.write('---\n')
+    #                     file_data.write(yaml.dump(dict_data))
+    #                     file_data.write('\n')
+    #                 if str_streams != "streams:":
+    #                     with open('%s/%s_streams.yml'%(path_configs,instance_name), mode= 'w', encoding= 'utf-8') as file_data_streams:
+    #                         file_data_streams.write('---\n')
+    #                         file_data_streams.write(str_streams)
+    #                 if str_interfaces != "interfaces:":
+    #                     with open('%s/%s_interfaces.yml'%(path_configs,instance_name), mode= 'w', encoding= 'utf-8') as file_data_interfaces:
+    #                         file_data_interfaces.write('---\n')
+    #                         file_data_interfaces.write(str_interfaces)
+    #                 st.info(':blue[Create successfully]', icon="🔥")
+    #                 log_authorize(st.session_state.user,blaster_server['ip'], f'CREATE intance {instance_name}')
+    #                 time.sleep(3)
+    #                 st.rerun()
+    #             else:
+    #                 for i in dict_check.keys():
+    #                     st.error(f'Input **{i}** wrong, check IP format before create, please', icon="🚨")    
+    # with tab3:
+    #     with st.container(border= True):
+    #         st.subheader(':sunny: :green[**MODIFY YOUR CONFIG**]')
+    #         st.write(':violet[**YOUR INSTANCE NAME**]')
+    #         st.session_state.edit_instance= False
+    #         edit_list_var=[]
+    #         with st.container(border=True):
+    #             edit_instance= st.selectbox(':orange[Select your instance for modifing]?', list_instance, placeholder = 'Select one instance')
+    #             log_authorize(st.session_state.user,blaster_server['ip'], f'Edit config {edit_instance}')
+    #         if os.path.exists('%s/%s.yml'%(path_configs,edit_instance)):
+    #             try:
+    #                 with open("%s/%s.yml"%(path_configs,edit_instance) , 'r') as file_data:
+    #                     config_data = yaml.load(file_data, Loader=yaml.FullLoader)
+    #                     edit_template= config_data[edit_instance]['template']
+    #                     edit_list_var = get_variables_jinja_file(f'{path_templates}/{edit_template}')
+    #                     edit_list_var.sort()
+    #             except Exception as ex:
+    #                 st.error(f"Can not load data file {ex}")
+    #             edit_dict_input={}
+    #             if edit_list_var:
+    #                 st.write(':violet[**EDIT YOUR PROTOCOLS VARIABLE BELOW**]')
+    #                 index=int(len(edit_list_var)/3)
+    #                 with st.container(border= True):
+    #                     col1, col2, col3 = st.columns([1,1,1])
+    #                     with col1:
+    #                         with st.container(border= True):
+    #                             for i in edit_list_var[0:index+1]:
+    #                                 exec(f"""edit_dict_input['{i}'] = st.text_input(f':orange[Modify **{i}**] ',config_data['{edit_instance}']['{i}'], placeholder = f'Typing {i}')""")
+    #                     with col2:
+    #                         with st.container(border= True):
+    #                             for i in edit_list_var[index+1:2*index+1]:
+    #                                 exec(f"""edit_dict_input['{i}'] = st.text_input(f':orange[Modify **{i}**] ',config_data['{edit_instance}']['{i}'], placeholder = f'Typing {i}')""")
+    #                     with col3:
+    #                         with st.container(border= True):
+    #                             for i in edit_list_var[2*index+1:len(edit_list_var)]:
+    #                                 exec(f"""edit_dict_input['{i}'] = st.text_input(f':orange[Modify **{i}**] ',config_data['{edit_instance}']['{i}'], placeholder = f'Typing {i}')""") 
+    #             else:
+    #                 print('Can not load jinja template')
+    #         else:
+    #             with open("%s/%s.json"%(path_configs,edit_instance) , 'r') as edit_config_data:
+    #                 edit_json_raw= edit_config_data.read()
+    #             with st.container(border=True):
+    #                 edit_json= st_ace(
+    #                     value= edit_json_raw,
+    #                     language= 'json', 
+    #                     theme= '', 
+    #                     show_gutter= True, 
+    #                     keybinding='vscode', 
+    #                     auto_update= True, 
+    #                     placeholder= '*Edit your config*')
+    #             col141, col151, col161 = st.columns([1,4,1])
+    #             with col141:
+    #                 if st.button(':material/save: **SAVE**', type= 'primary', use_container_width=True):
+    #                     st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False,False, True, False, False
+    #                     try: 
+    #                         json.loads(edit_json)
+    #                         with open("%s/%s.json"%(path_configs,edit_instance) , 'w') as after_edit_json:
+    #                             json.dump(json.loads(edit_json), after_edit_json, indent=2)
+    #                             st.toast(':blue[Save instance **%s** successfully]'%edit_instance, icon="🔥")
+    #                     except Exception as e:
+    #                         st.error('Error json %s'%e, icon="🚨")
+    #             with col161:
+    #                 if st.button(':material/delete: **DELETE**', use_container_width=True):
+    #                     st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, True, False, False
+    #                     delete_config(path_configs, edit_instance)
+    #             if edit_json != "":
+    #                 with st.popover(":green[**:material/preview: REVIEW JSON**]", use_container_width=True):
+    #                     # st.json(yaml.safe_load(edit_content))
+    #                     st.code(json.dumps(json.loads(edit_json), indent=2))
+    #         if os.path.exists('%s/%s_interfaces.yml'%(path_configs,edit_instance)):
+    #             with open('%s/%s_interfaces.yml'%(path_configs,edit_instance), mode= 'r') as interfaces:
+    #                 edit_interfaces_input= yaml.safe_load(interfaces.read())
+    #             edit_list_key_interfaces = list(edit_interfaces_input['interfaces'].keys())
+    #             if len(edit_interfaces_input['interfaces']) == 0 :
+    #                 st.write("interfaces null")
+    #             else:
+    #                 dict_edit_interfaces ={}
+    #                 st.write(f':violet[**EDIT INTERFACES VARIABLE BELOW**]')
+    #                 with st.container(border= True):
+    #                     index_int = int(len(edit_list_key_interfaces)/2)
+    #                     # st.write(edit_list_key_interfaces)
+    #                     col1, col2= st.columns([1,1])
+    #                     with col1:
+    #                         for key in edit_list_key_interfaces[0:index_int+1]:
+    #                             if check_key_value_is_list(edit_interfaces_input['interfaces'], key):
+    #                                 exec(f"edit_interfaces_{key} = []")
+    #                                 with st.container(border= True):
+    #                                     st.write(f':green[**interfaces/{key}**]')
+    #                                     for i in range(len(edit_interfaces_input['interfaces'][key])):
+    #                                         temp_edit_interfaces ={}
+    #                                         with st.popover(f":orange[interfaces_{key}_{i}]", use_container_width=True):
+    #                                             list_input= edit_interfaces_input['interfaces'][key][i].keys()
+    #                                             for j in list_input:
+    #                                                 exec(f"""temp_edit_interfaces['{j}'] = st.text_input(f":orange[interaces_{key}_{i}]/:orange[**{j}**]", edit_interfaces_input['interfaces'][key][i]['{j}'])""")
+    #                                         eval(f"edit_interfaces_{key}.append(temp_edit_interfaces)")
+    #                                         if i == (len(edit_interfaces_input['interfaces'][key])-1):
+    #                                             ###### Convert value of interface value to int #############################
+    #                                             for k in eval(f"edit_interfaces_{key}"):
+    #                                                 list_keys = list(k.keys())
+    #                                                 for n in list_keys:
+    #                                                     try:
+    #                                                         temp=int(k[n])
+    #                                                         k[n] = temp
+    #                                                     except:
+    #                                                         pass
+    #                                                     if (k[n]== 'True') or (k[n]== 'true'):
+    #                                                         k[n] = True
+    #                                                     if (k[n]== 'False') or (k[n]== 'false'):
+    #                                                         k[n] = False
+    #                                             exec(f"dict_edit_interfaces[key] = edit_interfaces_{key}")
+    #                             else:
+    #                                 # key_convert= key.replace('-','_')
+    #                                 with st.container(border= True):
+    #                                     st.write(f':green[**interfaces/{key}**]')
+    #                                     with st.popover(f":orange[interfaces_{key}]", use_container_width=True):
+    #                                         temp_edit_interfaces = st.text_input(f":orange[interfaces_{key}]", edit_interfaces_input['interfaces'][key])
+    #                                     try:
+    #                                         temp_edit_interfaces= int(temp_edit_interfaces)
+    #                                     except:
+    #                                         pass
+    #                                     if isinstance(edit_interfaces_input['interfaces'][key], float):
+    #                                         try:
+    #                                             temp_edit_interfaces= float(temp_edit_interfaces)
+    #                                         except:
+    #                                             pass
+    #                                     dict_edit_interfaces[key] = temp_edit_interfaces
+    #                     with col2:
+    #                         for key in edit_list_key_interfaces[index_int+1:len(edit_list_key_interfaces)]:
+    #                             if check_key_value_is_list(edit_interfaces_input['interfaces'],key):
+    #                                 exec(f"edit_interfaces_{key} = []")
+    #                                 with st.container(border= True):
+    #                                     st.write(f':green[**interfaces/{key}**]')
+    #                                     for i in range(len(edit_interfaces_input['interfaces'][key])):
+    #                                         temp_edit_interfaces ={}
+    #                                         with st.popover(f":orange[interfaces_{key}_{i}]", use_container_width=True):
+    #                                             list_input= edit_interfaces_input['interfaces'][key][i].keys()
+    #                                             for j in list_input:
+    #                                                 exec(f"""temp_edit_interfaces['{j}'] = st.text_input(f":orange[interaces_{key}_{i}]/:orange[**{j}**]", edit_interfaces_input['interfaces'][key][i]['{j}'])""")
+    #                                         eval(f"edit_interfaces_{key}.append(temp_edit_interfaces)")
+    #                                         if i == (len(edit_interfaces_input['interfaces'][key])-1):
+    #                                             ###### Convert value of interface value to int #############################
+    #                                             for k in eval(f"edit_interfaces_{key}"):
+    #                                                 list_keys = list(k.keys())
+    #                                                 for n in list_keys:
+    #                                                     try:
+    #                                                         temp=int(k[n])
+    #                                                         k[n] = temp
+    #                                                     except:
+    #                                                         pass
+    #                                                     if (k[n]== 'True') or (k[n]== 'true'):
+    #                                                         k[n] = True
+    #                                                     if (k[n]== 'False') or (k[n]== 'false'):
+    #                                                         k[n] = False
+    #                                             exec(f"dict_edit_interfaces[key] = edit_interfaces_{key}")
+    #                             else:
+    #                                 # key_convert= key.replace('-','_')
+    #                                 with st.container(border= True):
+    #                                     st.write(f':green[**interfaces/{key}**]')
+    #                                     with st.popover(f":orange[interfaces_{key}]", use_container_width=True):
+    #                                         temp_edit_interfaces = st.text_input(f":orange[interfaces_{key}]", edit_interfaces_input['interfaces'][key])
+    #                                     try:
+    #                                         temp_edit_interfaces= int(temp_edit_interfaces)
+    #                                     except:
+    #                                         pass
+    #                                     if isinstance(edit_interfaces_input['interfaces'][key], float):
+    #                                         try:
+    #                                             temp_edit_interfaces= float(temp_edit_interfaces)
+    #                                         except:
+    #                                             pass
+    #                                     dict_edit_interfaces[key] = temp_edit_interfaces
+    #                     # st.write(dict_edit_interfaces)
+    #         if os.path.exists('%s/%s_streams.yml'%(path_configs,edit_instance)):
+    #             # st.divider()
+    #             with open('%s/%s_streams.yml'%(path_configs,edit_instance), mode= 'r') as streams:
+    #                 edit_streams_input= yaml.safe_load(streams.read())
+    #             # st.write(edit_streams_input['streams'])
+    #             if len(edit_streams_input['streams']) == 0 :
+    #                 st.write("streams null")
+    #             else:
+    #                 edit_streams = []
+    #                 st.write(':violet[**EDIT STREAMS VARIABLE BELOW**]')
+    #                 with st.container(border= True):
+    #                     index_col = int(len(edit_streams_input['streams'])/2)
+    #                     col1, col2= st.columns([1,1])
+    #                     with col1:
+    #                         for i in range(0,index_col+1):
+    #                             temp_edit_streams ={}
+    #                             with st.popover(f":orange[stream_{i}]", use_container_width=True):
+    #                                 list_input= edit_streams_input['streams'][i].keys()
+    #                                 for j in list_input:
+    #                                     exec(f"""temp_edit_streams['{j}'] = st.text_input(f":orange[streams_{i}]/:orange[**{j}**]", edit_streams_input['streams'][i]['{j}'])""")
+    #                             edit_streams.append(temp_edit_streams)
+    #                     with col2:
+    #                         for i in range(index_col+1,len(edit_streams_input['streams'])):
+    #                             temp_edit_streams ={}
+    #                             with st.popover(f":orange[stream_{i}]", use_container_width=True):
+    #                                 list_input= edit_streams_input['streams'][i].keys()
+    #                                 for j in list_input:
+    #                                     exec(f"""temp_edit_streams['{j}'] = st.text_input(f":orange[streams_{i}]/:orange[**{j}**]", edit_streams_input['streams'][i]['{j}'])""")
+    #                             edit_streams.append(temp_edit_streams)
+    #             ###### Convert value of streams to int #############################
+    #             for i in edit_streams:
+    #                 list_keys = list(i.keys())
+    #                 for j in list_keys:
+    #                     try:
+    #                         temp=int(i[j])
+    #                         i[j] = temp
+    #                     except:
+    #                         continue
+    #             # st.write(edit_streams)
+    #         st.divider()
+    #         edit_content=""
+    #         col14, col15, col16 = st.columns([1,4,1])
+    #         if os.path.exists('%s/%s.yml'%(path_configs,edit_instance)):
+    #             with col14:
+    #                 if st.button(':material/save: **SAVE**', type= 'primary', disabled = st.session_state.edit_instance, use_container_width=True):
+    #                     st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False,False, True, False, False
+    #                     if "" not in edit_dict_input.values():
+    #                         streams_save={}
+    #                         interfaces_save={}
+    #                         if os.path.exists('%s/%s_streams.yml'%(path_configs,edit_instance)):
+    #                             streams_save['streams']= edit_streams
+    #                         if os.path.exists('%s/%s_interfaces.yml'%(path_configs,edit_instance)):
+    #                             interfaces_save['interfaces']= dict_edit_interfaces
+    #                         # Render config from Jinja file
+    #                         environment = Environment(loader=FileSystemLoader(f"{path_templates}"))
+    #                         template = environment.get_template(f"{config_data[edit_instance]['template']}")
+    #                         edit_content = template.render(edit_dict_input)
+    #                         ### Save new config
+    #                         with open('%s/%s.json'%(path_configs,edit_instance), mode= 'w', encoding= 'utf-8') as edit_config:
+    #                             if os.path.exists('%s/%s_streams.yml'%(path_configs,edit_instance)):
+    #                                 if os.path.exists('%s/%s_interfaces.yml'%(path_configs,edit_instance)):
+    #                                     edit_content += "\n" + yaml.dump(streams_save) + "\n" +yaml.dump(interfaces_save)
+    #                                 else:
+    #                                     edit_content += "\n" + yaml.dump(streams_save)
+    #                             else:
+    #                                 if os.path.exists('%s/%s_interfaces.yml'%(path_configs,edit_instance)):
+    #                                     edit_content += "\n" +yaml.dump(interfaces_save)
+    #                             json.dump(yaml.safe_load(edit_content), edit_config, indent=2)
+    #                         save_dict_data, save_dict_data_input={}, {} # Build dict of data
+    #                         for i in edit_dict_input.keys():
+    #                             save_dict_data_input.update({i: edit_dict_input[i]})
+    #                         save_dict_data_input['template']= config_data[edit_instance]['template'] # Save mapping config: template
+    #                         save_dict_data[edit_instance]= save_dict_data_input
+    #                         ### Save data instance to yaml
+    #                         with open('%s/%s.yml'%(path_configs,edit_instance), mode= 'w', encoding= 'utf-8') as data:
+    #                             data.write('---\n')
+    #                             data.write(yaml.dump(save_dict_data))
+    #                             data.write('\n')
+    #                         ### Save interfaces to yaml
+    #                         if os.path.exists('%s/%s_interfaces.yml'%(path_configs,edit_instance)):
+    #                             with open('%s/%s_interfaces.yml'%(path_configs,edit_instance), mode= 'w', encoding= 'utf-8') as interfaces_data:
+    #                                 interfaces_data.write('---\n')
+    #                                 interfaces_data.write(yaml.dump(interfaces_save))
+    #                         ### Save streams to yaml
+    #                         if os.path.exists('%s/%s_streams.yml'%(path_configs,edit_instance)):
+    #                             with open('%s/%s_streams.yml'%(path_configs,edit_instance), mode= 'w', encoding= 'utf-8') as streams_data:
+    #                                 streams_data.write('---\n')
+    #                                 streams_data.write(yaml.dump(streams_save))
+    #                         st.toast(':blue[Save instance %s successfully]'%edit_instance, icon="🔥")
+    #                         log_authorize(st.session_state.user,blaster_server['ip'], f'Edit and save instance {edit_instance}')
+    #                     else:
+    #                         st.toast(':red[Have parameters empty, fill us before save, please]', icon="🚨")
+    #             with col16:
+    #                 if st.button(':material/delete: **DELETE**', use_container_width=True):
+    #                     st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, True, False, False
+    #                     delete_config(path_configs, edit_instance)
+    #             if edit_content != "":
+    #                 with st.popover(":green[**REVIEW**]", use_container_width=True):
+    #                     # st.json(yaml.safe_load(edit_content))
+    #                     st.code(edit_content)
+    # if dict_user_db[st.session_state.user] == 'admin' or dict_user_db[st.session_state.user] == 'admin1':
+    #     with tab5:
+    #         with st.container(border= True):
+    #             st.subheader(':sunny: :green[YOUR SELECTION]')
+    #             import_radio = st.radio(
+    #                 ":violet[SELECT KIND OF TEMPLATES BELOW]",
+    #                 [":orange[PROTOCOLS]", ":orange[INTERFACES]", ":orange[STREAMS]"],
+    #                 index=None,
+    #             )
+    #         if import_radio == ":orange[PROTOCOLS]":
+    #             col1_template, col2_template = st.columns([1.25,1])
+    #             with col2_template:
+    #                 with st.container(border=True, height=630):
+    #                     st.subheader(':desktop_computer: :green[IMPORT PROTOCOLS TEMPLATE]')
+    #                     st.write(':violet[Upload protocols template]')
+    #                     protocols_file_import = st.file_uploader("Choose a Template file", accept_multiple_files=False)
+    #                     if protocols_file_import:
+    #                         if protocols_file_import.name[-3:] == '.j2':
+    #                             stringio = StringIO(protocols_file_import.getvalue().decode("utf-8"))
+    #                             string_data = stringio.read() 
+    #                             if protocols_file_import.name not in list_templates:
+    #                                 with open(f"{path_templates}/{protocols_file_import.name}", 'w') as jinja:
+    #                                     jinja.write(string_data)
+    #                                     st.info(':blue[Upload template %s successfully]'%protocols_file_import.name, icon="🔥")
+    #                                     log_authorize(st.session_state.user,blaster_server['ip'], f'Import protocols template file {protocols_file_import.name}')
+    #                             else:
+    #                                 st.error('Duplicate name file, change your file name and try again', icon="🚨")
+    #                         else:
+    #                             st.error('Upload file with .j2 , please. No accept other types ', icon="🚨")
+    #                     else:
+    #                         st.info(':blue[Select file upload]', icon="🔥")
+    #             with col1_template:
+    #                 with st.container(border=True):
+    #                     st.subheader(':memo: :green[EDIT PROTOCOLS TEMPLATE]')
+    #                     template_edit = st.selectbox(':orange[Select your template for editing]?', list_templates, placeholder = 'Select one template')
+    #                     with open(f"{path_templates}/{template_edit}", "r") as view:
+    #                         cont1= view.read()
+    #                     with st.container(border=True):
+    #                         edit_template_text = st_ace(
+    #                         value= cont1,
+    #                         language= 'yaml', 
+    #                         theme= '', 
+    #                         show_gutter= True, 
+    #                         keybinding='vscode', 
+    #                         auto_update= False, 
+    #                         placeholder= '*Edit your template*',
+    #                         height=350)
+    #                     col100, col101, col102 =st.columns([1,2,1])
+    #                     with col100:
+    #                         if st.button(":material/save: SAVE", type = 'primary', use_container_width= True):
+    #                             with open(f"{path_templates}/{template_edit}", "w") as write:
+    #                                 write.write(edit_template_text)
+    #                             st.toast(f':blue[Save your template **{template_edit}** successfully]', icon="🔥")
+    #                     with col102:
+    #                         if st.button(":material/delete: DELETE", use_container_width= True):
+    #                             os.remove(f"{path_templates}/{template_edit}")
+    #                             st.info(':blue[Delete successfully]', icon="🔥")
+    #                             st.rerun()
+    #         if import_radio == ":orange[INTERFACES]":
+    #             col1_template, col2_template = st.columns([1.25,1])
+    #             with col2_template:
+    #                 with st.container(border=True, height=630):
+    #                     st.subheader(':desktop_computer: :green[IMPORT INTERFACES TEMPLATE]')
+    #                     st.write(':violet[Upload interfaces template]')
+    #                     protocols_file_import = st.file_uploader("Choose a Template file", accept_multiple_files=False)
+    #                     if protocols_file_import:
+    #                         if protocols_file_import.name[-3:] == '.j2':
+    #                             stringio = StringIO(protocols_file_import.getvalue().decode("utf-8"))
+    #                             string_data = stringio.read() 
+    #                             if protocols_file_import.name not in list_templates:
+    #                                 with open(f"{path_templates_interfaces}/{protocols_file_import.name}", 'w') as jinja:
+    #                                     jinja.write(string_data)
+    #                                     st.info(':blue[Upload template %s successfully]'%protocols_file_import.name, icon="🔥")
+    #                                     log_authorize(st.session_state.user,blaster_server['ip'], f'Import interfaces template file {protocols_file_import.name}')
+    #                             else:
+    #                                 st.error('Duplicate name file, change your file name and try again', icon="🚨")
+    #                         else:
+    #                             st.error('Upload file with .j2 , please. No accept other types ', icon="🚨")
+    #                     else:
+    #                         st.info(':blue[Select file upload]', icon="🔥")
+    #             with col1_template:
+    #                 with st.container(border=True):
+    #                     st.subheader(':memo: :green[EDIT INTERFACES TEMPLATE]')
+    #                     template_edit = st.selectbox(':orange[Select your template for editing]?', list_interfaces, placeholder = 'Select one template')
+    #                     with open(f"{path_templates_interfaces}/{template_edit}.j2", "r") as view:
+    #                         cont1= view.read()
+    #                     with st.container(border=True):
+    #                         edit_template_text = st_ace(
+    #                         value= cont1,
+    #                         language= 'yaml', 
+    #                         theme= '', 
+    #                         show_gutter= True, 
+    #                         keybinding='vscode', 
+    #                         auto_update= False, 
+    #                         placeholder= '*Edit your template*',
+    #                         height=350)
+    #                     col100, col101, col102 =st.columns([1,2,1])
+    #                     with col100:
+    #                         if st.button("SAVE", type = 'primary', use_container_width= True):
+    #                             with open(f"{path_templates_interfaces}/{template_edit}.j2", "w") as write:
+    #                                 write.write(edit_template_text)
+    #                             st.toast(f':blue[Save your template **{template_edit}** successfully]', icon="🔥")
+    #                     with col102:
+    #                         if st.button(":material/delete: DELETE", use_container_width= True):
+    #                             os.remove(f"{path_templates_interfaces}/{template_edit}.j2")
+    #                             st.info(':blue[Delete successfully]', icon="🔥")
+    #                             st.rerun()
+    #         if import_radio == ":orange[STREAMS]":
+    #             col1_template, col2_template = st.columns([1.25,1])
+    #             with col2_template:
+    #                 with st.container(border=True, height=630):
+    #                     st.subheader(':desktop_computer: :green[IMPORT STREAMS TEMPLATE]')
+    #                     st.write(':violet[Upload streams template]')
+    #                     streams_file_import = st.file_uploader("Choose a Template file", accept_multiple_files=False)
+    #                     if streams_file_import:
+    #                         if streams_file_import.name[-3:] == '.j2':
+    #                             stringio = StringIO(streams_file_import.getvalue().decode("utf-8"))
+    #                             string_data = stringio.read() 
+    #                             if streams_file_import.name not in list_templates:
+    #                                 with open(f"{path_templates_streams}/{streams_file_import.name}", 'w') as jinja:
+    #                                     jinja.write(string_data)
+    #                                     st.info(':blue[Upload template %s successfully]'%streams_file_import.name, icon="🔥")
+    #                                     log_authorize(st.session_state.user,blaster_server['ip'], f'Import template file {streams_file_import.name}')
+    #                             else:
+    #                                 st.error('Duplicate name file, change your file name and try again', icon="🚨")
+    #                         else:
+    #                             st.error('Upload file with .j2 , please. No accept other types ', icon="🚨")
+    #                     else:
+    #                         st.info(':blue[Select file upload]', icon="🔥")
+    #             with col1_template:
+    #                 with st.container(border=True):
+    #                     st.subheader(':memo: :green[EDIT STREAMS TEMPLATE]')
+    #                     template_edit = st.selectbox(':orange[Select your template for editing]?', list_streams_templates, placeholder = 'Select one template')
+    #                     with open(f"{path_templates_streams}/{template_edit}.j2", "r") as view:
+    #                         cont1= view.read()
+    #                     with st.container(border=True):
+    #                         edit_template_text = st_ace(
+    #                         value= cont1,
+    #                         language= 'yaml', 
+    #                         theme= '', 
+    #                         show_gutter= True, 
+    #                         keybinding='vscode', 
+    #                         auto_update= False, 
+    #                         placeholder= '*Edit your template*',
+    #                         height=350)
+    #                     col100, col101, col102 =st.columns([1,2,1])
+    #                     with col100:
+    #                         if st.button(":material/save: SAVE", use_container_width=True, type = 'primary'):
+    #                             with open(f"{path_templates_streams}/{template_edit}.j2", "w") as write:
+    #                                 write.write(edit_template_text)
+    #                             st.toast(f':blue[Save your template **{template_edit}** successfully]', icon="🔥")
+    #                     with col102:
+    #                         if st.button(":material/delete: DELETE", use_container_width= True):
+    #                             os.remove(f"{path_templates_streams}/{template_edit}.j2")
+    #                             st.info(':blue[Delete successfully]', icon="🔥")
+    #                             st.rerun()
+    #         if import_radio == ":orange[PROTOCOLS]":
+    #             with st.container(border= True):
+    #                 st.subheader(':package: :green[BUILD YOUR PROTOCOLS TEMPLATE]')
+    #                 # st.write(list_part)
+    #                 output_str=""
+    #                 st.write(":violet[Select your pieces of your template]")
+    #                 with st.container(border=True):
+    #                     col1_temp, col2_temp = st.columns([1,1])
+    #                     index_temp = int(len(list_part)/2)
+    #                     with col1_temp:
+    #                         for i in list_part[0:index_temp+1]:
+    #                             with st.container(border=True):
+    #                                 if eval(f"st.checkbox(':orange[**{i}**]')"):
+    #                                     with eval(f"st.expander(':green[Edit **{i}** pieces]')"):
+    #                                         add_part= st_ace(
+    #                                         value= dict_element_config[i],
+    #                                         language= 'yaml', 
+    #                                         theme= '', 
+    #                                         show_gutter= True, 
+    #                                         keybinding='vscode', 
+    #                                         auto_update= False, 
+    #                                         placeholder= '*Edit your template*', 
+    #                                         height= 300,
+    #                                         key= list_part.index(i))
+    #                                         #########################################
+    #                                         output_str += '\n' + add_part
+    #                     with col2_temp:
+    #                         for i in list_part[index_temp+1:len(list_part)+1]:
+    #                             with st.container(border=True):
+    #                                 if eval(f"st.checkbox(':orange[**{i}**]')"):
+    #                                     with eval(f"st.expander(':green[Edit **{i}** pieces]')"):
+    #                                         add_part= st_ace(
+    #                                         value= dict_element_config[i],
+    #                                         language= 'yaml', 
+    #                                         theme= '', 
+    #                                         show_gutter= True, 
+    #                                         keybinding='vscode', 
+    #                                         auto_update= False, 
+    #                                         placeholder= '*Edit your template*', 
+    #                                         height= 300,
+    #                                         key= list_part.index(i))
+    #                                         #########################################
+    #                                         output_str += '\n' + add_part
+    #                     name_template = st.text_input(':violet[Input your name of new template]')
+    #                     if (f"{name_template}.j2") in list_templates:
+    #                         st.error('Name existed, try other name', icon="🚨")
+    #                         st.session_state.save_template= True
+    #                     else:
+    #                         if name_template == "":
+    #                             st.warning("Name can not null", icon="🔥")
+    #                             st.session_state.save_template= True
+    #                         else:
+    #                             if is_valid_name_instance(name_template):
+    #                                 st.info("You can use this name", icon="🔥")
+    #                                 st.session_state.save_template= False
+    #                             else:
+    #                                 st.warning("Name wrong syntax", icon="🔥")
+    #                                 st.session_state.save_template= True
+    #                 if st.button(":material/save: **SAVE**", type= 'primary', disabled= st.session_state.save_template):
+    #                     if output_str != "":
+    #                         with open(f"{path_templates}/{name_template}.j2", 'w') as file:
+    #                             file.write(output_str)
+    #                         st.code(output_str)
+    #                     else:
+    #                         st.error("Select above first", icon="🚨")
+    #         if import_radio == ":orange[INTERFACES]":
+    #             with st.container(border= True):
+    #                 st.subheader(':package: :green[BUILD YOUR INTERFACES TEMPLATE]')
+    #                 # st.write(list_interfaces)
+    #                 output_str=""
+    #                 st.write(":violet[Select your pieces of your template]")
+    #                 with st.container(border=True):
+    #                     col1_temp, col2_temp = st.columns([1,1])
+    #                     index_temp = int(len(list_interfaces)/2)
+    #                     with col1_temp:
+    #                         for i in list_interfaces[0:index_temp+1]:
+    #                             with st.container(border=True):
+    #                                 if eval(f"st.checkbox(':orange[**{i}**]', key='{i}')"):
+    #                                     with eval(f"st.expander(':green[Edit **{i}** pieces]')"):
+    #                                         add_part= st_ace(
+    #                                         value= dict_interfaces_templates[i],
+    #                                         language= 'yaml', 
+    #                                         theme= '', 
+    #                                         show_gutter= True, 
+    #                                         keybinding='vscode', 
+    #                                         auto_update= False, 
+    #                                         placeholder= '*Edit your template*', 
+    #                                         height= 300,
+    #                                         key= list_interfaces.index(i))
+    #                                         #########################################
+    #                                         output_str += '\n' + add_part
+    #                     with col2_temp:
+    #                         for i in list_interfaces[index_temp+1:len(list_interfaces)+1]:
+    #                             with st.container(border=True):
+    #                                 if eval(f"st.checkbox(':orange[**{i}**]', key='{i}')"):
+    #                                     with eval(f"st.expander(':green[Edit **{i}** pieces]')"):
+    #                                         add_part= st_ace(
+    #                                         value= dict_interfaces_templates[i],
+    #                                         language= 'yaml', 
+    #                                         theme= '', 
+    #                                         show_gutter= True, 
+    #                                         keybinding='vscode', 
+    #                                         auto_update= False, 
+    #                                         placeholder= '*Edit your template*', 
+    #                                         height= 300,
+    #                                         key= list_interfaces.index(i))
+    #                                         #########################################
+    #                                         output_str += '\n' + add_part
+    #                     name_template = st.text_input(':violet[Input your name of new template]')
+    #                     if (f"{name_template}") in list_interfaces:
+    #                         st.error('Name existed, try other name', icon="🚨")
+    #                         st.session_state.save_template= True
+    #                     else:
+    #                         if name_template == "":
+    #                             st.warning("Name can not null", icon="🔥")
+    #                             st.session_state.save_template= True
+    #                         else:
+    #                             if is_valid_name_instance(name_template):
+    #                                 st.info("You can use this name", icon="🔥")
+    #                                 st.session_state.save_template= False
+    #                             else:
+    #                                 st.warning("Name wrong syntax", icon="🔥")
+    #                                 st.session_state.save_template= True
+    #                 if st.button(":material/save: **SAVE**", type= 'primary', disabled= st.session_state.save_template):
+    #                     if output_str != "":
+    #                         with open(f"{path_templates_interfaces}/{name_template}.j2", 'w') as file:
+    #                             file.write(output_str)
+    #                         st.code(output_str)
+    #                     else:
+    #                         st.error("Select above first", icon="🚨")
+    #         if import_radio == ":orange[STREAMS]":
+    #             with st.container(border= True):
+    #                 st.subheader(':package: :green[BUILD YOUR STREAMS TEMPLATE]')
+    #                 # st.write(list_part)
+    #                 streams_output_str=""
+    #                 st.write(":violet[Select your pieces of your template]")
+    #                 with st.container(border=True):
+    #                     col1_temp, col2_temp = st.columns([1,1])
+    #                     index_temp = int(len(list_streams)/2)
+    #                     with col1_temp:
+    #                         for i in list_streams[0:index_temp+1]:
+    #                             with st.container(border=True):
+    #                                 if eval(f"st.checkbox(':orange[.**{i}**]')"):
+    #                                     with eval(f"st.expander(':green[Edit **{i}** pieces]')"):
+    #                                         add_part= st_ace(
+    #                                         value= dict_streams_templates[i],
+    #                                         language= 'yaml', 
+    #                                         theme= '', 
+    #                                         show_gutter= True, 
+    #                                         keybinding='vscode', 
+    #                                         auto_update= False, 
+    #                                         placeholder= '*Edit your template*', 
+    #                                         height= 300,
+    #                                         key= list_streams.index(i))
+    #                                         #########################################
+    #                                         streams_output_str += '\n' + add_part
+    #                     with col2_temp:
+    #                         for i in list_streams[index_temp+1:len(list_streams)+1]:
+    #                             with st.container(border=True):
+    #                                 if eval(f"st.checkbox(':orange[.**{i}**]')"):
+    #                                     with eval(f"st.expander(':green[Edit **{i}** pieces]')"):
+    #                                         add_part= st_ace(
+    #                                         value= dict_streams_templates[i],
+    #                                         language= 'yaml', 
+    #                                         theme= '', 
+    #                                         show_gutter= True, 
+    #                                         keybinding='vscode', 
+    #                                         auto_update= False, 
+    #                                         placeholder= '*Edit your template*', 
+    #                                         height= 300,
+    #                                         key= list_streams.index(i))
+    #                                         #########################################
+    #                                         streams_output_str += '\n' + add_part
+    #                     name_template = st.text_input(':violet[Input your name of new template]',"streams_")
+    #                     if (f"{name_template}.j2") in list_streams:
+    #                         st.error('Name existed, try other name', icon="🚨")
+    #                         st.session_state.save_template= True
+    #                     else:
+    #                         if name_template == "streams_":
+    #                             st.warning("Typing your name", icon="🔥")
+    #                             st.session_state.save_template= True
+    #                         else:
+    #                             if is_valid_name_instance(name_template):
+    #                                 st.info("You can use this name", icon="🔥")
+    #                                 st.session_state.save_template= False
+    #                             else:
+    #                                 st.warning("Name wrong syntax", icon="🔥")
+    #                                 st.session_state.save_template= True
+    #                 if st.button(":material/save: **SAVE**", type= 'primary', disabled= st.session_state.save_template):
+    #                     if streams_output_str != "":
+    #                         with open(f"{path_templates_streams}/{name_template}.j2", 'w') as file:
+    #                             file.write(streams_output_str)
+    #                         st.code(streams_output_str)
+    #                     else:
+    #                         st.error("Select above first", icon="🚨")
     with tab2:
-        with st.container(border= True):
-            st.subheader(':sunny: :green[**CREATE YOUR CONFIG**]')
-            st.write(':violet[**YOUR INSTANCE NAME**]')
-            with st.container(border=True):
-                instance_name = st.text_input(':orange[Name of your instance] ', placeholder = 'Typing your instance name')
-                if is_valid_name_instance(instance_name):
-                    if instance_name + '.json' not in list_json:
-                        st.info(':blue[Your instance\'s name can be use]', icon="🔥")
-                        st.session_state.create_instance= False
-                    else:
-                        st.error('Your instance was duplicate, choose other name', icon="🚨")
-                else:
-                    st.error('Instance name is null or wrong syntax', icon="🔥")
-            st.write(':violet[**SELECT YOUR PROTOCOLS TEMPLATES**]')
-            col21, col22 = st.columns([4.2,1])
-            with col21:
-                with st.container(border= True):
-                    select_template= st.selectbox(':orange[Select your template]?', list_templates, placeholder = 'Select one template')
-                    log_authorize(st.session_state.user,blaster_server['ip'], f'Select template {select_template}')
-            with col22:
-                with st.popover(":material/visibility: :green[**VIEW**]", use_container_width=True):
-                    st.info(":violet[Content of **%s template**]"%select_template, icon="🔥")
-                    with open('%s/%s'%(path_templates,select_template), 'r') as file_template:
-                        data= file_template.read()
-                    st.code(data)
-            col23, col24 = st.columns([2,1])
-            with col23:
-                with st.container(border= True):
-                    st.write(':violet[**FILL YOUR VARIABLES BELOW**]')
-                    list_var = get_variables_jinja_file(f'{path_templates}/{select_template}')
-                    list_var.sort()
-                    dict_input={}
-                    index=int(len(list_var)/3)
-                    col1, col2, col3 = st.columns([1,1,1])
-                    with col1:
-                        with st.container(border= True):
-                            for i in list_var[0:index+1]:
-                                exec(f"""dict_input['{i}'] = st.text_input(f':orange[**{i}**] ', placeholder = f'Typing {i}')""")
-                                # st.warning('%s is null, fill it'%i, icon="🚨")
-                    with col2:
-                        with st.container(border= True):
-                            for i in list_var[index+1:2*index+1]:
-                                exec(f"""dict_input['{i}'] = st.text_input(f':orange[**{i}**] ', placeholder = f'Typing {i}')""")
-                                # st.warning('%s is null, fill it'%i, icon="🚨")
-                    with col3:
-                        with st.container(border= True):
-                            for i in list_var[2*index+1:len(list_var)]:
-                                exec(f"""dict_input['{i}'] = st.text_input(f':orange[**{i}**] ', placeholder = f'Typing {i}')""")
-                                # st.warning('%s is null, fill it'%i, icon="🚨")
-                    # st.divider()
-                    dict_check = {}
-                    for d in list_var:
-                        if d.endswith("address") or d.endswith("gateway") or d.endswith("gate"):
-                            if is_valid_ip(dict_input[d]):
-                                continue
-                            else:
-                                dict_check[d]= False
-            with st.container(border= True):
-                st.write(':violet[**INTERFACES ENABLE**]')
-                str_interfaces_pre=""
-                list_interfaces_templates = list(dict_interfaces_templates.keys())
-                index_list_interfaces_templates = int(len(list_interfaces_templates)/2)
-                col1, col2 = st.columns([1,1])
-                with col1:
-                    for s in list_interfaces_templates[0:index_list_interfaces_templates+1]:
-                        with st.container(border= True):
-                            exec(f"{s}_cb = st.checkbox(':orange[**{s}**]')")
-                            if eval(f"{s}_cb"):
-                                exec(f"num_{s} = st.number_input(':orange[*Number {s}*]', value=1)")
-                                for i in eval(f"range(num_{s})"):
-                                    with st.popover(f":blue[{s}_{i}]", use_container_width=True):
-                                        exec(f"list_var_{i} = get_variables_jinja_file(f'{path_templates_interfaces}/{s}.j2')")
-                                        exec(f"{s}_content = dict()")
-                                        for var in eval(f"list_var_{i}"):
-                                            if var.endswith('interface'):
-                                                with st.container(border= True):
-                                                    st.write(f":orange[{s}/{i}/**{var}**]")
-                                                    with st.container(border= True):
-                                                        col_int1, col_int2 = st.columns([1.2,1])
-                                                        with col_int1:
-                                                            interface = st.selectbox(f":green[interface]", find_interface(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd']), key = f"{s}/{var}/{i}/interface" )
-                                                        with col_int2:
-                                                            # vlan = st.text_input(f":green[vlan]", key=f"{s}/{var}/{i}/vlan")
-                                                            vlan = st.selectbox(f":green[vlan]", find_unused_vlans(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd'], interface),key=f"{s}/{var}/{i}/vlan")
-                                                if vlan == "":
-                                                    exec(f"""{s}_content['{var}']= interface """)
-                                                else:
-                                                    exec(f"""{s}_content['{var}']= interface +'.'+ vlan""")
-                                            else:
-                                                with st.container(border= True):
-                                                    exec(f"""{s}_content['{var}'] = st.text_input(f":orange[{s}/{i}/**{var}**]")""")
-                                        environment = Environment(loader=FileSystemLoader(f"{path_templates_interfaces}"))
-                                        template = environment.get_template(f"{s}.j2")
-                                        content= template.render(eval(f"{s}_content"))
-                                        if i==0:
-                                            str_interfaces_pre += "\n" + content
-                                        else:
-                                            content1 = "\n".join(content.split("\n")[1:])
-                                            str_interfaces_pre += "\n" + content1
-                with col2:
-                    for s in list_interfaces_templates[index_list_interfaces_templates+1:len(list_interfaces_templates)]:
-                        with st.container(border= True):
-                            exec(f"{s}_cb = st.checkbox(':orange[**{s}**]')")
-                            if eval(f"{s}_cb"):
-                                exec(f"num_{s} = st.number_input(':orange[*Number {s}*]', value=1)")
-                                for i in eval(f"range(num_{s})"):
-                                    with st.popover(f":blue[{s}_{i}]", use_container_width=True):
-                                        exec(f"list_var_{i} = get_variables_jinja_file(f'{path_templates_interfaces}/{s}.j2')")
-                                        exec(f"{s}_content = dict()")
-                                        for var in eval(f"list_var_{i}"):
-                                            if var.endswith('interface'):
-                                                with st.container(border= True):
-                                                    st.write(f":orange[{s}/{i}/**{var}**]")
-                                                    with st.container(border= True):
-                                                        col_int1, col_int2 = st.columns([1.2,1])
-                                                        with col_int1:
-                                                            interface = st.selectbox(f":green[interface]", find_interface(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd']), key =f"{s}/{var}/{i}/interface" )
-                                                        with col_int2:
-                                                            # vlan = st.text_input(f":green[vlan]", key=f"{s}/{var}/{i}/vlan")
-                                                            vlan = st.selectbox(f":green[vlan]", find_unused_vlans(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd'], interface),key=f"{s}/{var}/{i}/vlan")
-                                                if vlan == "":
-                                                    exec(f"""{s}_content['{var}']= interface """)
-                                                else:
-                                                    exec(f"""{s}_content['{var}']= interface +'.'+ vlan""")
-                                            else:
-                                                with st.container(border= True):
-                                                    exec(f"""{s}_content['{var}'] = st.text_input(f":orange[{s}/{i}/**{var}**]")""")
-                                        environment = Environment(loader=FileSystemLoader(f"{path_templates_interfaces}"))
-                                        template = environment.get_template(f"{s}.j2")
-                                        content= template.render(eval(f"{s}_content"))
-                                        if i==0:
-                                            str_interfaces_pre += "\n" + content
-                                        else:
-                                            content1 = "\n".join(content.split("\n")[1:])
-                                            str_interfaces_pre += "\n" + content1
-            str_interfaces_pre1 = "\n  ".join(str_interfaces_pre.split("\n")[0:])
-            str_interfaces = "interfaces:"+ str_interfaces_pre1
-            # st.code(str_interfaces)
-            with st.container(border= True):
-                st.write(':violet[**STREAMS ENABLE**]')
-                str_streams_pre=""
-                list_streams_templates = list(dict_streams_templates.keys())
-                index_list_streams_templates = int(len(list_streams_templates)/2)
-                col1, col2 = st.columns([1,1])
-                with col1:
-                    for s in list_streams_templates[0:index_list_streams_templates+1]:
-                        with st.container(border= True):
-                            exec(f"{s}_cb = st.checkbox(':orange[**{s}**]')")
-                            if eval(f"{s}_cb"):
-                                exec(f"num_{s} = st.number_input(':orange[*Number {s}*]', value=1)")
-                                for i in eval(f"range(num_{s})"):
-                                    with st.popover(f":blue[{s}_{i}]", use_container_width=True):
-                                        exec(f"list_var_{i} = get_variables_jinja_file(f'{path_templates_streams}/{s}.j2')")
-                                        exec(f"{s}_content = dict()")
-                                        for var in eval(f"list_var_{i}"):
-                                            exec(f"""{s}_content['{var}'] = st.text_input(f":orange[{s}/stream_{i}/**{var}**]")""")
-                                        environment = Environment(loader=FileSystemLoader(f"{path_templates_streams}"))
-                                        template = environment.get_template(f"{s}.j2")
-                                        content= template.render(eval(f"{s}_content"))
-                                        str_streams_pre += "\n" + content
-                with col2:
-                    for s in list_streams_templates[index_list_streams_templates+1:len(list_streams_templates)]:
-                        with st.container(border= True):
-                            exec(f"{s}_cb = st.checkbox(':orange[**{s}**]')")
-                            if eval(f"{s}_cb"):
-                                exec(f"num_{s} = st.number_input(':orange[*Number {s}*]', value=1)")
-                                for i in eval(f"range(num_{s})"):
-                                    with st.popover(f":blue[{s}_{i}]", use_container_width=True):
-                                        exec(f"list_var_{i} = get_variables_jinja_file(f'{path_templates_streams}/{s}.j2')")
-                                        exec(f"{s}_content = dict()")
-                                        for var in eval(f"list_var_{i}"):
-                                            exec(f"""{s}_content['{var}'] = st.text_input(f":orange[{s}/stream_{i}/**{var}**]")""")
-                                        environment = Environment(loader=FileSystemLoader(f"{path_templates_streams}"))
-                                        template = environment.get_template(f"{s}.j2")
-                                        content= template.render(eval(f"{s}_content"))
-                                        str_streams_pre += "\n" + content
-            str_streams = "streams:"+ str_streams_pre     
-            with col24:
-                with st.container(border= True):
-                    st.write(':violet[**OR IMPORT YOUR VARIABLES WITH YAML FORMAT**]')
-                    dict_export_file={}
-                    with st.container(border= True):
-                        data_import = st.file_uploader(":orange[CHOOSE YOUR YAML FILE]", accept_multiple_files=False, disabled= st.session_state.create_instance)
-                        if data_import:
-                            # if data_import.name[-4:] == '.yml' or data_import.name[-5:] == '.yaml':
-                            stringio = StringIO(data_import.getvalue().decode("utf-8"))
-                            string_data = stringio.read()
-                            try:
-                                convert_yaml = yaml.load(string_data, Loader=yaml.FullLoader)
-                            except Exception as e:
-                                st.error(f"Can not read yaml content, check error {e}")
-                            # st.write(list(convert_yaml.keys())[0])
-                            if list(convert_yaml.keys())[0] == instance_name: 
-                                dict_input = convert_yaml.get(instance_name)
-                                # st.write(import_dict_input)
-                                if '' not in dict_input.values():
-                                    if set(list_var).issubset(set(list(dict_input.keys()))):
-                                        # Pop items no need
-                                        pop=[]
-                                        for e in list(dict_input.keys()):
-                                            if e not in list_var:
-                                                pop.append(e)
-                                        for i in range(len(pop)):
-                                            dict_input.pop(pop[i])
-                                        dict_input['template']= select_template # Save mapping config: template
-                                        st.info(':blue[Import variables successfully]', icon="🔥")
-                                        log_authorize(st.session_state.user,blaster_server['ip'], 'IMPORT yaml file')
-                                    else:
-                                        list_var_lack= set(list_var).difference(set(list(dict_input.keys())))
-                                        st.error(f'Data lack of vars **{list_var_lack}**', icon="🚨")
-                                else:
-                                    st.error('Have values empty', icon="🚨")
-                            else:
-                                st.error('Could not change intance-name', icon="🚨")
-                            # else:
-                            #     st.error('Upload file with .yaml or .yml , please. No accept other types ', icon="🚨")
-                    if instance_name:
-                        dict_export_file[instance_name] = dict_input
-                        st.download_button(':material/schema: DATA_FORMAT', '---\n'+yaml.dump(dict_export_file, indent = 2, encoding= None), disabled= st.session_state.create_instance)
-            with st.popover(":material/visibility: :green[**REVIEW**]", use_container_width=True):
-                environment = Environment(loader=FileSystemLoader(f"{path_templates}"))
-                template = environment.get_template(f"{select_template}")
-                if str_streams== "streams:":
-                    if str_interfaces =="interfaces:":
-                        review_content= template.render(dict_input)
-                    else:
-                        review_content= template.render(dict_input) + '\n' + str_interfaces
-                else:
-                    if str_interfaces =="interfaces:":
-                        review_content= template.render(dict_input) + '\n' + str_streams
-                    else:
-                        review_content= template.render(dict_input) + '\n' + str_interfaces + '\n' + str_streams
-                    # review_content= template.render(dict_input) + '\n' + str_streams
-                st.code(review_content)
-            if st.button(':material/add: **CREATE INSTANCE**', type= 'primary', disabled = st.session_state.create_instance):
-                st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4,st.session_state.p5= False,False, True, False, False
-                # if "" not in dict_input.values():
-                if len(list(dict_check.keys())) == 0:
-                    environment = Environment(loader=FileSystemLoader(f"{path_templates}"))
-                    template = environment.get_template(f"{select_template}")
-                    if str_streams== "streams:":
-                        if str_interfaces =="interfaces:":
-                            content= template.render(dict_input)
-                        else:
-                            content= template.render(dict_input) + '\n' + str_interfaces
-                    else:
-                        if str_interfaces =="interfaces:":
-                            content= template.render(dict_input) + '\n' + str_streams
-                        else:
-                            content= template.render(dict_input) + '\n' + str_interfaces + '\n' + str_streams
-                    with open('%s/%s.json'%(path_configs,instance_name), mode= 'w', encoding= 'utf-8') as config:
-                        # config.write(content)
-                        json.dump(yaml.safe_load(content), config, indent=2)
-                    dict_data, dict_data_input={}, {} # Build dict of data
-                    for i in dict_input.keys():
-                        dict_data_input.update({i: dict_input[i]})
-                    dict_data_input['template']= select_template # Save mapping config: template
-                    dict_data[instance_name]= dict_data_input
-                    with open('%s/%s.yml'%(path_configs,instance_name), mode= 'w', encoding= 'utf-8') as file_data:
-                        file_data.write('---\n')
-                        file_data.write(yaml.dump(dict_data))
-                        file_data.write('\n')
-                    if str_streams != "streams:":
-                        with open('%s/%s_streams.yml'%(path_configs,instance_name), mode= 'w', encoding= 'utf-8') as file_data_streams:
-                            file_data_streams.write('---\n')
-                            file_data_streams.write(str_streams)
-                    if str_interfaces != "interfaces:":
-                        with open('%s/%s_interfaces.yml'%(path_configs,instance_name), mode= 'w', encoding= 'utf-8') as file_data_interfaces:
-                            file_data_interfaces.write('---\n')
-                            file_data_interfaces.write(str_interfaces)
-                    st.info(':blue[Create successfully]', icon="🔥")
-                    log_authorize(st.session_state.user,blaster_server['ip'], f'CREATE intance {instance_name}')
-                    time.sleep(3)
-                    st.rerun()
-                else:
-                    for i in dict_check.keys():
-                        st.error(f'Input **{i}** wrong, check IP format before create, please', icon="🚨")    
-    with tab3:
-        with st.container(border= True):
-            st.subheader(':sunny: :green[**MODIFY YOUR CONFIG**]')
-            st.write(':violet[**YOUR INSTANCE NAME**]')
-            st.session_state.edit_instance= False
-            edit_list_var=[]
-            with st.container(border=True):
-                edit_instance= st.selectbox(':orange[Select your instance for modifing]?', list_instance, placeholder = 'Select one instance')
-                log_authorize(st.session_state.user,blaster_server['ip'], f'Edit config {edit_instance}')
-            if os.path.exists('%s/%s.yml'%(path_configs,edit_instance)):
-                try:
-                    with open("%s/%s.yml"%(path_configs,edit_instance) , 'r') as file_data:
-                        config_data = yaml.load(file_data, Loader=yaml.FullLoader)
-                        edit_template= config_data[edit_instance]['template']
-                        edit_list_var = get_variables_jinja_file(f'{path_templates}/{edit_template}')
-                        edit_list_var.sort()
-                except Exception as ex:
-                    st.error(f"Can not load data file {ex}")
-                edit_dict_input={}
-                if edit_list_var:
-                    st.write(':violet[**EDIT YOUR PROTOCOLS VARIABLE BELOW**]')
-                    index=int(len(edit_list_var)/3)
-                    with st.container(border= True):
-                        col1, col2, col3 = st.columns([1,1,1])
-                        with col1:
-                            with st.container(border= True):
-                                for i in edit_list_var[0:index+1]:
-                                    exec(f"""edit_dict_input['{i}'] = st.text_input(f':orange[Modify **{i}**] ',config_data['{edit_instance}']['{i}'], placeholder = f'Typing {i}')""")
-                        with col2:
-                            with st.container(border= True):
-                                for i in edit_list_var[index+1:2*index+1]:
-                                    exec(f"""edit_dict_input['{i}'] = st.text_input(f':orange[Modify **{i}**] ',config_data['{edit_instance}']['{i}'], placeholder = f'Typing {i}')""")
-                        with col3:
-                            with st.container(border= True):
-                                for i in edit_list_var[2*index+1:len(edit_list_var)]:
-                                    exec(f"""edit_dict_input['{i}'] = st.text_input(f':orange[Modify **{i}**] ',config_data['{edit_instance}']['{i}'], placeholder = f'Typing {i}')""") 
-                else:
-                    print('Can not load jinja template')
-            else:
-                with open("%s/%s.json"%(path_configs,edit_instance) , 'r') as edit_config_data:
-                    edit_json_raw= edit_config_data.read()
-                with st.container(border=True):
-                    edit_json= st_ace(
-                        value= edit_json_raw,
-                        language= 'json', 
-                        theme= '', 
-                        show_gutter= True, 
-                        keybinding='vscode', 
-                        auto_update= True, 
-                        placeholder= '*Edit your config*')
-                col141, col151, col161 = st.columns([1,4,1])
-                with col141:
-                    if st.button(':material/save: **SAVE**', type= 'primary', use_container_width=True):
-                        st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False,False, True, False, False
-                        try: 
-                            json.loads(edit_json)
-                            with open("%s/%s.json"%(path_configs,edit_instance) , 'w') as after_edit_json:
-                                json.dump(json.loads(edit_json), after_edit_json, indent=2)
-                                st.toast(':blue[Save instance **%s** successfully]'%edit_instance, icon="🔥")
-                        except Exception as e:
-                            st.error('Error json %s'%e, icon="🚨")
-                with col161:
-                    if st.button(':material/delete: **DELETE**', use_container_width=True):
-                        st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, True, False, False
-                        delete_config(path_configs, edit_instance)
-                if edit_json != "":
-                    with st.popover(":green[**:material/preview: REVIEW JSON**]", use_container_width=True):
-                        # st.json(yaml.safe_load(edit_content))
-                        st.code(json.dumps(json.loads(edit_json), indent=2))
-            if os.path.exists('%s/%s_interfaces.yml'%(path_configs,edit_instance)):
-                with open('%s/%s_interfaces.yml'%(path_configs,edit_instance), mode= 'r') as interfaces:
-                    edit_interfaces_input= yaml.safe_load(interfaces.read())
-                edit_list_key_interfaces = list(edit_interfaces_input['interfaces'].keys())
-                if len(edit_interfaces_input['interfaces']) == 0 :
-                    st.write("interfaces null")
-                else:
-                    dict_edit_interfaces ={}
-                    st.write(f':violet[**EDIT INTERFACES VARIABLE BELOW**]')
-                    with st.container(border= True):
-                        index_int = int(len(edit_list_key_interfaces)/2)
-                        # st.write(edit_list_key_interfaces)
-                        col1, col2= st.columns([1,1])
-                        with col1:
-                            for key in edit_list_key_interfaces[0:index_int+1]:
-                                if check_key_value_is_list(edit_interfaces_input['interfaces'], key):
-                                    exec(f"edit_interfaces_{key} = []")
-                                    with st.container(border= True):
-                                        st.write(f':green[**interfaces/{key}**]')
-                                        for i in range(len(edit_interfaces_input['interfaces'][key])):
-                                            temp_edit_interfaces ={}
-                                            with st.popover(f":orange[interfaces_{key}_{i}]", use_container_width=True):
-                                                list_input= edit_interfaces_input['interfaces'][key][i].keys()
-                                                for j in list_input:
-                                                    exec(f"""temp_edit_interfaces['{j}'] = st.text_input(f":orange[interaces_{key}_{i}]/:orange[**{j}**]", edit_interfaces_input['interfaces'][key][i]['{j}'])""")
-                                            eval(f"edit_interfaces_{key}.append(temp_edit_interfaces)")
-                                            if i == (len(edit_interfaces_input['interfaces'][key])-1):
-                                                ###### Convert value of interface value to int #############################
-                                                for k in eval(f"edit_interfaces_{key}"):
-                                                    list_keys = list(k.keys())
-                                                    for n in list_keys:
-                                                        try:
-                                                            temp=int(k[n])
-                                                            k[n] = temp
-                                                        except:
-                                                            pass
-                                                        if (k[n]== 'True') or (k[n]== 'true'):
-                                                            k[n] = True
-                                                        if (k[n]== 'False') or (k[n]== 'false'):
-                                                            k[n] = False
-                                                exec(f"dict_edit_interfaces[key] = edit_interfaces_{key}")
-                                else:
-                                    # key_convert= key.replace('-','_')
-                                    with st.container(border= True):
-                                        st.write(f':green[**interfaces/{key}**]')
-                                        with st.popover(f":orange[interfaces_{key}]", use_container_width=True):
-                                            temp_edit_interfaces = st.text_input(f":orange[interfaces_{key}]", edit_interfaces_input['interfaces'][key])
-                                        try:
-                                            temp_edit_interfaces= int(temp_edit_interfaces)
-                                        except:
-                                            pass
-                                        if isinstance(edit_interfaces_input['interfaces'][key], float):
-                                            try:
-                                                temp_edit_interfaces= float(temp_edit_interfaces)
-                                            except:
-                                                pass
-                                        dict_edit_interfaces[key] = temp_edit_interfaces
-                        with col2:
-                            for key in edit_list_key_interfaces[index_int+1:len(edit_list_key_interfaces)]:
-                                if check_key_value_is_list(edit_interfaces_input['interfaces'],key):
-                                    exec(f"edit_interfaces_{key} = []")
-                                    with st.container(border= True):
-                                        st.write(f':green[**interfaces/{key}**]')
-                                        for i in range(len(edit_interfaces_input['interfaces'][key])):
-                                            temp_edit_interfaces ={}
-                                            with st.popover(f":orange[interfaces_{key}_{i}]", use_container_width=True):
-                                                list_input= edit_interfaces_input['interfaces'][key][i].keys()
-                                                for j in list_input:
-                                                    exec(f"""temp_edit_interfaces['{j}'] = st.text_input(f":orange[interaces_{key}_{i}]/:orange[**{j}**]", edit_interfaces_input['interfaces'][key][i]['{j}'])""")
-                                            eval(f"edit_interfaces_{key}.append(temp_edit_interfaces)")
-                                            if i == (len(edit_interfaces_input['interfaces'][key])-1):
-                                                ###### Convert value of interface value to int #############################
-                                                for k in eval(f"edit_interfaces_{key}"):
-                                                    list_keys = list(k.keys())
-                                                    for n in list_keys:
-                                                        try:
-                                                            temp=int(k[n])
-                                                            k[n] = temp
-                                                        except:
-                                                            pass
-                                                        if (k[n]== 'True') or (k[n]== 'true'):
-                                                            k[n] = True
-                                                        if (k[n]== 'False') or (k[n]== 'false'):
-                                                            k[n] = False
-                                                exec(f"dict_edit_interfaces[key] = edit_interfaces_{key}")
-                                else:
-                                    # key_convert= key.replace('-','_')
-                                    with st.container(border= True):
-                                        st.write(f':green[**interfaces/{key}**]')
-                                        with st.popover(f":orange[interfaces_{key}]", use_container_width=True):
-                                            temp_edit_interfaces = st.text_input(f":orange[interfaces_{key}]", edit_interfaces_input['interfaces'][key])
-                                        try:
-                                            temp_edit_interfaces= int(temp_edit_interfaces)
-                                        except:
-                                            pass
-                                        if isinstance(edit_interfaces_input['interfaces'][key], float):
-                                            try:
-                                                temp_edit_interfaces= float(temp_edit_interfaces)
-                                            except:
-                                                pass
-                                        dict_edit_interfaces[key] = temp_edit_interfaces
-                        # st.write(dict_edit_interfaces)
-            if os.path.exists('%s/%s_streams.yml'%(path_configs,edit_instance)):
-                # st.divider()
-                with open('%s/%s_streams.yml'%(path_configs,edit_instance), mode= 'r') as streams:
-                    edit_streams_input= yaml.safe_load(streams.read())
-                # st.write(edit_streams_input['streams'])
-                if len(edit_streams_input['streams']) == 0 :
-                    st.write("streams null")
-                else:
-                    edit_streams = []
-                    st.write(':violet[**EDIT STREAMS VARIABLE BELOW**]')
-                    with st.container(border= True):
-                        index_col = int(len(edit_streams_input['streams'])/2)
-                        col1, col2= st.columns([1,1])
-                        with col1:
-                            for i in range(0,index_col+1):
-                                temp_edit_streams ={}
-                                with st.popover(f":orange[stream_{i}]", use_container_width=True):
-                                    list_input= edit_streams_input['streams'][i].keys()
-                                    for j in list_input:
-                                        exec(f"""temp_edit_streams['{j}'] = st.text_input(f":orange[streams_{i}]/:orange[**{j}**]", edit_streams_input['streams'][i]['{j}'])""")
-                                edit_streams.append(temp_edit_streams)
-                        with col2:
-                            for i in range(index_col+1,len(edit_streams_input['streams'])):
-                                temp_edit_streams ={}
-                                with st.popover(f":orange[stream_{i}]", use_container_width=True):
-                                    list_input= edit_streams_input['streams'][i].keys()
-                                    for j in list_input:
-                                        exec(f"""temp_edit_streams['{j}'] = st.text_input(f":orange[streams_{i}]/:orange[**{j}**]", edit_streams_input['streams'][i]['{j}'])""")
-                                edit_streams.append(temp_edit_streams)
-                ###### Convert value of streams to int #############################
-                for i in edit_streams:
-                    list_keys = list(i.keys())
-                    for j in list_keys:
-                        try:
-                            temp=int(i[j])
-                            i[j] = temp
-                        except:
-                            continue
-                # st.write(edit_streams)
-            st.divider()
-            edit_content=""
-            col14, col15, col16 = st.columns([1,4,1])
-            if os.path.exists('%s/%s.yml'%(path_configs,edit_instance)):
-                with col14:
-                    if st.button(':material/save: **SAVE**', type= 'primary', disabled = st.session_state.edit_instance, use_container_width=True):
-                        st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False,False, True, False, False
-                        if "" not in edit_dict_input.values():
-                            streams_save={}
-                            interfaces_save={}
-                            if os.path.exists('%s/%s_streams.yml'%(path_configs,edit_instance)):
-                                streams_save['streams']= edit_streams
-                            if os.path.exists('%s/%s_interfaces.yml'%(path_configs,edit_instance)):
-                                interfaces_save['interfaces']= dict_edit_interfaces
-                            # Render config from Jinja file
-                            environment = Environment(loader=FileSystemLoader(f"{path_templates}"))
-                            template = environment.get_template(f"{config_data[edit_instance]['template']}")
-                            edit_content = template.render(edit_dict_input)
-                            ### Save new config
-                            with open('%s/%s.json'%(path_configs,edit_instance), mode= 'w', encoding= 'utf-8') as edit_config:
-                                if os.path.exists('%s/%s_streams.yml'%(path_configs,edit_instance)):
-                                    if os.path.exists('%s/%s_interfaces.yml'%(path_configs,edit_instance)):
-                                        edit_content += "\n" + yaml.dump(streams_save) + "\n" +yaml.dump(interfaces_save)
-                                    else:
-                                        edit_content += "\n" + yaml.dump(streams_save)
-                                else:
-                                    if os.path.exists('%s/%s_interfaces.yml'%(path_configs,edit_instance)):
-                                        edit_content += "\n" +yaml.dump(interfaces_save)
-                                json.dump(yaml.safe_load(edit_content), edit_config, indent=2)
-                            save_dict_data, save_dict_data_input={}, {} # Build dict of data
-                            for i in edit_dict_input.keys():
-                                save_dict_data_input.update({i: edit_dict_input[i]})
-                            save_dict_data_input['template']= config_data[edit_instance]['template'] # Save mapping config: template
-                            save_dict_data[edit_instance]= save_dict_data_input
-                            ### Save data instance to yaml
-                            with open('%s/%s.yml'%(path_configs,edit_instance), mode= 'w', encoding= 'utf-8') as data:
-                                data.write('---\n')
-                                data.write(yaml.dump(save_dict_data))
-                                data.write('\n')
-                            ### Save interfaces to yaml
-                            if os.path.exists('%s/%s_interfaces.yml'%(path_configs,edit_instance)):
-                                with open('%s/%s_interfaces.yml'%(path_configs,edit_instance), mode= 'w', encoding= 'utf-8') as interfaces_data:
-                                    interfaces_data.write('---\n')
-                                    interfaces_data.write(yaml.dump(interfaces_save))
-                            ### Save streams to yaml
-                            if os.path.exists('%s/%s_streams.yml'%(path_configs,edit_instance)):
-                                with open('%s/%s_streams.yml'%(path_configs,edit_instance), mode= 'w', encoding= 'utf-8') as streams_data:
-                                    streams_data.write('---\n')
-                                    streams_data.write(yaml.dump(streams_save))
-                            st.toast(':blue[Save instance %s successfully]'%edit_instance, icon="🔥")
-                            log_authorize(st.session_state.user,blaster_server['ip'], f'Edit and save instance {edit_instance}')
-                        else:
-                            st.toast(':red[Have parameters empty, fill us before save, please]', icon="🚨")
-                with col16:
-                    if st.button(':material/delete: **DELETE**', use_container_width=True):
-                        st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, True, False, False
-                        delete_config(path_configs, edit_instance)
-                if edit_content != "":
-                    with st.popover(":green[**REVIEW**]", use_container_width=True):
-                        # st.json(yaml.safe_load(edit_content))
-                        st.code(edit_content)
-    if dict_user_db[st.session_state.user] == 'admin' or dict_user_db[st.session_state.user] == 'admin1':
-        with tab5:
-            with st.container(border= True):
-                st.subheader(':sunny: :green[YOUR SELECTION]')
-                import_radio = st.radio(
-                    ":violet[SELECT KIND OF TEMPLATES BELOW]",
-                    [":orange[PROTOCOLS]", ":orange[INTERFACES]", ":orange[STREAMS]"],
-                    index=None,
-                )
-            if import_radio == ":orange[PROTOCOLS]":
-                col1_template, col2_template = st.columns([1.25,1])
-                with col2_template:
-                    with st.container(border=True, height=630):
-                        st.subheader(':desktop_computer: :green[IMPORT PROTOCOLS TEMPLATE]')
-                        st.write(':violet[Upload protocols template]')
-                        protocols_file_import = st.file_uploader("Choose a Template file", accept_multiple_files=False)
-                        if protocols_file_import:
-                            if protocols_file_import.name[-3:] == '.j2':
-                                stringio = StringIO(protocols_file_import.getvalue().decode("utf-8"))
-                                string_data = stringio.read() 
-                                if protocols_file_import.name not in list_templates:
-                                    with open(f"{path_templates}/{protocols_file_import.name}", 'w') as jinja:
-                                        jinja.write(string_data)
-                                        st.info(':blue[Upload template %s successfully]'%protocols_file_import.name, icon="🔥")
-                                        log_authorize(st.session_state.user,blaster_server['ip'], f'Import protocols template file {protocols_file_import.name}')
-                                else:
-                                    st.error('Duplicate name file, change your file name and try again', icon="🚨")
-                            else:
-                                st.error('Upload file with .j2 , please. No accept other types ', icon="🚨")
-                        else:
-                            st.info(':blue[Select file upload]', icon="🔥")
-                with col1_template:
-                    with st.container(border=True):
-                        st.subheader(':memo: :green[EDIT PROTOCOLS TEMPLATE]')
-                        template_edit = st.selectbox(':orange[Select your template for editing]?', list_templates, placeholder = 'Select one template')
-                        with open(f"{path_templates}/{template_edit}", "r") as view:
-                            cont1= view.read()
-                        with st.container(border=True):
-                            edit_template_text = st_ace(
-                            value= cont1,
-                            language= 'yaml', 
-                            theme= '', 
-                            show_gutter= True, 
-                            keybinding='vscode', 
-                            auto_update= False, 
-                            placeholder= '*Edit your template*',
-                            height=350)
-                        col100, col101, col102 =st.columns([1,2,1])
-                        with col100:
-                            if st.button(":material/save: SAVE", type = 'primary', use_container_width= True):
-                                with open(f"{path_templates}/{template_edit}", "w") as write:
-                                    write.write(edit_template_text)
-                                st.toast(f':blue[Save your template **{template_edit}** successfully]', icon="🔥")
-                        with col102:
-                            if st.button(":material/delete: DELETE", use_container_width= True):
-                                os.remove(f"{path_templates}/{template_edit}")
-                                st.info(':blue[Delete successfully]', icon="🔥")
-                                st.rerun()
-            if import_radio == ":orange[INTERFACES]":
-                col1_template, col2_template = st.columns([1.25,1])
-                with col2_template:
-                    with st.container(border=True, height=630):
-                        st.subheader(':desktop_computer: :green[IMPORT INTERFACES TEMPLATE]')
-                        st.write(':violet[Upload interfaces template]')
-                        protocols_file_import = st.file_uploader("Choose a Template file", accept_multiple_files=False)
-                        if protocols_file_import:
-                            if protocols_file_import.name[-3:] == '.j2':
-                                stringio = StringIO(protocols_file_import.getvalue().decode("utf-8"))
-                                string_data = stringio.read() 
-                                if protocols_file_import.name not in list_templates:
-                                    with open(f"{path_templates_interfaces}/{protocols_file_import.name}", 'w') as jinja:
-                                        jinja.write(string_data)
-                                        st.info(':blue[Upload template %s successfully]'%protocols_file_import.name, icon="🔥")
-                                        log_authorize(st.session_state.user,blaster_server['ip'], f'Import interfaces template file {protocols_file_import.name}')
-                                else:
-                                    st.error('Duplicate name file, change your file name and try again', icon="🚨")
-                            else:
-                                st.error('Upload file with .j2 , please. No accept other types ', icon="🚨")
-                        else:
-                            st.info(':blue[Select file upload]', icon="🔥")
-                with col1_template:
-                    with st.container(border=True):
-                        st.subheader(':memo: :green[EDIT INTERFACES TEMPLATE]')
-                        template_edit = st.selectbox(':orange[Select your template for editing]?', list_interfaces, placeholder = 'Select one template')
-                        with open(f"{path_templates_interfaces}/{template_edit}.j2", "r") as view:
-                            cont1= view.read()
-                        with st.container(border=True):
-                            edit_template_text = st_ace(
-                            value= cont1,
-                            language= 'yaml', 
-                            theme= '', 
-                            show_gutter= True, 
-                            keybinding='vscode', 
-                            auto_update= False, 
-                            placeholder= '*Edit your template*',
-                            height=350)
-                        col100, col101, col102 =st.columns([1,2,1])
-                        with col100:
-                            if st.button("SAVE", type = 'primary', use_container_width= True):
-                                with open(f"{path_templates_interfaces}/{template_edit}.j2", "w") as write:
-                                    write.write(edit_template_text)
-                                st.toast(f':blue[Save your template **{template_edit}** successfully]', icon="🔥")
-                        with col102:
-                            if st.button(":material/delete: DELETE", use_container_width= True):
-                                os.remove(f"{path_templates_interfaces}/{template_edit}.j2")
-                                st.info(':blue[Delete successfully]', icon="🔥")
-                                st.rerun()
-            if import_radio == ":orange[STREAMS]":
-                col1_template, col2_template = st.columns([1.25,1])
-                with col2_template:
-                    with st.container(border=True, height=630):
-                        st.subheader(':desktop_computer: :green[IMPORT STREAMS TEMPLATE]')
-                        st.write(':violet[Upload streams template]')
-                        streams_file_import = st.file_uploader("Choose a Template file", accept_multiple_files=False)
-                        if streams_file_import:
-                            if streams_file_import.name[-3:] == '.j2':
-                                stringio = StringIO(streams_file_import.getvalue().decode("utf-8"))
-                                string_data = stringio.read() 
-                                if streams_file_import.name not in list_templates:
-                                    with open(f"{path_templates_streams}/{streams_file_import.name}", 'w') as jinja:
-                                        jinja.write(string_data)
-                                        st.info(':blue[Upload template %s successfully]'%streams_file_import.name, icon="🔥")
-                                        log_authorize(st.session_state.user,blaster_server['ip'], f'Import template file {streams_file_import.name}')
-                                else:
-                                    st.error('Duplicate name file, change your file name and try again', icon="🚨")
-                            else:
-                                st.error('Upload file with .j2 , please. No accept other types ', icon="🚨")
-                        else:
-                            st.info(':blue[Select file upload]', icon="🔥")
-                with col1_template:
-                    with st.container(border=True):
-                        st.subheader(':memo: :green[EDIT STREAMS TEMPLATE]')
-                        template_edit = st.selectbox(':orange[Select your template for editing]?', list_streams_templates, placeholder = 'Select one template')
-                        with open(f"{path_templates_streams}/{template_edit}.j2", "r") as view:
-                            cont1= view.read()
-                        with st.container(border=True):
-                            edit_template_text = st_ace(
-                            value= cont1,
-                            language= 'yaml', 
-                            theme= '', 
-                            show_gutter= True, 
-                            keybinding='vscode', 
-                            auto_update= False, 
-                            placeholder= '*Edit your template*',
-                            height=350)
-                        col100, col101, col102 =st.columns([1,2,1])
-                        with col100:
-                            if st.button(":material/save: SAVE", use_container_width=True, type = 'primary'):
-                                with open(f"{path_templates_streams}/{template_edit}.j2", "w") as write:
-                                    write.write(edit_template_text)
-                                st.toast(f':blue[Save your template **{template_edit}** successfully]', icon="🔥")
-                        with col102:
-                            if st.button(":material/delete: DELETE", use_container_width= True):
-                                os.remove(f"{path_templates_streams}/{template_edit}.j2")
-                                st.info(':blue[Delete successfully]', icon="🔥")
-                                st.rerun()
-            if import_radio == ":orange[PROTOCOLS]":
-                with st.container(border= True):
-                    st.subheader(':package: :green[BUILD YOUR PROTOCOLS TEMPLATE]')
-                    # st.write(list_part)
-                    output_str=""
-                    st.write(":violet[Select your pieces of your template]")
-                    with st.container(border=True):
-                        col1_temp, col2_temp = st.columns([1,1])
-                        index_temp = int(len(list_part)/2)
-                        with col1_temp:
-                            for i in list_part[0:index_temp+1]:
-                                with st.container(border=True):
-                                    if eval(f"st.checkbox(':orange[**{i}**]')"):
-                                        with eval(f"st.expander(':green[Edit **{i}** pieces]')"):
-                                            add_part= st_ace(
-                                            value= dict_element_config[i],
-                                            language= 'yaml', 
-                                            theme= '', 
-                                            show_gutter= True, 
-                                            keybinding='vscode', 
-                                            auto_update= False, 
-                                            placeholder= '*Edit your template*', 
-                                            height= 300,
-                                            key= list_part.index(i))
-                                            #########################################
-                                            output_str += '\n' + add_part
-                        with col2_temp:
-                            for i in list_part[index_temp+1:len(list_part)+1]:
-                                with st.container(border=True):
-                                    if eval(f"st.checkbox(':orange[**{i}**]')"):
-                                        with eval(f"st.expander(':green[Edit **{i}** pieces]')"):
-                                            add_part= st_ace(
-                                            value= dict_element_config[i],
-                                            language= 'yaml', 
-                                            theme= '', 
-                                            show_gutter= True, 
-                                            keybinding='vscode', 
-                                            auto_update= False, 
-                                            placeholder= '*Edit your template*', 
-                                            height= 300,
-                                            key= list_part.index(i))
-                                            #########################################
-                                            output_str += '\n' + add_part
-                        name_template = st.text_input(':violet[Input your name of new template]')
-                        if (f"{name_template}.j2") in list_templates:
-                            st.error('Name existed, try other name', icon="🚨")
-                            st.session_state.save_template= True
-                        else:
-                            if name_template == "":
-                                st.warning("Name can not null", icon="🔥")
-                                st.session_state.save_template= True
-                            else:
-                                if is_valid_name_instance(name_template):
-                                    st.info("You can use this name", icon="🔥")
-                                    st.session_state.save_template= False
-                                else:
-                                    st.warning("Name wrong syntax", icon="🔥")
-                                    st.session_state.save_template= True
-                    if st.button(":material/save: **SAVE**", type= 'primary', disabled= st.session_state.save_template):
-                        if output_str != "":
-                            with open(f"{path_templates}/{name_template}.j2", 'w') as file:
-                                file.write(output_str)
-                            st.code(output_str)
-                        else:
-                            st.error("Select above first", icon="🚨")
-            if import_radio == ":orange[INTERFACES]":
-                with st.container(border= True):
-                    st.subheader(':package: :green[BUILD YOUR INTERFACES TEMPLATE]')
-                    # st.write(list_interfaces)
-                    output_str=""
-                    st.write(":violet[Select your pieces of your template]")
-                    with st.container(border=True):
-                        col1_temp, col2_temp = st.columns([1,1])
-                        index_temp = int(len(list_interfaces)/2)
-                        with col1_temp:
-                            for i in list_interfaces[0:index_temp+1]:
-                                with st.container(border=True):
-                                    if eval(f"st.checkbox(':orange[**{i}**]', key='{i}')"):
-                                        with eval(f"st.expander(':green[Edit **{i}** pieces]')"):
-                                            add_part= st_ace(
-                                            value= dict_interfaces_templates[i],
-                                            language= 'yaml', 
-                                            theme= '', 
-                                            show_gutter= True, 
-                                            keybinding='vscode', 
-                                            auto_update= False, 
-                                            placeholder= '*Edit your template*', 
-                                            height= 300,
-                                            key= list_interfaces.index(i))
-                                            #########################################
-                                            output_str += '\n' + add_part
-                        with col2_temp:
-                            for i in list_interfaces[index_temp+1:len(list_interfaces)+1]:
-                                with st.container(border=True):
-                                    if eval(f"st.checkbox(':orange[**{i}**]', key='{i}')"):
-                                        with eval(f"st.expander(':green[Edit **{i}** pieces]')"):
-                                            add_part= st_ace(
-                                            value= dict_interfaces_templates[i],
-                                            language= 'yaml', 
-                                            theme= '', 
-                                            show_gutter= True, 
-                                            keybinding='vscode', 
-                                            auto_update= False, 
-                                            placeholder= '*Edit your template*', 
-                                            height= 300,
-                                            key= list_interfaces.index(i))
-                                            #########################################
-                                            output_str += '\n' + add_part
-                        name_template = st.text_input(':violet[Input your name of new template]')
-                        if (f"{name_template}") in list_interfaces:
-                            st.error('Name existed, try other name', icon="🚨")
-                            st.session_state.save_template= True
-                        else:
-                            if name_template == "":
-                                st.warning("Name can not null", icon="🔥")
-                                st.session_state.save_template= True
-                            else:
-                                if is_valid_name_instance(name_template):
-                                    st.info("You can use this name", icon="🔥")
-                                    st.session_state.save_template= False
-                                else:
-                                    st.warning("Name wrong syntax", icon="🔥")
-                                    st.session_state.save_template= True
-                    if st.button(":material/save: **SAVE**", type= 'primary', disabled= st.session_state.save_template):
-                        if output_str != "":
-                            with open(f"{path_templates_interfaces}/{name_template}.j2", 'w') as file:
-                                file.write(output_str)
-                            st.code(output_str)
-                        else:
-                            st.error("Select above first", icon="🚨")
-            if import_radio == ":orange[STREAMS]":
-                with st.container(border= True):
-                    st.subheader(':package: :green[BUILD YOUR STREAMS TEMPLATE]')
-                    # st.write(list_part)
-                    streams_output_str=""
-                    st.write(":violet[Select your pieces of your template]")
-                    with st.container(border=True):
-                        col1_temp, col2_temp = st.columns([1,1])
-                        index_temp = int(len(list_streams)/2)
-                        with col1_temp:
-                            for i in list_streams[0:index_temp+1]:
-                                with st.container(border=True):
-                                    if eval(f"st.checkbox(':orange[.**{i}**]')"):
-                                        with eval(f"st.expander(':green[Edit **{i}** pieces]')"):
-                                            add_part= st_ace(
-                                            value= dict_streams_templates[i],
-                                            language= 'yaml', 
-                                            theme= '', 
-                                            show_gutter= True, 
-                                            keybinding='vscode', 
-                                            auto_update= False, 
-                                            placeholder= '*Edit your template*', 
-                                            height= 300,
-                                            key= list_streams.index(i))
-                                            #########################################
-                                            streams_output_str += '\n' + add_part
-                        with col2_temp:
-                            for i in list_streams[index_temp+1:len(list_streams)+1]:
-                                with st.container(border=True):
-                                    if eval(f"st.checkbox(':orange[.**{i}**]')"):
-                                        with eval(f"st.expander(':green[Edit **{i}** pieces]')"):
-                                            add_part= st_ace(
-                                            value= dict_streams_templates[i],
-                                            language= 'yaml', 
-                                            theme= '', 
-                                            show_gutter= True, 
-                                            keybinding='vscode', 
-                                            auto_update= False, 
-                                            placeholder= '*Edit your template*', 
-                                            height= 300,
-                                            key= list_streams.index(i))
-                                            #########################################
-                                            streams_output_str += '\n' + add_part
-                        name_template = st.text_input(':violet[Input your name of new template]',"streams_")
-                        if (f"{name_template}.j2") in list_streams:
-                            st.error('Name existed, try other name', icon="🚨")
-                            st.session_state.save_template= True
-                        else:
-                            if name_template == "streams_":
-                                st.warning("Typing your name", icon="🔥")
-                                st.session_state.save_template= True
-                            else:
-                                if is_valid_name_instance(name_template):
-                                    st.info("You can use this name", icon="🔥")
-                                    st.session_state.save_template= False
-                                else:
-                                    st.warning("Name wrong syntax", icon="🔥")
-                                    st.session_state.save_template= True
-                    if st.button(":material/save: **SAVE**", type= 'primary', disabled= st.session_state.save_template):
-                        if streams_output_str != "":
-                            with open(f"{path_templates_streams}/{name_template}.j2", 'w') as file:
-                                file.write(streams_output_str)
-                            st.code(streams_output_str)
-                        else:
-                            st.error("Select above first", icon="🚨")
-    with tab4:
         col1, col2 = st.columns([2,2])
         with col1:
             with st.container(border=True):
@@ -2228,136 +2707,380 @@ if st.session_state.p3:
                         if is_valid_name_instance(name_json_config):
                             # st.write(name_json_config)
                             if (name_json_config+'.json') not in list_json:
-                                try:
-                                    export_yaml= yaml.dump(input_json)
-                                    with col2:
+                                # try:
+                                # export_yaml= yaml.dump(input_json)
+                                with col2:
+                                    with st.container(border=True):
+                                        st.write("**:violet[3. EDIT CONFIG]**")
                                         with st.container(border=True):
-                                            st.write("**:violet[3. EDIT CONFIG]**")
-                                            with st.container(border=True):
-                                                convert_json= st_ace(
-                                                value= export_yaml,
-                                                language= 'yaml', 
-                                                theme= '', 
-                                                show_gutter= True, 
-                                                keybinding='vscode', 
-                                                auto_update= True, 
-                                                placeholder= '*Edit your config*')
-                                            if st.button("SAVE CONFIG", type= 'primary', use_container_width= True):
-                                                with open('%s/%s.json'%(path_configs,name_json_config), mode= 'w', encoding= 'utf-8') as json_config:
-                                                    json.dump(yaml.safe_load(convert_json), json_config, indent=2)
-                                                st.success("Config save successfully", icon="🔥")
-                                                log_authorize(st.session_state.user,blaster_server['ip'], f'Create new json {name_json_config}')
-                                except Exception as e:
-                                    with col2:
-                                        st.error(f"Can not yaml dump content, check error {e}", icon="🚨")
+                                            convert_json= st_ace(
+                                            value= json.dumps(input_json, indent=2),
+                                            language= 'json', 
+                                            theme= '', 
+                                            show_gutter= True, 
+                                            keybinding='vscode', 
+                                            auto_update= True, 
+                                            placeholder= '*Edit your config*')
+                                        if st.button("SAVE CONFIG", type= 'primary', use_container_width= True):
+                                            with open('%s/%s.json'%(path_configs,name_json_config), mode= 'w', encoding= 'utf-8') as json_config:
+                                                json.dump(json.loads(convert_json), json_config, indent=2)
+                                            # This code for convert json to template yaml
+                                            import_paths=list_all_paths(input_json)
+                                            with open('all_conf.yml', 'r') as file_template:
+                                                try:
+                                                    data=yaml.safe_load(file_template) # This dict is library of bngblaster
+                                                except yaml.YAMLError as exc:
+                                                    st.error(exc)
+                                            new_dict_import=copy_dict_with_empty_values(input_json)
+                                            for i in import_paths:
+                                                var_access=''
+                                                var_access_data=''
+                                                for e in i:
+                                                    if isinstance(e,int):
+                                                        var_access+= "[%s]"%e
+                                                        if int(e) == 0:
+                                                            var_access_data+= "[%s]"%e
+                                                        else:
+                                                            var_access_data+= "[0]"
+                                                    else:
+                                                        var_access+= "['%s']"%e
+                                                        var_access_data+= "['%s']"%e
+                                                exec("new_dict_import%s=copy.deepcopy(data%s)"%(var_access,var_access_data))
+                                                exec("new_dict_import%s['__value']=input_json%s"%(var_access,var_access))
+                                                if eval("new_dict_import%s['__widget'] == 'customize'"%(var_access)):
+                                                    exec("new_dict_import%s['__widget']='text_input'"%(var_access))
+                                            # Write to template file
+                                            write_dict_to_yaml(new_dict_import,'%s/%s.yml'%(path_configs,name_json_config))
+                                            st.success("Config save successfully", icon="🔥")
+                                            log_authorize(st.session_state.user,blaster_server['ip'], f'Create new json {name_json_config}')
+                                # except Exception as e:
+                                #     with col2:
+                                #         st.error(f"Can not yaml dump content, check error {e}", icon="🚨")
                             else:
                                 st.error('Name existed', icon="🚨")
                         else:
                             st.error('Name empty or wrong syntax', icon="🚨")
                     except Exception as e:
-                        st.error(f"Can not read json content, check error {e}", icon="🚨")
+                        with col2:
+                            st.error(f"Can not read json content, check error {e}", icon="🚨")
                     # st.write(list_json)
                 else:
                     st.error('Import File', icon="🚨")
     with tab1:
         with st.container(border= True):
-            st.subheader(':sunny: :green[**CREATE YOUR CONFIG**]')
+            col1,col2,col3=st.columns([1.5,1,1])
+            with col2:
+                choice = st.radio(
+                    ":violet[:material/call_split: **SELECT FOR CREATE OR EDIT**]",
+                    [":green[:material/note_add: **CREATE**]", ":green[:material/edit_note: **EDIT**]"],
+                    index=None,
+                    horizontal=True
+                )
+        if choice== ":green[:material/note_add: **CREATE**]": 
             with st.container(border= True):
-                st.write(':violet[**:material/account_circle: YOUR INSTANCE NAME**]')
-                with st.container(border=True):
-                    select_instance_name = st.text_input(':orange[Name of your instance] ', placeholder = 'Typing your instance name', key='create_by_selection')
-                    if is_valid_name_instance(select_instance_name):
-                        if select_instance_name + '.json' not in list_json:
-                            st.info(':blue[Your instance\'s name can be use]', icon="🔥")
-                            st.session_state.create_instance= False
+                enable= False
+                st.subheader(':sunny: :green[**CREATE YOUR CONFIG**]')
+                with st.container(border= True):
+                    st.write(':violet[**:material/account_circle: YOUR INSTANCE NAME**]')
+                    with st.container(border=True):
+                        select_instance_name = st.text_input(':orange[Name of your instance] ', placeholder = 'Typing your instance name', key='create_by_selection')
+                        if is_valid_name_instance(select_instance_name):
+                            if select_instance_name + '.json' not in list_json:
+                                st.info(':blue[Your instance\'s name can be use]', icon="🔥")
+                                st.session_state.create_instance= False
+                                enable= True # Var for display when name instance valid
+                            else:
+                                st.error('Your instance was duplicate, choose other name', icon="🚨")
                         else:
-                            st.error('Your instance was duplicate, choose other name', icon="🚨")
-                    else:
-                        st.error('Instance name is null or wrong syntax', icon="🔥")
-            with open('all_conf.yaml', 'r') as file_template:
-                try:
-                    data=yaml.safe_load(file_template) # This dict is library of bngblaster
-                except yaml.YAMLError as exc:
-                    st.error(exc)
-            load_data=copy_dict_with_empty_values(data) # This dict is library of bngblaster
-            dict_var={} # Var for save value from UI
-            ##################### Value of columns dynamic to deep elements of dict ######################
-            _, num_col= find_deepest_element(data)
-            var_col=""
-            for i in range(num_col):
-                if i == (num_col-1):
-                    var_col += "col%s"%i
-                else:
-                    var_col += "col%s"%i + ','
-            x=''
-            for i in range(num_col):
-                if i == 0:
-                    x += "0.8"
-                else:
-                    x += ",1"
-            x='[%s]'%x # This var for modify scale column
-            exec("%s =st.columns(%s, border=True)"%(var_col,x))
-            with col0:
-                st.write(":violet[:material/account_tree: **[BNGBlaster Configs]**]")
-                dict_selection_part_UI(data,"", 0)
-            # st.write(dict_var)
-            if dict_var:
-                #For process len(list of dict)
-                for i,v in dict_var.items(): 
-                    if "num_" in i:
-                        path_ext= i.split("num_")[1]
-                        path= path_ext.split('___')
-                        path.remove("")
-                        for k in path:
-                            if k.find('_') != -1:
-                                path[path.index(k)]=k.replace('_','-')
-                        str_path=""
-                        for o in path:
-                            if isinstance(o, int):
-                                str_path += "[%s]"%o
+                            st.error('Instance name is null or wrong syntax', icon="🔥")
+                if enable:
+                    with open('all_conf.yml', 'r') as file_template:
+                        try:
+                            data=yaml.safe_load(file_template) # This dict is library of bngblaster
+                        except yaml.YAMLError as exc:
+                            st.error(exc)
+                    load_data=copy_dict_with_empty_values(data) # This dict to export json config
+                    dict_var={} # Var for save value from UI (define before dict_selection_part_UI_new())
+                    ##################### Value of columns dynamic to deep elements of dict ######################
+                    _, num_col= find_deepest_element(data)
+                    num_col = num_col - 2 # Adjust number column for display UI
+                    var_col=""
+                    for i in range(num_col):
+                        if i == (num_col-1):
+                            var_col += "col%s"%i
+                        else:
+                            var_col += "col%s"%i + ','
+                    x=''
+                    for i in range(num_col):
+                        if i == 0:
+                            x += "0.8"
+                        else:
+                            x += ",1"
+                    x='[%s]'%x # This var for modify scale column
+                    exec("%s =st.columns(%s, border=True)"%(var_col,x))
+                    with col0:
+                        st.write(":violet[:material/account_tree: **[BNGBlaster Configs]**]")
+                        dict_selection_part_UI_new(data=data, key_up_level="", number_column=0)
+                    # st.write(dict_var)
+                    if dict_var:
+                        #For process len(list of dict)
+                        for i,v in dict_var.items(): 
+                            if "num_" in i:
+                                path_ext= i.split("num_")[1]
+                                path= path_ext.split('___')
+                                path.remove("")
+                                for k in path:
+                                    if k.find('_') != -1:
+                                        path[path.index(k)]=k.replace('_','-')
+                                str_path=""
+                                for o in path:
+                                    if isinstance(o, int):
+                                        str_path += "[%s]"%o
+                                    else:
+                                        str_path += "['%s']"%o
+                                for u in range(v-1):
+                                    exec("copy%s = data%s"%(u, str_path))
+                                    exec("temp_data = copy.deepcopy(copy%s)"%(u))
+                                    exec("copy_empty= copy_dict_with_empty_values(copy%s)"%u)
+                                    exec("load_data%s.extend(copy_empty)"%(str_path)) # Extend number element list of dict
+                                    exec("data%s.extend(temp_data)"%(str_path))
+                        #For process input of elements UI
+                        path_save=[]
+                        for i,v in dict_var.items(): 
+                            if "num_" not in i:
+                                path= i.split('___')
+                                path.remove("")
+                                path_save.append(path)
+                                for k in path:
+                                    if k.find('_') != -1:
+                                        path[path.index(k)]=k.replace('_','-')
+                                    try:
+                                        path[path.index(k)]=int(k)
+                                    except Exception as e:
+                                        # print(e)
+                                        continue
+                                str_path=""
+                                for o in path:
+                                    if isinstance(o, int):
+                                        str_path += "[%s]"%o
+                                    else:
+                                        str_path += "['%s']"%o
+                                if isinstance(v, int) or isinstance(v, list):
+                                    exec("load_data%s= %s"%(str_path, v))
+                                else:
+                                    exec("load_data%s= '%s'"%(str_path, v))
+                                    
+                                if isinstance(v, int) or isinstance(v, list):
+                                    exec("data%s['__value']= %s"%(str_path, v))
+                                else:
+                                    exec("data%s['__value']= '%s'"%(str_path, v))
+                                # st.write("load_data%s= '%s'"%(str_path, v))
+                    for i in range(num_col+10): # For remove emptry dict, list, str
+                        pop_empty_structures(load_data)
+                    with st.popover(':green[**:material/visibility: REVIEW**]', use_container_width=True):
+                        convert_str_to_int(load_data)
+                        convert_str_to_bool(load_data)
+                        st.code(json.dumps(load_data, indent=2))
+                    if st.button(':material/add: **CREATE INSTANCE**', type= 'primary', disabled = st.session_state.create_instance, key= 'btn_create_by_selection'):
+                        st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4,st.session_state.p5= False,False, True, False, False
+                        # if "" not in dict_input.values():
+                        with open('%s/%s.json'%(path_configs,select_instance_name), mode= 'w', encoding= 'utf-8') as config:
+                            json.dump(load_data, config, indent=2)
+                        
+                        # Code save value to template for edit
+                        dict_save_for_edit=pick_elements_by_multipath(data, path_save)
+                        # Change __widget= customize to input_text
+                        # st.write(path_save)
+                        for path_widget in path_save:
+                            str_path=""
+                            for o in path_widget:
+                                if isinstance(o, int):
+                                    str_path += "[%s]"%o
+                                else:
+                                    str_path += "['%s']"%o
+                            if eval("dict_save_for_edit%s['__widget'] == 'customize'"%(str_path)):
+                                exec("dict_save_for_edit%s['__widget']= 'text_input'"%(str_path))
+                        # st.write(dict_save_for_edit)
+                        temp_dict_save_for_edit= json.dumps(dict_save_for_edit)
+                        write_dict_to_yaml(yaml.safe_load(temp_dict_save_for_edit),'%s/%s.yml'%(path_configs,select_instance_name))
+                        st.info(':blue[Create successfully]', icon="🔥")
+                        log_authorize(st.session_state.user,blaster_server['ip'], f'CREATE intance {select_instance_name}')
+                        time.sleep(3)
+                        st.rerun()
+        elif choice== ":green[:material/edit_note: **EDIT**]":
+            with st.container(border= True):
+                st.subheader(':sunny: :green[**MODIFY YOUR CONFIG**]')
+                st.write(':violet[**YOUR INSTANCE NAME**]')
+                st.session_state.edit_instance= False
+                edit_list_var=[]
+                with st.container(border=True):
+                    edit_instance= st.selectbox(':orange[Select your instance for modifing]?', list_instance, placeholder = 'Select one instance')
+                    log_authorize(st.session_state.user,blaster_server['ip'], f'Edit config {edit_instance}')
+                if os.path.exists('%s/%s.yml'%(path_configs,edit_instance)):
+                    with open('%s/%s.yml'%(path_configs,edit_instance), 'r') as file_template:
+                        try:
+                            data=yaml.safe_load(file_template) # This dict is library of bngblaster
+                        except yaml.YAMLError as exc:
+                            st.error(exc)
+                    load_data=copy_dict_with_empty_values(data) # This dict is library of bngblaster
+                    dict_var={} # Var for save value from UI
+                    ##################### Value of columns dynamic to deep elements of dict ######################
+                    _, num_col= find_deepest_element(load_data)
+                    var_col=""
+                    for i in range(num_col):
+                        if i == (num_col-1):
+                            var_col += "col%s"%i
+                        else:
+                            var_col += "col%s"%i + ','
+                    x=''
+                    for i in range(num_col):
+                        if i == 0:
+                            x += "0.8"
+                        else:
+                            x += ",1"
+                    x='[%s]'%x # This var for modify scale column
+                    exec("%s =st.columns(%s, border=True)"%(var_col,x))
+                    with col0:
+                        st.write(":violet[:material/account_tree: **[BNGBlaster Configs]**]")
+                        dict_selection_part_UI_edit(data=data,key_up_level="",number_column=0)
+                    # st.write(dict_var)
+                    if dict_var:
+                        #For process input of elements UI
+                        for i,v in dict_var.items(): 
+                            if "num_" not in i:
+                                path= i.split('___')
+                                path.remove("")
+                                # st.write(path)
+                                for k in path:
+                                    if k.find('_') != -1:
+                                        path[path.index(k)]=k.replace('_','-')
+                                    try:
+                                        path[path.index(k)]=int(k)
+                                    except Exception as e:
+                                        # print(e)
+                                        continue
+                                str_path=""
+                                for o in path:
+                                    if isinstance(o, int):
+                                        str_path += "[%s]"%o
+                                    else:
+                                        str_path += "['%s']"%o
+                                if isinstance(v, int) or isinstance(v, list):
+                                    exec("load_data%s= %s"%(str_path, v))
+                                else:
+                                    exec("load_data%s= '%s'"%(str_path, v))
+                                    
+                                if isinstance(v, int) or isinstance(v, list):
+                                    exec("data%s['__value']= %s"%(str_path, v))
+                                else:
+                                    exec("data%s['__value']= '%s'"%(str_path, v))
+                                # st.write("load_data%s= '%s'"%(str_path, v))
+                    for i in range(num_col+10): # For remove emptry dict, list, str
+                        pop_empty_structures(load_data)
+                    with st.popover(':green[**:material/visibility: REVIEW**]', use_container_width=True):
+                        convert_str_to_int(load_data)
+                        convert_str_to_bool(load_data)
+                        st.code(json.dumps(load_data, indent=2))
+                    st.divider()
+                    col14, col15, col16,col17 = st.columns([1,1,2,1])
+                    with col14:
+                        if st.button(':material/save: **SAVE**', type= 'primary', disabled = st.session_state.edit_instance, use_container_width=True):
+                            st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False,False, True, False, False
+                            ### Save new config
+                            with open('%s/%s.json'%(path_configs,edit_instance), mode= 'w', encoding= 'utf-8') as config:
+                                json.dump(load_data, config, indent=2)
+                            ### Save data instance to yaml
+                            write_dict_to_yaml(data,'%s/%s.yml'%(path_configs,edit_instance))
+
+                            st.toast(':blue[Save instance %s successfully]'%edit_instance, icon="🔥")
+                            log_authorize(st.session_state.user,blaster_server['ip'], f'Edit and save instance {edit_instance}')
+                    with col15:
+                        with st.popover(':material/content_copy: **CLONE**', use_container_width=True):
+                            new_name= st.text_input(f":orange[:material/add: Your instance name for cloning config: ]","", placeholder = "Fill your name")
+                            if is_valid_name_instance(new_name):
+                                if new_name + '.json' not in list_json:
+                                    # st.info(':blue[Your instance\'s name can be use.]', icon="🔥")
+                                    st.info(':blue[Use button below for saving.]', icon="🔥")
+                                    if st.button('**:material/done_outline:**', use_container_width=True):
+                                        # Clone json config
+                                        with open('%s/%s.json'%(path_configs,new_name), mode= 'w', encoding= 'utf-8') as config:
+                                            json.dump(load_data, config, indent=2)
+                                        # Clone template
+                                        write_dict_to_yaml(data,'%s/%s.yml'%(path_configs,new_name))
+                                        st.toast(':blue[Clone instance %s successfully]'%new_name, icon="🔥")
+                                        time.sleep(2)
+                                        st.rerun()
+                                else:
+                                    st.error('Your instance was duplicate, choose other name', icon="🚨")
                             else:
-                                str_path += "['%s']"%o
-                        for u in range(v-1):
-                            exec("copy%s = data%s"%(u, str_path))
-                            exec("copy_empty= copy_dict_with_empty_values(copy%s)"%u)
-                            exec("load_data%s.extend(copy_empty)"%(str_path)) # Extend number element list of dict
-                #For process input of elements UI
-                for i,v in dict_var.items(): 
-                    if "num_" not in i:
-                        path= i.split('___')
-                        path.remove("")
-                        # st.write(path)
-                        for k in path:
-                            if k.find('_') != -1:
-                                path[path.index(k)]=k.replace('_','-')
-                            try:
-                                path[path.index(k)]=int(k)
+                                st.error('Instance name is null or wrong syntax', icon="🔥")
+                    with col17:
+                        if st.button(':material/delete: **DELETE**', use_container_width=True):
+                            st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, True, False, False
+                            delete_config(path_configs, edit_instance)
+                else:
+                    with open("%s/%s.json"%(path_configs,edit_instance) , 'r') as edit_config_data:
+                        edit_json_raw= edit_config_data.read()
+                    with st.container(border=True):
+                        edit_json= st_ace(
+                            value= edit_json_raw,
+                            language= 'json', 
+                            theme= '', 
+                            show_gutter= True, 
+                            keybinding='vscode', 
+                            auto_update= True, 
+                            placeholder= '*Edit your config*')
+                    col141, col151, col161,col171 = st.columns([1,1,2,1])
+                    with col141:
+                        if st.button(':material/save: **SAVE**', type= 'primary', use_container_width=True):
+                            st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False,False, True, False, False
+                            try: 
+                                json.loads(edit_json)
+                                with open("%s/%s.json"%(path_configs,edit_instance) , 'w') as after_edit_json:
+                                    json.dump(json.loads(edit_json), after_edit_json, indent=2)
+                                    st.toast(':blue[Save instance **%s** successfully]'%edit_instance, icon="🔥")
                             except Exception as e:
-                                # print(e)
-                                continue
-                        str_path=""
-                        for o in path:
-                            if isinstance(o, int):
-                                str_path += "[%s]"%o
-                            else:
-                                str_path += "['%s']"%o
-                        exec("load_data%s= '%s'"%(str_path, v))
-                        # st.write("load_data%s= '%s'"%(str_path, v))
-            for i in range(num_col+1): # For remove emptry dict, list, str
-                pop_empty_structures(load_data)
-            with st.popover(':green[**:material/visibility: REVIEW**]', use_container_width=True):
-                convert_str_to_int(load_data)
-                convert_str_to_bool(load_data)
-                st.code(json.dumps(load_data, indent=2))
-            if st.button(':material/add: **CREATE INSTANCE**', type= 'primary', disabled = st.session_state.create_instance, key= 'btn_create_by_selection'):
-                st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4,st.session_state.p5= False,False, True, False, False
-                # if "" not in dict_input.values():
-                with open('%s/%s.json'%(path_configs,select_instance_name), mode= 'w', encoding= 'utf-8') as config:
-                    json.dump(load_data, config, indent=2)
-                st.info(':blue[Create successfully]', icon="🔥")
-                log_authorize(st.session_state.user,blaster_server['ip'], f'CREATE intance {instance_name}')
-                time.sleep(3)
-                st.rerun()
+                                st.error('Error json %s'%e, icon="🚨")
+                    with col151:
+                        if st.button(':material/change_circle: **CONVERT**', use_container_width=True):
+                            dict_edit= json.loads(edit_json)
+                            convert_paths=list_all_paths(dict_edit)
+                            with open('all_conf.yml', 'r') as file_template:
+                                try:
+                                    data=yaml.safe_load(file_template) # This dict is library of bngblaster
+                                except yaml.YAMLError as exc:
+                                    st.error(exc)
+                            new_dict_template=copy_dict_with_empty_values(dict_edit)
+                            for i in convert_paths:
+                                var_access=''
+                                var_access_data=''
+                                for e in i:
+                                    if isinstance(e,int):
+                                        var_access+= "[%s]"%e
+                                        if int(e) == 0:
+                                            var_access_data+= "[%s]"%e
+                                        else:
+                                            var_access_data+= "[0]"
+                                    else:
+                                        var_access+= "['%s']"%e
+                                        var_access_data+= "['%s']"%e
+                                exec("new_dict_template%s=copy.deepcopy(data%s)"%(var_access,var_access_data))
+                                exec("new_dict_template%s['__value']=dict_edit%s"%(var_access,var_access))
+                                if eval("new_dict_template%s['__widget'] == 'customize'"%(var_access)):
+                                    exec("new_dict_template%s['__widget']='text_input'"%(var_access))
+                            # Write to template file
+                            write_dict_to_yaml(new_dict_template,'%s/%s.yml'%(path_configs,edit_instance))
+                            st.toast(':blue[Convert config of **%s** successfully]'%edit_instance, icon="🔥")
+                            time.sleep(2)
+                            st.rerun()
+                    with col171:
+                        if st.button(':material/delete: **DELETE**', use_container_width=True):
+                            st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, True, False, False
+                            delete_config(path_configs, edit_instance)
+                    if edit_json != "":
+                        with st.popover(":green[**:material/preview: REVIEW JSON**]", use_container_width=True):
+                            # st.json(yaml.safe_load(edit_content))
+                            st.code(json.dumps(json.loads(edit_json), indent=2))
 if st.session_state.p4:
     st.title(':material/all_inclusive: :rainbow[RUN BLASTER]')
     col41, col42 ,col43 =st.columns([19,0.9,0.9])
