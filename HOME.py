@@ -2725,13 +2725,13 @@ if st.session_state.p3:
                                             with open('%s/%s.json'%(path_configs,name_json_config), mode= 'w', encoding= 'utf-8') as json_config:
                                                 json.dump(json.loads(convert_json), json_config, indent=2)
                                             # This code for convert json to template yaml
-                                            import_paths=list_all_paths(input_json)
+                                            import_paths=list_all_paths(json.loads(convert_json))
                                             with open('all_conf.yml', 'r') as file_template:
                                                 try:
                                                     data=yaml.safe_load(file_template) # This dict is library of bngblaster
                                                 except yaml.YAMLError as exc:
                                                     st.error(exc)
-                                            new_dict_import=copy_dict_with_empty_values(input_json)
+                                            new_dict_import=copy_dict_with_empty_values(json.loads(convert_json))
                                             for i in import_paths:
                                                 var_access=''
                                                 var_access_data=''
@@ -2746,7 +2746,7 @@ if st.session_state.p3:
                                                         var_access+= "['%s']"%e
                                                         var_access_data+= "['%s']"%e
                                                 exec("new_dict_import%s=copy.deepcopy(data%s)"%(var_access,var_access_data))
-                                                exec("new_dict_import%s['__value']=input_json%s"%(var_access,var_access))
+                                                exec("new_dict_import%s['__value']=json.loads(convert_json)%s"%(var_access,var_access))
                                                 if eval("new_dict_import%s['__widget'] == 'customize'"%(var_access)):
                                                     exec("new_dict_import%s['__widget']='text_input'"%(var_access))
                                             # Write to template file
@@ -3052,6 +3052,8 @@ if st.session_state.p3:
                                     st.error(exc)
                             new_dict_template=copy_dict_with_empty_values(dict_edit)
                             for i in convert_paths:
+                                if isinstance(i[-1],int):
+                                    i.pop(-1)
                                 var_access=''
                                 var_access_data=''
                                 for e in i:
