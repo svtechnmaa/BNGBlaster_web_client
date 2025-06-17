@@ -12,8 +12,8 @@ interfaces:
     __datatype: 'int'
     __options:
       __min: 1
-      __max: 5000
-      __step: 100
+      __max: 65535
+      __step: 10000
   io-burst:
     __label: 'interfaces/io-burst'
     __widget: 'number_input'
@@ -32,21 +32,21 @@ interfaces:
   tx-interval:
     __label: 'interfaces/tx-interval'
     __widget: 'number_input'
-    __value: 1
-    __datatype: 'int'
+    __value: 0.1
+    __datatype: 'float'
     __options:
-      __min: 1
-      __max: 1000
-      __step: 100
+      __min: 0.0001
+      __max: 1000.0
+      __step: 100.0
   rx-interval:
     __label: 'interfaces/rx-interval'
     __widget: 'number_input'
-    __value: 1
-    __datatype: 'int'
+    __value: 0.1
+    __datatype: 'float'
     __options:
-      __min: 1
-      __max: 1000
-      __step: 100
+      __min: 0.0001
+      __max: 1000.0
+      __step: 100.0
   tx-threads:
     __label: 'interfaces/tx-threads'
     __widget: 'slider'
@@ -132,7 +132,7 @@ interfaces:
       __widget: 'selectbox'
       __value: 'packet_mmap_raw'
       __datatype: 'str'
-      __options: [packet_mmap_raw,packet_mmap,raw]
+      __options: ['packet_mmap_raw','packet_mmap','raw']
     io-burst:
       __label: 'interfaces/links/io-burst'
       __widget: 'number_input'
@@ -149,8 +149,8 @@ interfaces:
       __datatype: 'int'
       __options:
         __min: 1
-        __max: 5000
-        __step: 100
+        __max: 65535
+        __step: 10000
     io-slots-tx:
       __label: 'interfaces/links/io-slots-tx'
       __widget: 'number_input'
@@ -863,16 +863,16 @@ sessions:
     __datatype: 'int'
     __options:
       __min: 1
-      __max: 1000
-      __step: 10
+      __max: 1000000
+      __step: 10000
   max-outstanding:
     __label: 'sessions/max-outstanding'
     __widget: 'number_input'
     __value: 800
     __datatype: 'int'
     __options:
-      __min: 800
-      __max: 1000
+      __min: 1
+      __max: 10000
       __step: 10
   start-rate:
     __label: 'sessions/start-rate'
@@ -880,18 +880,18 @@ sessions:
     __value: 400
     __datatype: 'int'
     __options:
-      __min: 100
-      __max: 500
-      __step: 10
+      __min: 1
+      __max: 40000
+      __step: 1000
   stop-rate:
     __label: 'sessions/stop-rate'
     __widget: 'number_input'
     __value: 400
     __datatype: 'int'
     __options:
-      __min: 100
-      __max: 500
-      __step: 10
+      __min: 1
+      __max: 40000
+      __step: 1000
   start-delay:
     __label: 'sessions/start-delay'
     __widget: 'number_input'
@@ -1630,8 +1630,8 @@ streams:
     __datatype: 'int'
     __options:
       __min: 0
-      __max: 1000
-      __step: 100
+      __max: 10000
+      __step: 1000
   type:
     __label: 'streams/type'
     __widget: 'selectbox'
@@ -1729,6 +1729,15 @@ streams:
     __value: ''
     __datatype: 'str'
     __options: []
+  Gbps:
+    __label: 'streams/Gbps'
+    __widget: 'number_input'
+    __value: 1.0
+    __datatype: 'float'
+    __options:
+      __min: 0.0
+      __max: 100.0
+      __step: 1.0
   pps-upstream:
     __label: 'streams/pps-upstream'
     __widget: 'text_input'
