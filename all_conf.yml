@@ -1656,7 +1656,7 @@ streams:
     __value: 65056
     __datatype: 'int'
     __options:
-      __min: 50000
+      __min: 10000
       __max: 65535
       __step: 1000
   destination-port:
@@ -1738,6 +1738,15 @@ streams:
       __min: 0.0
       __max: 100.0
       __step: 1.0
+  Mbps:
+    __label: 'streams/Mbps'
+    __widget: 'number_input'
+    __value: 1.0
+    __datatype: 'float'
+    __options:
+      __min: 0.0
+      __max: 1024.0
+      __step: 10.0
   pps-upstream:
     __label: 'streams/pps-upstream'
     __widget: 'text_input'
