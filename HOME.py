@@ -690,6 +690,24 @@ def CALL_API_BLASTER(server,port,instance, method, body, action=''):
         return response.status_code, response.content
     except Exception as e:
         print(f'Can not request API blaster server. Error {e}')
+def VERSION_BLASTER(server,port):
+    try:
+        # print(f'http://{server}:{port}/api/v1/instances/{instance}{action}')
+        response = requests.request('GET', f'http://{server}:{port}/api/v1/version')
+        # print(response.headers["Date"])
+        return response.status_code, response.content
+    except Exception as e:
+        print(f'Can not request API blaster server. Error {e}')        
+def UPLOAD_FILE_BLASTER(server, port, instance, file_path):
+    try:
+        with open(file_path, 'rb') as file:
+            response = requests.post(
+                f'http://{server}:{port}/api/v1/instances/{instance}/_upload',
+                files={'file': file}  # Use 'files' instead of 'form'
+            )
+        return response.status_code, response.content
+    except Exception as e:
+        print(f'Cannot request API blaster server. Error: {e}')
 def GET_ALL_INTANCES_BLASTER(server,port):
     try:
         # print(f'http://{server}:{port}/api/v1/instances/{instance}{action}')
@@ -704,6 +722,10 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
         bscol1, bscol2 = st.columns([1,2], border=True)
         with bscol1:
             st.subheader(f':sunny: :green[BNG-BLASTER [{ip}] STATUS]')
+            version_sc, version_ct = VERSION_BLASTER(blaster_server['ip'], blaster_server['port'])
+            if version_sc==200:
+                version = json.loads(version_ct)
+                st.write(":green[*:material/sunny_snowing: [BNGBlaster: V%s] [BNGBlasterCtrl: V%s] [%s]*]"%(version['bngblaster-version'], version['bngblasterctrl-version'], version['bngblaster-compiler']))
         with bscol2:
             # Note: dict_blaster_db_format is var global
             list_int_server = find_interface(ip, dict_blaster_db_format[ip]['user'], dict_blaster_db_format[ip]['passwd'])
@@ -1901,6 +1923,7 @@ if st.session_state.p3:
                     horizontal=True
                 )
         if choice== ":green[:material/note_add: **CREATE**]": 
+            log_authorize(st.session_state.user,blaster_server['ip'], 'Select CREATE')
             with st.container(border= True):
                 enable= False
                 st.subheader(':sunny: :green[**CREATE YOUR CONFIG**]')
@@ -2033,6 +2056,7 @@ if st.session_state.p3:
                         time.sleep(3)
                         st.rerun()
         elif choice== ":green[:material/edit_note: **EDIT**]":
+            log_authorize(st.session_state.user,blaster_server['ip'], 'Select EDIT')
             with st.container(border= True):
                 st.subheader(':sunny: :green[**MODIFY YOUR CONFIG**]')
                 st.write(':violet[**YOUR INSTANCE NAME**]')
@@ -2134,6 +2158,7 @@ if st.session_state.p3:
                                         # Clone template
                                         write_dict_to_yaml(data,'%s/%s.yml'%(path_configs,new_name))
                                         st.toast(':blue[Clone instance %s successfully]'%new_name, icon="🔥")
+                                        log_authorize(st.session_state.user,blaster_server['ip'], "Clone %s to %s"%(edit_instance,new_name))
                                         time.sleep(2)
                                         st.rerun()
                                 else:
@@ -2165,6 +2190,7 @@ if st.session_state.p3:
                                 with open("%s/%s.json"%(path_configs,edit_instance) , 'w') as after_edit_json:
                                     json.dump(json.loads(edit_json), after_edit_json, indent=2)
                                     st.toast(':blue[Save instance **%s** successfully]'%edit_instance, icon="🔥")
+                                    log_authorize(st.session_state.user,blaster_server['ip'], "Save instance %s"%(edit_instance))
                             except Exception as e:
                                 st.error('Error json %s'%e, icon="🚨")
                     with col151:
@@ -2206,6 +2232,7 @@ if st.session_state.p3:
                             # Write to template file
                             write_dict_to_yaml(new_dict_template,'%s/%s.yml'%(path_configs,edit_instance))
                             st.toast(':blue[Convert config of **%s** successfully]'%edit_instance, icon="🔥")
+                            log_authorize(st.session_state.user,blaster_server['ip'], "Convert config instance %s to yaml"%(edit_instance))
                             time.sleep(2)
                             st.rerun()
                     with col171:
@@ -2236,6 +2263,7 @@ if st.session_state.p4:
             with col19:
                 with st.container(border= True):
                     instance= st.selectbox(':orange[:material/done: Select your instance]?', list_instance, placeholder = 'Select one instance')
+                    instance_exist_st, instance_exist_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'GET', payload_start)
             with col20:
                 with st.popover(":blue[:material/visibility: **CONFIG**]", use_container_width=True):
                     st.info(":violet[Content of **%s.json**]"%instance, icon="🔥")
@@ -2259,7 +2287,36 @@ if st.session_state.p4:
                         st.info(':material/info: Instance **%s** use access interface *%s*'%(instance, temp_list_acc))
                     except Exception as e:
                         print('[RUN] Json config dont have network or access interface, error %s'%e)
-            instance_exist_st, instance_exist_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'GET', payload_start)
+                    if "started" not in str(instance_exist_ct):
+                        if 'bgp' in data_json.keys():
+                            if 'raw-update-file' in data_json['bgp'].keys():
+                                with st.container(border= True):
+                                    st.warning(':material/warning: Should have file **%s** before start instance **%s**'%(data_json['bgp']['raw-update-file'],instance))
+                                    with st.popover(":green[:material/data_saver_on: Create **raw-update-file**]", use_container_width=True):
+                                        with st.form("CREATE_FILE"):
+                                            prefix= st.text_input(f":orange[:material/add: Your prefix you want advertise: ]","", placeholder = "Fill your IP prefix")
+                                            num_prefix= st.text_input(f":orange[:material/add: Your number of prefixs you want advertise: ]","", placeholder = "Fill number")
+                                            submitted = st.form_submit_button(label= ":green[:material/send: **CREATE**]", use_container_width=True)
+                                            if submitted:
+                                                if "/" in prefix and prefix:
+                                                    name_bgp_update = data_json['bgp']['raw-update-file'].split('/')[-1]
+                                                    if prefix and num_prefix:
+                                                        result = subprocess.run(["bgpupdate","-f", "./bgp_update/%s"%name_bgp_update,"-a", f"{data_json['bgp']['local-as']}", "-n",data_json['bgp']['local-address'], "-p", prefix, "-P",num_prefix], capture_output=True, text=True)
+                                                        if 'error' not in str(result):
+                                                            # push_file_to_server_by_ftp(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd'],f"{path_bgp_update}/{name_bgp_update}.bgp", f"{data_json['bgp']['raw-update-file']}")
+                                                            upload_sc, upload_st = UPLOAD_FILE_BLASTER(blaster_server['ip'], blaster_server['port'], instance, f"{path_bgp_update}/{name_bgp_update}")
+                                                            # st.write(upload_sc, upload_st)
+                                                            if upload_sc == 200:
+                                                                st.info(':blue[Upload sucessfully]', icon="🔥")
+                                                            else:
+                                                                st.warning("Upload not sucessfully, Error %s"%upload_st, icon="🔥")
+                                                            log_authorize(st.session_state.user,blaster_server['ip'], f'Create file bgpupdate {prefix} num {num_prefix} instance {instance}')
+                                                        else:
+                                                            st.error(":violet[Wrong prefix]", icon="🔥")
+                                                    else:
+                                                        st.error(":violet[Fill prefix advertise above first]", icon="🔥")
+                                                else:
+                                                    st.error('Type your prefix with subnet mask, plz', icon="🚨")
             if "started" in str(instance_exist_ct):
                 st.session_state.button_start= True
                 st.session_state.button_stop= False
@@ -2268,9 +2325,10 @@ if st.session_state.p4:
                 if os.path.exists('%s/%s.yml'%(path_configs,instance)):
                     with open('%s/%s.yml'%(path_configs,instance), 'r') as file_temp:
                         run_template = yaml.load(file_temp, Loader=yaml.FullLoader)
-                    col17, col18 =st.columns([1,1])
                     if 'bgp' in run_template.keys():
                         if 'raw-update-file' in run_template['bgp'].keys():
+                            st.info(":green[**:material/route: BGP ROUTE UPDATE :material/expand_more:**]")
+                            col17, col18 =st.columns([1,1])
                             with col17:
                                 with st.form("ADVERTISE"):
                                     prefix= st.text_input(f":orange[:material/add: Your prefix you want advertise: ]","", placeholder = "Fill your IP prefix")
@@ -2283,19 +2341,28 @@ if st.session_state.p4:
                                             {
                                                 "command": "bgp-raw-update",
                                                 "arguments": {
-                                                    "file": "/var/bngblaster/uploads/%s.bgp"
+                                                    "file": "/var/bngblaster/%s/%s.bgp"
                                                 }
                                             }
-                                            """%name_bgp_update
+                                            """%(instance, name_bgp_update)
                                             if prefix and num_prefix:
                                                 # subprocess.run(["bgpupdate","-f", "%s.bgp"%instance,"-a", run_template[instance]['local_as'], "-n",run_template[instance]['bgp_local_address'], "-p", prefix, "-P",num_prefix,"-f", "withdraw.bgp","--withdraw"], capture_output=True, text=True)
-                                                result = subprocess.run(["bgpupdate","-f", "./bgp_update/%s.bgp"%name_bgp_update,"-a", run_template[instance]['bgp_local_as'], "-n",run_template[instance]['bgp_local_address'], "-p", prefix, "-P",num_prefix], capture_output=True, text=True)
+                                                # result = subprocess.run(["bgpupdate","-f", "./bgp_update/%s.bgp"%name_bgp_update,"-a", run_template[instance]['bgp_local_as'], "-n",run_template[instance]['bgp_local_address'], "-p", prefix, "-P",num_prefix], capture_output=True, text=True)
+                                                result= subprocess.run(["bgpupdate","-f", "./bgp_update/%s.bgp"%name_bgp_update,"-a", f"{data_json['bgp']['local-as']}", "-n",data_json['bgp']['local-address'], "-p", prefix, "-P",num_prefix], capture_output=True, text=True)
                                                 if 'error' not in str(result):
                                                     # send_file = push_file_to_server_rest_api(blaster_server['ip'], '5000', './bgp_update/%s.bgp'%name_bgp_update)
-                                                    push_file_to_server_by_ftp(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd'],f"{path_bgp_update}/{name_bgp_update}.bgp", f'/var/bngblaster/uploads/{name_bgp_update}.bgp')
+                                                    # push_file_to_server_by_ftp(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd'],f"{path_bgp_update}/{name_bgp_update}.bgp", f'/var/bngblaster/uploads/{name_bgp_update}.bgp')
+                                                    upload_sc, upload_st = UPLOAD_FILE_BLASTER(blaster_server['ip'], blaster_server['port'], instance, f"{path_bgp_update}/{name_bgp_update}.bgp")
+                                                    if upload_sc == 200:
+                                                        st.info(':blue[Upload file sucessfully]', icon="🔥")
+                                                    else:
+                                                        st.warning("Upload file not sucessfully, Error %s"%upload_st, icon="🔥")
                                                     adv_sc, adv_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'POST', payload_command_bgp_raw_update, '/_command')
-                                                    st.info(':blue[Advertise sucessfully]', icon="🔥")
-                                                    log_authorize(st.session_state.user,blaster_server['ip'], f'Advertise BGP route {prefix} num {num_prefix}')
+                                                    if adv_sc==200:
+                                                        st.info(':blue[Advertise route sucessfully]', icon="🔥")
+                                                        log_authorize(st.session_state.user,blaster_server['ip'], f'Advertise BGP route {prefix} num {num_prefix}')
+                                                    else:
+                                                        st.warning("Advertise route not sucessfully, Error %s"%adv_ct, icon="🔥")
                                                 else:
                                                     st.error(":violet[Wrong prefix]", icon="🔥")
                                             else:
@@ -2314,18 +2381,27 @@ if st.session_state.p4:
                                             {
                                                 "command": "bgp-raw-update",
                                                 "arguments": {
-                                                    "file": "/var/bngblaster/uploads/%s.bgp"
+                                                    "file": "/var/bngblaster/%s/%s.bgp"
                                                 }
                                             }
-                                            """%name_bgp_update_wd
+                                            """%(instance, name_bgp_update_wd)
                                             if prefix_wd and num_prefix_wd:
-                                                result_wd= subprocess.run(["bgpupdate","-a", run_template[instance]['bgp_local_as'], "-n",run_template[instance]['bgp_local_address'], "-p", prefix_wd, "-P",num_prefix_wd,"-f", "./bgp_update/%s.bgp"%name_bgp_update_wd,"--withdraw"], capture_output=True, text=True)
+                                                # result_wd= subprocess.run(["bgpupdate","-a", run_template[instance]['bgp_local_as'], "-n",run_template[instance]['bgp_local_address'], "-p", prefix_wd, "-P",num_prefix_wd,"-f", "./bgp_update/%s.bgp"%name_bgp_update_wd,"--withdraw"], capture_output=True, text=True)
+                                                result_wd= subprocess.run(["bgpupdate","-f", "./bgp_update/%s.bgp"%name_bgp_update_wd,"-a", f"{data_json['bgp']['local-as']}", "-n",data_json['bgp']['local-address'], "-p", prefix, "-P",num_prefix], capture_output=True, text=True)
                                                 if "error" not in str(result_wd):
                                                     # send_file_wd = push_file_to_server_rest_api(blaster_server['ip'], '5000', './bgp_update/%s.bgp'%name_bgp_update_wd)
-                                                    push_file_to_server_by_ftp(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']]['user'],dict_blaster_db_format[blaster_server['ip']]['passwd'] ,f"{path_bgp_update}/{name_bgp_update_wd}.bgp", f'/var/bngblaster/uploads/{name_bgp_update_wd}.bgp')
+                                                    # push_file_to_server_by_ftp(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']]['user'],dict_blaster_db_format[blaster_server['ip']]['passwd'] ,f"{path_bgp_update}/{name_bgp_update_wd}.bgp", f'/var/bngblaster/uploads/{name_bgp_update_wd}.bgp')
+                                                    upload_sc, upload_st = UPLOAD_FILE_BLASTER(blaster_server['ip'], blaster_server['port'], instance, f"{path_bgp_update}/{name_bgp_update_wd}.bgp")
+                                                    if upload_sc == 200:
+                                                        st.info(':blue[Upload file sucessfully]', icon="🔥")
+                                                    else:
+                                                        st.warning("Upload file not sucessfully, Error %s"%upload_st, icon="🔥")
                                                     wd_sc, wd_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'POST', payload_command_bgp_raw_update_wd, '/_command')
-                                                    st.info(':blue[Withdraw sucessfully]', icon="🔥")
-                                                    log_authorize(st.session_state.user,blaster_server['ip'], f'Withdraw BGP route {prefix_wd} num {num_prefix_wd}')
+                                                    if wd_sc==200:
+                                                        st.info(':blue[Withdraw sucessfully]', icon="🔥")
+                                                        log_authorize(st.session_state.user,blaster_server['ip'], f'Withdraw BGP route {prefix_wd} num {num_prefix_wd}')
+                                                    else:
+                                                        st.warning("Advertise route not sucessfully, Error %s"%wd_ct, icon="🔥")
                                                 else:
                                                     st.error(":violet[Wrong prefix]", icon="🔥")
                                             else:
@@ -2343,57 +2419,27 @@ if st.session_state.p4:
                             st.info("You can start this instance", icon="🔥")
             with col19:
                 if st.button('**START** :material/sound_sampler: ', type = 'primary',use_container_width=True, disabled= st.session_state.button_start):
-                    # Get list interface "ens" from config and send remote set bng-blaster server
-                    if os.path.exists('%s/%s_interfaces.yml'%(path_configs,instance)):
-                        with open(f"{path_configs}/{instance}_interfaces.yml", "r") as interfaces_set:
-                            data_set = yaml.safe_load(interfaces_set.read())
-                        list_int_key = list(data_set['interfaces'].keys())
-                        int_list =[]
-                        if len(list_int_key) == 1:
-                            for i in data_set['interfaces'][list_int_key[0]]:
-                                try:
-                                    int_list.append(i['interface'])
-                                except:
-                                    continue
-                        else:
-                            for type_int in list_int_key:
-                                if isinstance(data_set['interfaces'][type_int], list):
-                                    for i in data_set['interfaces'][type_int]:
-                                        try:
-                                            int_list.append(i['interface'])
-                                        except:
-                                            continue
-                                else:
-                                    continue
-                        for y in int_list:
-                            if "." in y:
-                                execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), "sudo modprobe 8021q")
-                                time.sleep(0.02)
-                                execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo ip link add link {y.split('.')[0]} name {y} type vlan id {y.split('.')[1]}")
-                                time.sleep(0.02)
-                                execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo ip link set dev {y} up")
-                    else:
-                        list_inf = []
-                        with open(f"{path_configs}/{instance}.json", "r") as json_run:
-                            val_json=json.load(json_run)
-                        try:
-                            for i in range(len(val_json['interfaces']['access'])):
-                                list_inf.append(val_json['interfaces']['access'][i]['interface'])
-                        except:
-                            pass
-                        try:
-                            for i in range(len(val_json['interfaces']['network'])):
-                                list_inf.append(val_json['interfaces']['network'][i]['interface'])
-                        except:
-                            pass
-                        for i in list_inf:
-                            if '.' in i:
-                                # st.toast(i)
-                                execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), "sudo -S modprobe 8021q")
-                                time.sleep(0.02)
-                                execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo -S ip link add link {i.split('.')[0]} name {i} type vlan id {i.split('.')[1]}")
-                                time.sleep(0.02)
-                                execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo -S ip link set dev {i} up")
+                    list_inf = []
+                    with open(f"{path_configs}/{instance}.json", "r") as json_run:
+                        val_json=json.load(json_run)
+                    try:
+                        for i in range(len(val_json['interfaces']['access'])):
+                            list_inf.append(val_json['interfaces']['access'][i]['interface'])
+                    except:
+                        pass
+                    try:
+                        for i in range(len(val_json['interfaces']['network'])):
+                            list_inf.append(val_json['interfaces']['network'][i]['interface'])
+                    except:
+                        pass
+                    for i in list_inf:
+                        if '.' in i:
+                            # st.toast(i)
+                            execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), "sudo -S modprobe 8021q")
+                            time.sleep(0.02)
+                            execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo -S ip link add link {i.split('.')[0]} name {i} type vlan id {i.split('.')[1]}")
+                            time.sleep(0.02)
+                            execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo -S ip link set dev {i} up")
                     try:
                         exist_sc, exist_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'GET', payload_start)
                         # st.write(exist_sc, exist_ct)
