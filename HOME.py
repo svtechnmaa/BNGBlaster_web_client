@@ -2491,10 +2491,28 @@ if st.session_state.p4:
                     
                     stop_pg = st.progress(0)
                     for percent_complete3 in range(100):
-                        time.sleep(0.04)
+                        time.sleep(0.004)
                         stop_pg.progress(percent_complete3 + 1, text= f':violet[{percent_complete3+1}%]')
+                    # time.sleep(1)
+                    list_inf = []
+                    with open(f"{path_configs}/{instance}.json", "r") as json_run:
+                        val_json=json.load(json_run)
+                    try:
+                        for i in range(len(val_json['interfaces']['access'])):
+                            list_inf.append(val_json['interfaces']['access'][i]['interface'])
+                    except:
+                        pass
+                    try:
+                        for i in range(len(val_json['interfaces']['network'])):
+                            list_inf.append(val_json['interfaces']['network'][i]['interface'])
+                    except:
+                        pass
+                    for i in list_inf:
+                        if '.' in i:
+                            # st.toast(i)
+                            execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo -S ip link delete link {i.split('.')[0]} name {i} type vlan id {i.split('.')[1]}")
+                            time.sleep(0.02)
                     st.info(":green[Stop successfully]", icon="🔥")
-                    time.sleep(1)
                     st.rerun()
     with col5:
         with st.container(border= True):
