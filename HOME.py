@@ -673,8 +673,8 @@ def delete_config(path_configs, instance):
                 os.remove(f"{path_configs}/{instance}_streams.yml")
             if os.path.exists('%s/%s_interfaces.yml'%(path_configs,instance)):
                 os.remove(f"{path_configs}/{instance}_interfaces.yml")
-            st.toast(':blue[Delete instance %s successfully]'%instance, icon="🔥")
-            log_authorize(st.session_state.user,blaster_server['ip'], f'DELETE instance {instance}')
+            st.toast(':blue[Delete test profile %s successfully]'%instance, icon="🔥")
+            log_authorize(st.session_state.user,blaster_server['ip'], f'DELETE test profile {instance}')
             time.sleep(1)
             st.rerun()
     with col2:
@@ -734,7 +734,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
         col_select, col_display= st.columns([1,2])
         with col_select:
             with st.container(border=True):
-                st.write(":fire: :violet[**INSTANCE RUNNING**]")
+                st.write(":fire: :violet[**TEST PROFILE RUNNING**]")
             with st.container(border=True, height= 400):   
                 select_running_instance={}
                 for i in list_instance_running_from_blaster:
@@ -744,7 +744,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                     with col112:
                         with st.popover(':orange[:material/access_time:]', use_container_width=True):
                         # with st.container(border=True):
-                            time_start = find_and_split_line_from_file('auth.log', 'RUN START instance %s'%i)
+                            time_start = find_and_split_line_from_file('auth.log', 'RUN START test profile %s'%i)
                             st.info(":blue[**:material/sound_sampler: LAST START**]")
                             try:
                                 st.write(":orange[ :material/sound_sampler: *%s*]"%time_start[0].split('_')[0:3])
@@ -752,7 +752,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                             except:
                                 st.write(":orange[ :material/sound_sampler: *None*]")
                                 st.write(":orange[ :material/dns: *None*]")
-                            time_stop = find_and_split_line_from_file('auth.log', 'RUN STOP instance %s'%i)
+                            time_stop = find_and_split_line_from_file('auth.log', 'RUN STOP test profile %s'%i)
                             st.info(":blue[**:material/stop_circle: LAST STOP**]")
                             try:
                                 st.write(":orange[ :material/stop_circle:*%s*]"%time_stop[0].split('_')[0:3])
@@ -764,12 +764,12 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                 for i in select_running_instance.keys():
                     if select_running_instance[i]:
                         select_running_instance_cb.append(i)    
-        with  st.expander(":material/graphic_eq: :violet[**INSTANCE EXISTED CONFIG**]"):
+        with  st.expander(":material/graphic_eq: :violet[**TEST PROFILE EXISTED CONFIG**]"):
             for i in list_instance_avail_from_blaster:
                 with st.container(border=True):
                     col1, col2= st.columns([1,1])
                     with col1:
-                        st.write(f":orange[**Instance :**] *{i}*")
+                        st.write(f":orange[**Profile :**] *{i}*")
                     with col2:
                         with st.popover(f":blue[:material/visibility: **CONFIG**]", use_container_width=True):
                             view_config_avail_sc,  view_config_avail_ct = CALL_API_BLASTER(ip, port, i, 'GET', payload_start, '/config.json')
@@ -778,7 +778,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                     config_avail = json.loads(view_config_avail_ct)
                                     st.code(json.dumps(config_avail, indent=2), language='json')
                                 except Exception as e:
-                                    st.error(':blue[Instance %s have json syntax error %s]'%(i,e), icon="🔥")
+                                    st.error(':blue[Test profile %s have json syntax error %s]'%(i,e), icon="🔥")
                                     continue
                 # st.dataframe(list_instance_avail_from_blaster, use_container_width= True)
                 # st.dataframe(list_instance_avail_from_blaster, use_container_width= True, column_config={"value": "instance-name"})
@@ -1773,7 +1773,7 @@ try:
                 list_instance_avail_from_blaster.pop(list_instance_avail_from_blaster.index("uploads"))
         log_authorize(st.session_state.user,blaster_server['ip'], f'Success get BNG-Blaster_{st.session_state.ip_blaster} info')
     else:
-        st.error('Can not get list-instance from server', icon="🚨")
+        st.error('Can not get list-profile from server', icon="🚨")
 except Exception as e:
     e1,e2,e3= st.columns([1,2,1])
     with e2:
@@ -1928,18 +1928,18 @@ if st.session_state.p3:
                 enable= False
                 st.subheader(':sunny: :green[**CREATE YOUR CONFIG**]')
                 with st.container(border= True):
-                    st.write(':violet[**:material/account_circle: YOUR INSTANCE NAME**]')
+                    st.write(':violet[**:material/account_circle: YOUR TEST PROFILE NAME**]')
                     with st.container(border=True):
-                        select_instance_name = st.text_input(':orange[Name of your instance] ', placeholder = 'Typing your instance name', key='create_by_selection')
+                        select_instance_name = st.text_input(':orange[Name of your test profile] ', placeholder = 'Typing your test profile name', key='create_by_selection')
                         if is_valid_name_instance(select_instance_name):
                             if select_instance_name + '.json' not in list_json:
-                                st.info(':blue[Your instance\'s name can be use]', icon="🔥")
+                                st.info(':blue[Your test profile\'s name can be use]', icon="🔥")
                                 st.session_state.create_instance= False
                                 enable= True # Var for display when name instance valid
                             else:
-                                st.error('Your instance was duplicate, choose other name', icon="🚨")
+                                st.error('Your test profile was duplicate, choose other name', icon="🚨")
                         else:
-                            st.error('Instance name is null or wrong syntax', icon="🔥")
+                            st.error('Test profile name is null or wrong syntax', icon="🔥")
                 if enable:
                     with open('all_conf.yml', 'r') as file_template:
                         try:
@@ -2029,7 +2029,7 @@ if st.session_state.p3:
                         convert_str_to_float(load_data)
                         convert_str_to_bool(load_data)
                         st.code(json.dumps(load_data, indent=2))
-                    if st.button(':material/add: **CREATE INSTANCE**', type= 'primary', disabled = st.session_state.create_instance, key= 'btn_create_by_selection'):
+                    if st.button(':material/add: **CREATE PROFILE**', type= 'primary', disabled = st.session_state.create_instance, key= 'btn_create_by_selection'):
                         st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4,st.session_state.p5= False,False, True, False, False
                         # if "" not in dict_input.values():
                         with open('%s/%s.json'%(path_configs,select_instance_name), mode= 'w', encoding= 'utf-8') as config:
@@ -2052,18 +2052,18 @@ if st.session_state.p3:
                         temp_dict_save_for_edit= json.dumps(dict_save_for_edit)
                         write_dict_to_yaml(yaml.safe_load(temp_dict_save_for_edit),'%s/%s.yml'%(path_configs,select_instance_name))
                         st.info(':blue[Create successfully]', icon="🔥")
-                        log_authorize(st.session_state.user,blaster_server['ip'], f'CREATE intance {select_instance_name}')
+                        log_authorize(st.session_state.user,blaster_server['ip'], f'CREATE test profile {select_instance_name}')
                         time.sleep(3)
                         st.rerun()
         elif choice== ":green[:material/edit_note: **EDIT**]":
             log_authorize(st.session_state.user,blaster_server['ip'], 'Select EDIT')
             with st.container(border= True):
                 st.subheader(':sunny: :green[**MODIFY YOUR CONFIG**]')
-                st.write(':violet[**YOUR INSTANCE NAME**]')
+                st.write(':violet[**YOUR TEST PROFILE NAME**]')
                 st.session_state.edit_instance= False
                 edit_list_var=[]
                 with st.container(border=True):
-                    edit_instance= st.selectbox(':orange[Select your instance for modifing]?', list_instance, placeholder = 'Select one instance')
+                    edit_instance= st.selectbox(':orange[Select your test profile for modifing]?', list_instance, placeholder = 'Select one test profile')
                     log_authorize(st.session_state.user,blaster_server['ip'], f'Edit config {edit_instance}')
                 if os.path.exists('%s/%s.yml'%(path_configs,edit_instance)):
                     with open('%s/%s.yml'%(path_configs,edit_instance), 'r') as file_template:
@@ -2142,11 +2142,11 @@ if st.session_state.p3:
                             ### Save data instance to yaml
                             write_dict_to_yaml(data,'%s/%s.yml'%(path_configs,edit_instance))
 
-                            st.toast(':blue[Save instance %s successfully]'%edit_instance, icon="🔥")
-                            log_authorize(st.session_state.user,blaster_server['ip'], f'Edit and save instance {edit_instance}')
+                            st.toast(':blue[Save test profile %s successfully]'%edit_instance, icon="🔥")
+                            log_authorize(st.session_state.user,blaster_server['ip'], f'Edit and save test profile {edit_instance}')
                     with col15:
                         with st.popover(':material/content_copy: **CLONE**', use_container_width=True):
-                            new_name= st.text_input(f":orange[:material/add: Your instance name for cloning config: ]","", placeholder = "Fill your name")
+                            new_name= st.text_input(f":orange[:material/add: Your test profile name for cloning config: ]","", placeholder = "Fill your name")
                             if is_valid_name_instance(new_name):
                                 if new_name + '.json' not in list_json:
                                     # st.info(':blue[Your instance\'s name can be use.]', icon="🔥")
@@ -2157,14 +2157,14 @@ if st.session_state.p3:
                                             json.dump(load_data, config, indent=2)
                                         # Clone template
                                         write_dict_to_yaml(data,'%s/%s.yml'%(path_configs,new_name))
-                                        st.toast(':blue[Clone instance %s successfully]'%new_name, icon="🔥")
+                                        st.toast(':blue[Clone test profile %s successfully]'%new_name, icon="🔥")
                                         log_authorize(st.session_state.user,blaster_server['ip'], "Clone %s to %s"%(edit_instance,new_name))
                                         time.sleep(2)
                                         st.rerun()
                                 else:
-                                    st.error('Your instance was duplicate, choose other name', icon="🚨")
+                                    st.error('Your test profile was duplicate, choose other name', icon="🚨")
                             else:
-                                st.error('Instance name is null or wrong syntax', icon="🔥")
+                                st.error('Test profile name is null or wrong syntax', icon="🔥")
                     with col17:
                         if st.button(':material/delete: **DELETE**', use_container_width=True):
                             st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, True, False, False
@@ -2189,8 +2189,8 @@ if st.session_state.p3:
                                 json.loads(edit_json)
                                 with open("%s/%s.json"%(path_configs,edit_instance) , 'w') as after_edit_json:
                                     json.dump(json.loads(edit_json), after_edit_json, indent=2)
-                                    st.toast(':blue[Save instance **%s** successfully]'%edit_instance, icon="🔥")
-                                    log_authorize(st.session_state.user,blaster_server['ip'], "Save instance %s"%(edit_instance))
+                                    st.toast(':blue[Save test profile **%s** successfully]'%edit_instance, icon="🔥")
+                                    log_authorize(st.session_state.user,blaster_server['ip'], "Save test profile %s"%(edit_instance))
                             except Exception as e:
                                 st.error('Error json %s'%e, icon="🚨")
                     with col151:
@@ -2232,7 +2232,7 @@ if st.session_state.p3:
                             # Write to template file
                             write_dict_to_yaml(new_dict_template,'%s/%s.yml'%(path_configs,edit_instance))
                             st.toast(':blue[Convert config of **%s** successfully]'%edit_instance, icon="🔥")
-                            log_authorize(st.session_state.user,blaster_server['ip'], "Convert config instance %s to yaml"%(edit_instance))
+                            log_authorize(st.session_state.user,blaster_server['ip'], "Convert config test profile %s to yaml"%(edit_instance))
                             time.sleep(2)
                             st.rerun()
                     with col171:
@@ -2262,7 +2262,7 @@ if st.session_state.p4:
             col19, col20 =st.columns([1.3,1])
             with col19:
                 with st.container(border= True):
-                    instance= st.selectbox(':orange[:material/done: Select your instance]?', list_instance, placeholder = 'Select one instance')
+                    instance= st.selectbox(':orange[:material/done: Select your test profile]?', list_instance, placeholder = 'Select one test profile')
                     instance_exist_st, instance_exist_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'GET', payload_start)
             with col20:
                 with st.popover(":blue[:material/visibility: **CONFIG**]", use_container_width=True):
@@ -2280,18 +2280,18 @@ if st.session_state.p4:
                         temp_list_nw=[]
                         for i in range(len(data_json['interfaces']['network'])):
                             temp_list_nw.append(data_json['interfaces']['network'][i]['interface'])
-                        st.info(':material/info: Instance **%s** use network interface *%s*'%(instance, temp_list_nw))
+                        st.info(':material/info: Test profile **%s** use network interface *%s*'%(instance, temp_list_nw))
                         temp_list_acc=[]
                         for i in range(len(data_json['interfaces']['access'])):
                             temp_list_acc.append(data_json['interfaces']['access'][i]['interface'])
-                        st.info(':material/info: Instance **%s** use access interface *%s*'%(instance, temp_list_acc))
+                        st.info(':material/info: Test profile **%s** use access interface *%s*'%(instance, temp_list_acc))
                     except Exception as e:
                         print('[RUN] Json config dont have network or access interface, error %s'%e)
                     if "started" not in str(instance_exist_ct):
                         if 'bgp' in data_json.keys():
                             if 'raw-update-file' in data_json['bgp'].keys():
                                 with st.container(border= True):
-                                    st.warning(':material/warning: Should have file **%s** before start instance **%s**'%(data_json['bgp']['raw-update-file'],instance))
+                                    st.warning(':material/warning: Should have file **%s** before start test profile **%s**'%(data_json['bgp']['raw-update-file'],instance))
                                     with st.popover(":green[:material/data_saver_on: Create **raw-update-file**]", use_container_width=True):
                                         with st.form("CREATE_FILE"):
                                             prefix= st.text_input(f":orange[:material/add: Your prefix you want advertise: ]","", placeholder = "Fill your IP prefix")
@@ -2310,7 +2310,7 @@ if st.session_state.p4:
                                                                 st.info(':blue[Upload sucessfully]', icon="🔥")
                                                             else:
                                                                 st.warning("Upload not sucessfully, Error %s"%upload_st, icon="🔥")
-                                                            log_authorize(st.session_state.user,blaster_server['ip'], f'Create file bgpupdate {prefix} num {num_prefix} instance {instance}')
+                                                            log_authorize(st.session_state.user,blaster_server['ip'], f'Create file bgpupdate {prefix} num {num_prefix} test profile {instance}')
                                                         else:
                                                             st.error(":violet[Wrong prefix]", icon="🔥")
                                                     else:
@@ -2321,7 +2321,7 @@ if st.session_state.p4:
                 st.session_state.button_start= True
                 st.session_state.button_stop= False
                 with col19:
-                    st.warning("This instance already running", icon="🔥")
+                    st.warning("This test profile already running", icon="🔥")
                 if os.path.exists('%s/%s.yml'%(path_configs,instance)):
                     with open('%s/%s.yml'%(path_configs,instance), 'r') as file_temp:
                         run_template = yaml.load(file_temp, Loader=yaml.FullLoader)
@@ -2414,9 +2414,9 @@ if st.session_state.p4:
                     st.session_state.button_stop= True
                     with st.container(border= True):
                         if instance in list_instance_avail_from_blaster:
-                            st.warning(f'Instance **{instance}** can start but its config will be overrided', icon="🔥")
+                            st.warning(f'Test profile **{instance}** can start but its config will be overrided', icon="🔥")
                         else:
-                            st.info("You can start this instance", icon="🔥")
+                            st.info("You can start this test profile", icon="🔥")
             with col19:
                 if st.button('**START** :material/sound_sampler: ', type = 'primary',use_container_width=True, disabled= st.session_state.button_start):
                     list_inf = []
@@ -2475,11 +2475,11 @@ if st.session_state.p4:
                             time.sleep(0.01)
                             run_pg.progress(percent_complete2 + 1, text= f':violet[{percent_complete2+1}%]')
                         if put_sc == 201:
-                            print('Create instance on blaster sucessfully')
+                            print('Create test profile on blaster sucessfully')
                         else: 
-                            print('Create instance on blaster didnt sucessfully')
+                            print('Create test profile on blaster didnt sucessfully')
                     st.session_state.button_stop= False
-                    log_authorize(st.session_state.user,blaster_server['ip'], f'RUN START instance {instance}')
+                    log_authorize(st.session_state.user,blaster_server['ip'], f'RUN START test profile {instance}')
                     time.sleep(1)
                     st.rerun()
                 # with st.container(border= True):
@@ -2487,7 +2487,7 @@ if st.session_state.p4:
                     stop_sc, stop_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'POST', payload_stop, '/_stop')
                     # st.write(stop_sc, stop_ct)
                     st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, True, False
-                    log_authorize(st.session_state.user,blaster_server['ip'], f'RUN STOP instance {instance}')
+                    log_authorize(st.session_state.user,blaster_server['ip'], f'RUN STOP test profile {instance}')
                     
                     stop_pg = st.progress(0)
                     for percent_complete3 in range(100):
@@ -2543,7 +2543,7 @@ if st.session_state.p5:
     col29, col30 = st.columns([1,1])
     with col29:
         with st.container(border=True):
-            instance_report = st.selectbox(':orange[Select your instance for reporting]', list_instance_avail_from_blaster)
+            instance_report = st.selectbox(':orange[Select your test profile for reporting]', list_instance_avail_from_blaster)
     # run_report_sc, run_report = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], f'{st.session_state.report}', 'GET', payload_start, '/run_report.json')
     run_report_sc, run_report = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance_report, 'GET', payload_start, '/run_report.json')
     if run_report_sc == 200:
