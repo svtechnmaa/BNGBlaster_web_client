@@ -23,9 +23,9 @@ interfaces:
   qdisc-bypass: 
     __label: 'interfaces/qdisc-bypass'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   tx-interval:
     __label: 'interfaces/tx-interval'
     __widget: 'number_input'
@@ -59,9 +59,9 @@ interfaces:
   capture-include-streams:
     __label: 'interfaces/capture-include-streams'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   mac-modifier:
     __label: 'interfaces/mac-modifier'
     __widget: 'slider'
@@ -158,9 +158,9 @@ interfaces:
     qdisc-bypass:
       __label: 'interfaces/links/qdisc-bypass'
       __widget: 'selectbox'
-      __value: 'false'
+      __value: false
       __datatype: 'bool'
-      __options: ['true','false']
+      __options: [true,false]
     tx-interval:
       __label: 'interfaces/links/tx-interval'
       __widget: 'number_input'
@@ -201,15 +201,15 @@ interfaces:
     lacp:
       __label: 'interfaces/lag/lacp'
       __widget: 'selectbox'
-      __value: 'false'
+      __value: false
       __datatype: 'bool'
-      __options: ['true','false']
+      __options: [true,false]
     lacp-timeout-short:
       __label: 'interfaces/lag/lacp-timeout-short'
       __widget: 'selectbox'
-      __value: 'false'
+      __value: false
       __datatype: 'bool'
-      __options: ['true','false']
+      __options: [true,false]
     lacp-system-priority:
       __label: 'interfaces/lag/lacp-system-priority'
       __widget: 'text_input'
@@ -274,9 +274,9 @@ interfaces:
     ipv6-router-advertisement:
       __label: 'interfaces/network/ipv6-router-advertisement'
       __widget: 'selectbox'
-      __value: 'false'
+      __value: false
       __datatype: 'bool'
-      __options: ['true','false']
+      __options: [true,false]
     mtu:
       __label: 'interfaces/network/mtu'
       __widget: 'number_input'
@@ -304,9 +304,9 @@ interfaces:
     gateway-resolve-wait:
       __label: 'interfaces/network/gateway-resolve-wait'
       __widget: 'selectbox'
-      __value: 'false'
+      __value: false
       __datatype: 'bool'
-      __options: ['true','false']
+      __options: [true,false]
     isis-instance-id:
       __label: 'interfaces/network/isis-instance-id'
       __widget: 'text_input'
@@ -324,9 +324,9 @@ interfaces:
     isis-p2p:
       __label: 'interfaces/network/isis-p2p'
       __widget: 'selectbox'
-      __value: 'false'
+      __value: false
       __datatype: 'bool'
-      __options: ['true','false']
+      __options: [true,false]
     isis-l1-metric:
       __label: 'interfaces/network/isis-l1-metric'
       __widget: 'text_input'
@@ -427,9 +427,9 @@ interfaces:
     qinq:
       __label: 'interfaces/access/qinq'
       __widget: 'selectbox'
-      __value: 'false'
+      __value: false
       __datatype: 'bool'
-      __options: ['true','false']
+      __options: [true,false]
     outer-vlan-min:
       __label: 'interfaces/access/outer-vlan-min'
       __widget: 'number_input'
@@ -508,9 +508,9 @@ interfaces:
     ipv4:
       __label: 'interfaces/access/ipv4'
       __widget: 'selectbox'
-      __value: 'false'
+      __value: false
       __datatype: 'bool'
-      __options: ['true','false']
+      __options: [true,false]
     address:
       __label: 'interfaces/access/address'
       __widget: 'text_input'
@@ -538,9 +538,9 @@ interfaces:
     ipv6:
       __label: 'interfaces/access/ipv6'
       __widget: 'selectbox'
-      __value: 'false'
+      __value: false
       __datatype: 'bool'
-      __options: ['true','false']
+      __options: [true,false]
     ipv6-link-local:
       __label: 'interfaces/access/ipv6-link-local'
       __widget: 'text_input'
@@ -550,9 +550,9 @@ interfaces:
     cfm-cc:
       __label: 'interfaces/access/cfm-cc'
       __widget: 'selectbox'
-      __value: 'false'
+      __value: false
       __datatype: 'bool'
-      __options: ['true','false']
+      __options: [true,false]
     cfm-level:
       __label: 'interfaces/access/cfm-level'
       __widget: 'slider'
@@ -726,9 +726,9 @@ interfaces:
     monkey:
       __label: 'interfaces/access/monkey'
       __widget: 'selectbox'
-      __value: 'false'
+      __value: false
       __datatype: 'bool'
-      __options: ['true','false']
+      __options: [true,false]
     session-limit:
       __label: 'interfaces/access/session-limit'
       __widget: 'number_input'
@@ -792,9 +792,9 @@ interfaces:
     tun:
       __label: 'interfaces/access/tun'
       __widget: 'selectbox'
-      __value: 'false'
+      __value: false
       __datatype: 'bool'
-      __options: ['true','false']
+      __options: [true,false]
   a10nsp:
   - interface:
       __label: 'interfaces/a10nsp/interface'
@@ -805,9 +805,9 @@ interfaces:
     qinq:
       __label: 'interfaces/a10nsp/qinq'
       __widget: 'selectbox'
-      __value: 'false'
+      __value: false
       __datatype: 'bool'
-      __options: ['true','false']
+      __options: [true,false]
     mac:
       __label: 'interfaces/a10nsp/mac'
       __widget: 'text_input'
@@ -848,40 +848,40 @@ sessions:
   reconnect:
     __label: 'sessions/reconnect'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   autostart:
     __label: 'sessions/autostart'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   monkey-autostart:
     __label: 'sessions/monkey-autostart'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   iterate-vlan-outer:
     __label: 'sessions/iterate-vlan-outer'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
 ipoe:
   ipv6:
     __label: 'ipoe/ipv6'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   ipv4:
     __label: 'ipoe/ipv4'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   arp-timeout:
     __label: 'ipoe/arp-timeout'
     __widget: 'text_input'
@@ -904,9 +904,9 @@ pppoe:
   reconnect:
     __label: 'pppoe/reconnect'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']  
+    __options: [true,false]  
   discovery-timeout:
     __label: 'pppoe/discovery-timeout'
     __widget: 'text_input'
@@ -928,9 +928,9 @@ pppoe:
   host-uniq:
     __label: 'pppoe/host-uniq'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   max-payload:
     __label: 'pppoe/max-payload'
     __widget: 'text_input'
@@ -1018,46 +1018,46 @@ ppp:
     ignore-vendor-specific:
       __label: 'ppp/lcp/ignore-vendor-specific'
       __widget: 'selectbox'
-      __value: 'false'
+      __value: false
       __datatype: 'bool'
-      __options: ['true','false']
+      __options: [true,false]
     connection-status-message:
       __label: 'ppp/lcp/connection-status-message'
       __widget: 'selectbox'
-      __value: 'false'
+      __value: false
       __datatype: 'bool'
-      __options: ['true','false']
+      __options: [true,false]
   ipcp:
     enable:
       __label: 'ppp/ipcp/enable'
       __widget: 'selectbox'
-      __value: 'false'
+      __value: false
       __datatype: 'bool'
-      __options: ['true','false']
+      __options: [true,false]
     request-ip:
       __label: 'ppp/ipcp/request-ip'
       __widget: 'selectbox'
-      __value: 'false'
+      __value: false
       __datatype: 'bool'
-      __options: ['true','false']
+      __options: [true,false]
     request-dns1:
       __label: 'ppp/ipcp/request-dns1'
       __widget: 'selectbox'
-      __value: 'false'
+      __value: false
       __datatype: 'bool'
-      __options: ['true','false']
+      __options: [true,false]
     request-dns2:
       __label: 'ppp/ipcp/request-dns2'
       __widget: 'selectbox'
-      __value: 'false'
+      __value: false
       __datatype: 'bool'
-      __options: ['true','false']
+      __options: [true,false]
     conf-reject-ignore:
       __label: 'ppp/ipcp/conf-reject-ignore'
       __widget: 'selectbox'
-      __value: 'false'
+      __value: false
       __datatype: 'bool'
-      __options: ['true','false']
+      __options: [true,false]
     conf-request-timeout:
       __label: 'ppp/ipcp/conf-request-timeout'
       __widget: 'text_input'
@@ -1074,9 +1074,9 @@ ppp:
     enable:
       __label: 'ppp/ip6cp/enable'
       __widget: 'selectbox'
-      __value: 'false'
+      __value: false
       __datatype: 'bool'
-      __options: ['true','false']
+      __options: [true,false]
     conf-request-timeout:
       __label: 'ppp/ip6cp/conf-request-timeout'
       __widget: 'text_input'
@@ -1093,15 +1093,15 @@ dhcp:
   enable:
     __label: 'dhcp/enable'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   broadcast:
     __label: 'dhcp/broadcast'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   timeout:
     __label: 'dhcp/timeout'
     __widget: 'text_input'
@@ -1141,34 +1141,34 @@ dhcp:
   access-line:
     __label: 'dhcp/access-line'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
 dhcpv6:
   enable:
     __label: 'dhcpv6/enable'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   ia-na:
     __label: 'dhcpv6/ia-na'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   ia-pd:
     __label: 'dhcpv6/ia-pd'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   rapid-commit:
     __label: 'dhcpv6/rapid-commit'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   timeout:
     __label: 'dhcpv6/timeout'
     __widget: 'text_input'
@@ -1184,22 +1184,22 @@ dhcpv6:
   access-line:
     __label: 'dhcpv6/access-line'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   ldra:
     __label: 'dhcpv6/ldra'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
 igmp:
   autostart:
     __label: 'igmp/autostart'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   start-delay:
     __label: 'igmp/start-delay'
     __widget: 'text_input'
@@ -1215,9 +1215,9 @@ igmp:
   combined-leave-join:
     __label: 'igmp/combined-leave-join'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   group:
     __label: 'igmp/group'
     __widget: 'text_input'
@@ -1257,9 +1257,9 @@ igmp:
   zapping-wait:
     __label: 'igmp/zapping-wait'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   view-duration:
     __label: 'igmp/view-duration'
     __widget: 'text_input'
@@ -1275,9 +1275,9 @@ igmp:
   send-multicast-traffic:
     __label: 'igmp/send-multicast-traffic'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   multicast-traffic-length:
     __label: 'igmp/multicast-traffic-length'
     __widget: 'text_input'
@@ -1357,21 +1357,21 @@ l2tp-server:
   data-control-priority:
     __label: 'l2tp-server/data-control-priority'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   data-length:
     __label: 'l2tp-server/data-length'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   data-offset:
     __label: 'l2tp-server/data-offset'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   control-tos:
     __label: 'l2tp-server/control-tos'
     __widget: 'number_input'
@@ -1409,33 +1409,33 @@ traffic:
   autostart:
     __label: 'traffic/autostart'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   stop-verified:
     __label: 'traffic/stop-verified'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   stream-autostart:
     __label: 'traffic/stream-autostart'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   stream-rate-calculation:
     __label: 'traffic/stream-rate-calculation'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   stream-delay-calculation:
     __label: 'traffic/stream-delay-calculation'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   stream-burst-ms:
     __label: 'traffic/stream-burst-ms'
     __widget: 'number_input'
@@ -1448,21 +1448,21 @@ traffic:
   multicast-traffic-autostart: 
     __label: 'traffic/multicast-traffic-autostart'
     __widget: 'selectbox'
-    __value: 'true'
+    __value: true
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   udp-checksum:
     __label: 'traffic/udp-checksum'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   reassemble-fragments:
     __label: 'traffic/reassemble-fragments'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
 streams:
 - name:
     __label: 'streams/name'
@@ -1491,9 +1491,9 @@ streams:
   autostart:
     __label: 'streams/autostart'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   source-port:
     __label: 'streams/source-port'
     __widget: 'number_input'
@@ -1515,9 +1515,9 @@ streams:
   ipv4-df:
     __label: 'streams/ipv4-df'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   priority:
     __label: 'streams/priority'
     __widget: 'number_input'
@@ -1741,22 +1741,22 @@ streams:
   nat:
     __label: 'streams/nat'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   raw-tcp:
     __label: 'streams/raw-tcp'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
 session-traffic:
   autostart:
     __label: 'session-traffic/autostart'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   ipv4-pps:
     __label: 'session-traffic/ipv4-pps'
     __widget: 'tex'
@@ -2057,15 +2057,15 @@ isis:
   protocol-ipv4:
     __label: 'isis/protocol-ipv4'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   protocol-ipv6:
     __label: 'isis/protocol-ipv6'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   level1-auth-key:
     __label: 'isis/level1-auth-key'
     __widget: 'text_input'
@@ -2138,9 +2138,9 @@ isis:
   hello-padding:
     __label: 'isis/hello-padding'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   hold-time:
     __label: 'isis/hold-time'
     __widget: 'number_input'
@@ -2294,15 +2294,15 @@ isis:
     purge:
       __label: 'isis/external/purge'
       __widget: 'selectbox'
-      __value: 'false'
+      __value: false
       __datatype: 'bool'
-      __options: ['true','false']
+      __options: [true,false]
     auto-refresh:
       __label: 'isis/external/auto-refresh'
       __widget: 'selectbox'
-      __value: 'false'
+      __value: false
       __datatype: 'bool'
-      __options: ['true','false']
+      __options: [true,false]
     mrt-file:
       __label: 'isis/external/mrt-file'
       __widget: 'text_input'
@@ -2450,9 +2450,9 @@ ospf:
     purge:
       __label: 'ospf/external/purge'
       __widget: 'selectbox'
-      __value: 'false'
+      __value: false
       __datatype: 'bool'
-      __options: ['true','false']
+      __options: [true,false]
     mrt-file:
       __label: 'ospf/external/mrt-file'
       __widget: 'text_input'
@@ -2560,9 +2560,9 @@ ldp:
   prefer-ipv4-transport:
     __label: 'ldp/prefer-ipv4-transport'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']  
+    __options: [true,false]  
   raw-update-file:
     __label: 'ldp/raw-update-file'
     __widget: 'text_input'
@@ -2636,15 +2636,15 @@ bgp:
   reconnect:
     __label: 'bgp/reconnect'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   start-traffic:
     __label: 'bgp/start-traffic'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   teardown-time:
     __label: 'bgp/teardown-time'
     __widget: 'number_input'
@@ -2706,9 +2706,9 @@ http-client:
   autostart:
     __label: 'http-client/autostart'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   start-delay:
     __label: 'http-client/start-delay'
     __widget: 'text_input'
@@ -2831,15 +2831,15 @@ icmp-client:
   df:
     __label: 'icmp-client/df'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   autostart:
     __label: 'icmp-client/autostart'
     __widget: 'selectbox'
-    __value: 'false'
+    __value: false
     __datatype: 'bool'
-    __options: ['true','false']
+    __options: [true,false]
   start-delay:
     __label: 'icmp-client/start-delay'
     __widget: 'text_input'
