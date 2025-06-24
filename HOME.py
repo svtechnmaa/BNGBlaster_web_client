@@ -1830,88 +1830,179 @@ if st.session_state.p3:
             log_authorize(st.session_state.user,blaster_server['ip'], 'Change RUN page')
             st.rerun()
     # tab1, tab2, tab3, tab4, tab5= st.tabs([":material/edit_note: CREATE/EDIT BY SELECTION", ":material/note_add: CREATE BY TEMPLATE", ":material/edit_note: MODIFY", ":material/publish: JSON_IMPORT", ":material/note_alt: TEMPLATE"])
-    tab1, tab2= st.tabs([":material/edit_note: CREATE/EDIT BY SELECTION",":material/publish: JSON_IMPORT"])
+    tab1, tab2= st.tabs([":material/edit_note: CREATE/EDIT BY SELECTION",":material/publish: IMPORT/CLONE JSON CONFIG"])
     with tab2: # Tab for import json
-        col1, col2 = st.columns([2,2])
-        with col1:
-            with st.container(border=True):
-                name_json_config= st.text_input("**:violet[1. INPUT NAME OF CONFIG]**")
-                data_json_import = st.file_uploader("**:violet[2. CHOOSE YOUR JSON FILE]**", accept_multiple_files=False)
-                if data_json_import:
-                    stringio = StringIO(data_json_import.getvalue().decode("utf-8"))
-                    string_data = stringio.read()
-                    try:
-                        input_json = json.loads(string_data)
-                        if is_valid_name_instance(name_json_config):
-                            # st.write(name_json_config)
-                            if (name_json_config+'.json') not in list_json:
-                                # try:
-                                # export_yaml= yaml.dump(input_json)
-                                with col2:
-                                    with st.container(border=True):
-                                        st.write("**:violet[3. EDIT CONFIG]**")
+        with st.container(border= True):
+            col1,col2,col3=st.columns([1,1,1])
+            with col2:
+                choice_import = st.radio(
+                    ":violet[:material/call_split: **SELECT FOR CLONE EXISTED PROFILE OR IMPORT FILE**]",
+                    [":green[:material/note_add: **CLONE EXISTED PROFILE**]", ":green[:material/edit_note: **IMPORT FILE**]"],
+                    index=None,
+                    horizontal=True
+                )
+        if choice_import == ":green[:material/edit_note: **IMPORT FILE**]":
+            col1, col2 = st.columns([1,2])
+            with col1:
+                with st.container(border=True):
+                    name_json_config= st.text_input("**:violet[1. INPUT NAME OF TEST PROFILE]**")
+                    data_json_import = st.file_uploader("**:violet[2. CHOOSE YOUR JSON FILE]**", accept_multiple_files=False)
+                    if data_json_import:
+                        stringio = StringIO(data_json_import.getvalue().decode("utf-8"))
+                        string_data = stringio.read()
+                        try:
+                            input_json = json.loads(string_data)
+                            if is_valid_name_instance(name_json_config):
+                                # st.write(name_json_config)
+                                if (name_json_config+'.json') not in list_json:
+                                    # try:
+                                    # export_yaml= yaml.dump(input_json)
+                                    with col2:
                                         with st.container(border=True):
-                                            convert_json= st_ace(
-                                            value= json.dumps(input_json, indent=2),
-                                            language= 'json', 
-                                            theme= '', 
-                                            show_gutter= True, 
-                                            keybinding='vscode', 
-                                            auto_update= True, 
-                                            placeholder= '*Edit your config*')
-                                        if st.button("SAVE CONFIG", type= 'primary', use_container_width= True):
-                                            # This code for convert json to template yaml
-                                            import_paths=list_all_paths(json.loads(convert_json))
-                                            with open('all_conf.yml', 'r') as file_template:
-                                                try:
-                                                    data=yaml.safe_load(file_template) # This dict is library of bngblaster
-                                                except yaml.YAMLError as exc:
-                                                    st.error(exc)
-                                            new_dict_import=copy_dict_with_empty_values(json.loads(convert_json))
-                                            for i in import_paths:
-                                                if isinstance(i[-1],int):
-                                                    i.pop(-1)
-                                                var_access=''
-                                                var_access_data=''
-                                                for e in i:
-                                                    if isinstance(e,int):
-                                                        var_access+= "[%s]"%e
-                                                        if int(e) == 0:
-                                                            var_access_data+= "[%s]"%e
+                                            st.write("**:violet[3. EDIT TEST PROFILE]**")
+                                            with st.container(border=True):
+                                                convert_json= st_ace(
+                                                value= json.dumps(input_json, indent=2),
+                                                language= 'json', 
+                                                theme= '', 
+                                                show_gutter= True, 
+                                                keybinding='vscode', 
+                                                auto_update= True, 
+                                                placeholder= '*Edit your config*')
+                                            if st.button("SAVE CONFIG", type= 'primary', use_container_width= True):
+                                                # This code for convert json to template yaml
+                                                import_paths=list_all_paths(json.loads(convert_json))
+                                                with open('all_conf.yml', 'r') as file_template:
+                                                    try:
+                                                        data=yaml.safe_load(file_template) # This dict is library of bngblaster
+                                                    except yaml.YAMLError as exc:
+                                                        st.error(exc)
+                                                new_dict_import=copy_dict_with_empty_values(json.loads(convert_json))
+                                                for i in import_paths:
+                                                    if isinstance(i[-1],int):
+                                                        i.pop(-1)
+                                                    var_access=''
+                                                    var_access_data=''
+                                                    for e in i:
+                                                        if isinstance(e,int):
+                                                            var_access+= "[%s]"%e
+                                                            if int(e) == 0:
+                                                                var_access_data+= "[%s]"%e
+                                                            else:
+                                                                var_access_data+= "[0]"
                                                         else:
-                                                            var_access_data+= "[0]"
+                                                            var_access+= "['%s']"%e
+                                                            var_access_data+= "['%s']"%e
+                                                    exec("new_dict_import%s=copy.deepcopy(data%s)"%(var_access,var_access_data))
+                                                    exec("data_type= new_dict_import%s['__datatype']"%(var_access))
+                                                    if data_type == 'int' or data_type == 'float': # This code for case user input integer auto cast into float and divert
+                                                        exec("new_dict_import%s['__value']=%s(json.loads(convert_json)%s)"%(var_access,data_type,var_access))
                                                     else:
-                                                        var_access+= "['%s']"%e
-                                                        var_access_data+= "['%s']"%e
-                                                exec("new_dict_import%s=copy.deepcopy(data%s)"%(var_access,var_access_data))
-                                                exec("data_type= new_dict_import%s['__datatype']"%(var_access))
-                                                if data_type == 'int' or data_type == 'float': # This code for case user input integer auto cast into float and divert
-                                                    exec("new_dict_import%s['__value']=%s(json.loads(convert_json)%s)"%(var_access,data_type,var_access))
-                                                else:
-                                                    exec("new_dict_import%s['__value']=json.loads(convert_json)%s"%(var_access,var_access))
-                                                # For change wdget customize to input text with edit mode
-                                                if eval("new_dict_import%s['__widget'] == 'customize'"%(var_access)):
-                                                    exec("new_dict_import%s['__widget']='text_input'"%(var_access))
-                                            # Write to template file
-                                            write_dict_to_yaml(new_dict_import,'%s/%s.yml'%(path_configs,name_json_config))
-                                            # This code for save json config
-                                            with open('%s/%s.json'%(path_configs,name_json_config), mode= 'w', encoding= 'utf-8') as json_config:
-                                                json.dump(json.loads(convert_json), json_config, indent=2)
-                                            st.success("Config save successfully", icon="🔥")
-                                            log_authorize(st.session_state.user,blaster_server['ip'], f'Create new json {name_json_config}')
-                                # except Exception as e:
-                                #     with col2:
-                                #         st.error(f"Can not yaml dump content, check error {e}", icon="🚨")
+                                                        exec("new_dict_import%s['__value']=json.loads(convert_json)%s"%(var_access,var_access))
+                                                    # For change wdget customize to input text with edit mode
+                                                    if eval("new_dict_import%s['__widget'] == 'customize'"%(var_access)):
+                                                        exec("new_dict_import%s['__widget']='text_input'"%(var_access))
+                                                # Write to template file
+                                                write_dict_to_yaml(new_dict_import,'%s/%s.yml'%(path_configs,name_json_config))
+                                                # This code for save json config
+                                                with open('%s/%s.json'%(path_configs,name_json_config), mode= 'w', encoding= 'utf-8') as json_config:
+                                                    json.dump(json.loads(convert_json), json_config, indent=2)
+                                                st.success("Config save successfully", icon="🔥")
+                                                log_authorize(st.session_state.user,blaster_server['ip'], f'Create new json {name_json_config}')
+                                    # except Exception as e:
+                                    #     with col2:
+                                    #         st.error(f"Can not yaml dump content, check error {e}", icon="🚨")
+                                else:
+                                    st.error('Name existed', icon="🚨")
                             else:
-                                st.error('Name existed', icon="🚨")
-                        else:
-                            st.error('Name empty or wrong syntax', icon="🚨")
-                    except Exception as e:
-                        with col2:
-                            st.error(f"Can not read json content, check error {e}", icon="🚨")
-                    # st.write(list_json)
-                else:
-                    st.error('Import File', icon="🚨")
+                                st.error('Name empty or wrong syntax', icon="🚨")
+                        except Exception as e:
+                            with col2:
+                                st.error(f"Can not read json content, check error {e}", icon="🚨")
+                        # st.write(list_json)
+                    else:
+                        st.error('Import file please', icon="🚨")
+        if choice_import == ":green[:material/note_add: **CLONE EXISTED PROFILE**]":
+            col1, col2 = st.columns([1,2])
+            with col1:
+                with st.container(border=True):
+                    import_clone_new= st.text_input("**:violet[1. NAME OF NEW TEST PROFILE]**")
+                    import_clone_instance= st.selectbox("**:violet[2. CHOOSE TEST PROFILE EXISTED]**", list_instance,placeholder = 'Select one test profile')
+                    with open("%s/%s.json"%(path_configs,import_clone_instance) , 'r') as edit_config_data:
+                        import_clone_json= edit_config_data.read()
+                    if import_clone_new:
+                        try:
+                            input_json = json.loads(import_clone_json)
+                            if is_valid_name_instance(import_clone_new):
+                                # st.write(name_json_config)
+                                if (import_clone_new+'.json') not in list_json:
+                                    # try:
+                                    # export_yaml= yaml.dump(input_json)
+                                    with col2:
+                                        with st.container(border=True):
+                                            st.write("**:violet[3. EDIT TEST PROFILE]**")
+                                            with st.container(border=True):
+                                                convert_json= st_ace(
+                                                value= json.dumps(input_json, indent=2),
+                                                language= 'json', 
+                                                theme= '', 
+                                                show_gutter= True, 
+                                                keybinding='vscode', 
+                                                auto_update= True, 
+                                                placeholder= '*Edit your config*')
+                                            if st.button("SAVE CONFIG", type= 'primary', use_container_width= True):
+                                                # This code for convert json to template yaml
+                                                import_paths=list_all_paths(json.loads(convert_json))
+                                                with open('all_conf.yml', 'r') as file_template:
+                                                    try:
+                                                        data=yaml.safe_load(file_template) # This dict is library of bngblaster
+                                                    except yaml.YAMLError as exc:
+                                                        st.error(exc)
+                                                new_dict_import=copy_dict_with_empty_values(json.loads(convert_json))
+                                                for i in import_paths:
+                                                    if isinstance(i[-1],int):
+                                                        i.pop(-1)
+                                                    var_access=''
+                                                    var_access_data=''
+                                                    for e in i:
+                                                        if isinstance(e,int):
+                                                            var_access+= "[%s]"%e
+                                                            if int(e) == 0:
+                                                                var_access_data+= "[%s]"%e
+                                                            else:
+                                                                var_access_data+= "[0]"
+                                                        else:
+                                                            var_access+= "['%s']"%e
+                                                            var_access_data+= "['%s']"%e
+                                                    exec("new_dict_import%s=copy.deepcopy(data%s)"%(var_access,var_access_data))
+                                                    exec("data_type= new_dict_import%s['__datatype']"%(var_access))
+                                                    if data_type == 'int' or data_type == 'float': # This code for case user input integer auto cast into float and divert
+                                                        exec("new_dict_import%s['__value']=%s(json.loads(convert_json)%s)"%(var_access,data_type,var_access))
+                                                    else:
+                                                        exec("new_dict_import%s['__value']=json.loads(convert_json)%s"%(var_access,var_access))
+                                                    # For change wdget customize to input text with edit mode
+                                                    if eval("new_dict_import%s['__widget'] == 'customize'"%(var_access)):
+                                                        exec("new_dict_import%s['__widget']='text_input'"%(var_access))
+                                                # Write to template file
+                                                write_dict_to_yaml(new_dict_import,'%s/%s.yml'%(path_configs,import_clone_new))
+                                                # This code for save json config
+                                                with open('%s/%s.json'%(path_configs,import_clone_new), mode= 'w', encoding= 'utf-8') as json_config:
+                                                    json.dump(json.loads(convert_json), json_config, indent=2)
+                                                st.success("Config save successfully", icon="🔥")
+                                                log_authorize(st.session_state.user,blaster_server['ip'], f'Create new json {import_clone_new}')
+                                    # except Exception as e:
+                                    #     with col2:
+                                    #         st.error(f"Can not yaml dump content, check error {e}", icon="🚨")
+                                else:
+                                    st.error('Name existed', icon="🚨")
+                            else:
+                                st.error('Name wrong syntax', icon="🚨")
+                        except Exception as e:
+                            with col2:
+                                st.error(f"Can not read json content, check error {e}", icon="🚨")
+                        # st.write(list_json)
+                    else:
+                        st.error('Test profile name empty', icon="🚨")
     with tab1:
         with st.container(border= True):
             col1,col2,col3=st.columns([1.5,1,1])
