@@ -1,0 +1,39 @@
+{
+  "access-line": {
+    "agent-circuit-id": "0.0.0.0/0.0.0.3 ge-0/0/0"
+  },
+  "dhcpv6": {
+    "enable": true,
+    "rapid-commit": true
+  },
+  "interfaces": {
+    "access": [
+      {
+        "authentication-protocol": "PAP",
+        "interface": "ens16.3003",
+        "stream-group-id": 1,
+        "vlan-mode": "N:1"
+      }
+    ],
+    "mac-modifier": 10
+  },
+  "ppp": {
+    "authentication": {
+      "password": "svtech@123",
+      "retry": 30,
+      "timeout": 2,
+      "username": "vlan3003_{session-global}"
+    },
+    "mru": 1492
+  },
+  "pppoe": {
+    "reconnect": true,
+    "session-time": 0
+  },
+  "sessions": {
+    "max-outstanding": 800,
+    "start-rate": 600,
+    "stop-rate": 600,
+    "count": 2000
+  }
+}

@@ -1,0 +1,127 @@
+interfaces:
+  network:
+  - address:
+      __datatype: str
+      __label: interfaces/network/address
+      __options: []
+      __value: 172.10.102.2/30
+      __widget: text_input
+    gateway:
+      __datatype: str
+      __label: interfaces/network/gateway
+      __options: []
+      __value: 172.10.102.1
+      __widget: text_input
+    interface:
+      __datatype: interface_auto
+      __label: interfaces/network/interface
+      __options: []
+      __value: ens17.102
+      __widget: text_input
+    ospfv2-instance-id:
+      __datatype: str
+      __label: interfaces/network/ospfv2-instance-id
+      __options: []
+      __value: 1
+      __widget: text_input
+    ospfv2-type:
+      __datatype: str
+      __label: interfaces/network/ospfv2-type
+      __options:
+      - broadcast
+      - p2p
+      __value: p2p
+      __widget: selectbox
+  - address:
+      __datatype: str
+      __label: interfaces/network/address
+      __options: []
+      __value: 172.10.104.2/30
+      __widget: text_input
+    gateway:
+      __datatype: str
+      __label: interfaces/network/gateway
+      __options: []
+      __value: 172.10.104.1
+      __widget: text_input
+    interface:
+      __datatype: interface_auto
+      __label: interfaces/network/interface
+      __options: []
+      __value: ens17.104
+      __widget: text_input
+    ospfv2-instance-id:
+      __datatype: str
+      __label: interfaces/network/ospfv2-instance-id
+      __options: []
+      __value: 1
+      __widget: text_input
+    ospfv2-type:
+      __datatype: str
+      __label: interfaces/network/ospfv2-type
+      __options:
+      - broadcast
+      - p2p
+      __value: p2p
+      __widget: selectbox
+  - address:
+      __datatype: str
+      __label: interfaces/network/address
+      __options: []
+      __value: 172.10.105.2/30
+      __widget: text_input
+    gateway:
+      __datatype: str
+      __label: interfaces/network/gateway
+      __options: []
+      __value: 172.10.105.1
+      __widget: text_input
+    interface:
+      __datatype: interface_auto
+      __label: interfaces/network/interface
+      __options: []
+      __value: ens17.105
+      __widget: text_input
+    ospfv2-instance-id:
+      __datatype: str
+      __label: interfaces/network/ospfv2-instance-id
+      __options: []
+      __value: 1
+      __widget: text_input
+    ospfv2-type:
+      __datatype: str
+      __label: interfaces/network/ospfv2-type
+      __options:
+      - broadcast
+      - p2p
+      __value: p2p
+      __widget: selectbox
+ospf:
+  hostname:
+    __datatype: str
+    __label: ospf/hostname
+    __options:
+    - bngblaster
+    __value: R1
+    __widget: text_input
+  instance-id:
+    __datatype: str
+    __label: ospf/instance-id
+    __options: []
+    __value: 1
+    __widget: text_input
+  router-id:
+    __datatype: str
+    __label: ospf/router-id
+    __options: []
+    __value: 10.0.0.11
+    __widget: text_input
+  version:
+    __datatype: int
+    __label: ospf/version
+    __options:
+      __max: 3
+      __min: 1
+      __step: 1
+    __value: 2
+    __widget: number_input

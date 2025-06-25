@@ -1,0 +1,41 @@
+{
+  "access-line": {
+    "agent-circuit-id": "0.0.0.0/0.0.0.0 ge-0/0/0"
+  },
+  "dhcpv6": {
+    "enable": true,
+    "rapid-commit": true
+  },
+  "interfaces": {
+    "access": [
+      {
+        "authentication-protocol": "PAP",
+        "interface": "ens16.93",
+        "outer-vlan": 2,
+        "stream-group-id": 1,
+        "vlan-mode": "N:1"
+      }
+    ]
+  },
+  "ppp": {
+    "authentication": {
+      "password": "svtech@123",
+      "retry": 30,
+      "timeout": 3,
+      "username": "test"
+    },
+    "mru": 1492
+  },
+  "pppoe": {
+    "reconnect": true,
+    "session-time": 0
+  },
+  "sessions": {
+    "count": 8000
+  },
+  "traffic": {
+    "stream-delay-calculation": true,
+    "stream-rate-calculation": true,
+    "udp-checksum": true
+  }
+}

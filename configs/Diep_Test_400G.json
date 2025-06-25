@@ -1,0 +1,33 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "192.168.0.2",
+        "address-iter": "0.0.0.1",
+        "gateway": "192.168.0.1",
+        "interface": "ens16.110",
+        "ipv6": false,
+        "stream-group-id": 24,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "network": [
+      {
+        "address": "192.168.0.6/30",
+        "gateway": "192.168.0.5",
+        "interface": "ens17.120"
+      }
+    ]
+  },
+  "streams": [
+    {
+      "stream-group-id": 24,
+      "name": "Diep_Test_400G",
+      "type": "ipv4",
+      "direction": "both",
+      "pps": 5000,
+      "network-interface": "ens17.120"
+    }
+  ]
+}

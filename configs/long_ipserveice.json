@@ -1,0 +1,57 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "113.1.0.2",
+        "address-iter": "0.0.0.5",
+        "gateway": "113.1.0.1",
+        "interface": "ens17.35",
+        "ipv6": false,
+        "stream-group-id": 1,
+        "type": "ipoe",
+        "username": "FTTH",
+        "vlan-mode": "N:1"
+      },
+      {
+        "address": "10.30.0.2",
+        "address-iter": "0.0.0.5",
+        "gateway": "10.30.0.1",
+        "interface": "ens17.350",
+        "ipv6": false,
+        "stream-group-id": 2,
+        "type": "ipoe",
+        "username": "3G",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "io-slots": 65535,
+    "network": [
+      {
+        "address": "100.100.100.2/30",
+        "gateway": "100.100.100.1",
+        "interface": "ens16.35"
+      },
+      {
+        "address": "10.35.35.2/30",
+        "gateway": "10.35.35.1",
+        "interface": "ens16.350"
+      }
+    ],
+    "rx-threads": 5,
+    "tx-threads": 5
+  },
+  "sessions": {
+    "count": 100
+  },
+  "streams": [
+    {
+      "direction": "upstream",
+      "length": 1000,
+      "name": "FTTH",
+      "network-interface": "ens16.35",
+      "Mbps": 10,
+      "stream-group-id": 1,
+      "type": "ipv4"
+    }
+  ]
+}

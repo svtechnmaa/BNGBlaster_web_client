@@ -1,0 +1,44 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "10.121.0.3",
+        "address-iter": "0.0.0.1",
+        "gateway": "10.121.0.1",
+        "interface": "ens16.2231",
+        "ipv6": false,
+        "stream-group-id": 400,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "io-slots": 32768,
+    "network": [
+      {
+        "address": "192.168.31.2/30",
+        "gateway": "192.168.31.1",
+        "interface": "ens16.2221"
+      }
+    ],
+    "rx-interval": 0.001,
+    "rx-threads": 30,
+    "tx-interval": 0.001,
+    "tx-threads": 30
+  },
+  "sessions": {
+    "count": 800
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "length": 500,
+      "name": "SWITCHING_CAPACITY",
+      "network-interface": "enp179.2231",
+      "network-ipv4-address": "192.168.31.2",
+      "pps": 100000,
+      "start-delay": 1,
+      "stream-group-id": 400,
+      "type": "ipv4"
+    }
+  ]
+}

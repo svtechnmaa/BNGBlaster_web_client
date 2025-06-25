@@ -1,0 +1,71 @@
+bgp:
+  family:
+    __datatype: str
+    __label: bgp/family
+    __options:
+    - ipv4-unicast
+    - ipv6-unicast
+    - ipv4-multicast
+    - ipv6-multicast
+    - ipv4-labeled-unicast
+    - ipv6-labeled-unicast
+    - ipv4-vpn-unicast
+    - ipv6-vpn-unicast
+    - ipv4-vpn-multicast
+    - ipv6-vpn-multicast
+    - ipv4-flow
+    - ipv6-flow
+    - evpn
+    __value:
+    - ipv4-unicast
+    __widget: multiselect
+  local-address:
+    __datatype: str
+    __label: bgp/local-address
+    __options: []
+    __value: 113.171.240.246
+    __widget: text_input
+  local-as:
+    __datatype: str
+    __label: bgp/local-as
+    __options: []
+    __value: 70000
+    __widget: text_input
+  peer-address:
+    __datatype: str
+    __label: bgp/peer-address
+    __options: []
+    __value: 113.171.240.245
+    __widget: text_input
+  peer-as:
+    __datatype: str
+    __label: bgp/peer-as
+    __options: []
+    __value: 45899
+    __widget: text_input
+  raw-update-file:
+    __datatype: str
+    __label: bgp/raw-update-file
+    __options: []
+    __value: /var/bngblaster/dungtran_bgp_nix/NIX.bgp
+    __widget: text_input
+interfaces:
+  network:
+  - address:
+      __datatype: str
+      __label: interfaces/network/address
+      __options: []
+      __value: 113.171.240.246/30
+      __widget: text_input
+    gateway:
+      __datatype: str
+      __label: interfaces/network/gateway
+      __options: []
+      __value: 113.171.240.245
+      __widget: text_input
+    interface:
+      __datatype: interface_auto
+      __label: interfaces/network/interface
+      __options: []
+      __value: ens16.102
+      __widget: text_input

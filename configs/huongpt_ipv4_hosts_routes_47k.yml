@@ -1,0 +1,51 @@
+bgp:
+  local-address:
+    __datatype: str
+    __label: bgp/local-address
+    __options: []
+    __value: 192.168.31.2
+    __widget: text_input
+  local-as:
+    __datatype: str
+    __label: bgp/local-as
+    __options: []
+    __value: 5000
+    __widget: text_input
+  peer-address:
+    __datatype: str
+    __label: bgp/peer-address
+    __options: []
+    __value: 192.168.31.1
+    __widget: text_input
+  peer-as:
+    __datatype: str
+    __label: bgp/peer-as
+    __options: []
+    __value: 4000
+    __widget: text_input
+  raw-update-file:
+    __datatype: str
+    __label: bgp/raw-update-file
+    __options: []
+    __value: /var/bngblaster/47K_HOST.bgp
+    __widget: text_input
+interfaces:
+  network:
+  - address:
+      __datatype: str
+      __label: interfaces/network/address
+      __options: []
+      __value: 192.168.31.2/30
+      __widget: text_input
+    gateway:
+      __datatype: str
+      __label: interfaces/network/gateway
+      __options: []
+      __value: 192.168.31.1
+      __widget: text_input
+    interface:
+      __datatype: interface_auto
+      __label: interfaces/network/interface
+      __options: []
+      __value: ens16.2231
+      __widget: text_input

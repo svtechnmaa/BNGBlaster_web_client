@@ -1,0 +1,84 @@
+{
+  "access-line": {
+    "agent-circuit-id": "0.0.0.0/0.0.0.0 ge-0/0/0"
+  },
+  "dhcpv6": {
+    "enable": true,
+    "rapid-commit": true
+  },
+  "interfaces": {
+    "access": [
+      {
+        "authentication-protocol": "PAP",
+        "interface": "ens16.10",
+        "outer-vlan": 3001,
+        "stream-group-id": 1,
+        "vlan-mode": "N:1"
+      }
+    ],
+    "network": [
+      {
+        "address": "180.10.10.2/30",
+        "address-ipv6": "2010:1010:abab::a/112",
+        "gateway": "180.10.10.1",
+        "gateway-ipv6": "2010:1010:abab::1",
+        "interface": "ens17.10"
+      }
+    ]
+  },
+  "ppp": {
+    "authentication": {
+      "password": "svtech@123",
+      "retry": 30,
+      "timeout": 2,
+      "username": "testlab{session-global}"
+    },
+    "mru": 1492
+  },
+  "pppoe": {
+    "reconnect": true,
+    "session-time": 0
+  },
+  "sessions": {
+    "count": 8000
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "length": 1400,
+      "name": "IPv6PD_3M",
+      "pps": 1,
+      "priority": 192,
+      "start-delay": 3,
+      "stream-group-id": 1,
+      "type": "ipv6pd"
+    },
+    {
+      "direction": "both",
+      "length": 1400,
+      "name": "IPv6_3M",
+      "network-interface": "ens17.10",
+      "pps": 1,
+      "priority": 192,
+      "start-delay": 3,
+      "stream-group-id": 1,
+      "type": "ipv6"
+    },
+    {
+      "direction": "both",
+      "length": 1400,
+      "name": "IPv4_3M",
+      "network-interface": "ens17.10",
+      "pps": 1,
+      "priority": 192,
+      "start-delay": 3,
+      "stream-group-id": 1,
+      "type": "ipv4"
+    }
+  ],
+  "traffic": {
+    "stream-delay-calculation": true,
+    "stream-rate-calculation": true,
+    "udp-checksum": true
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "sessions": {
+    "count": 6400,
+    "start-rate": 800
+  },
+  "interfaces": {
+    "access": [
+      {
+        "address": "10.121.0.3",
+        "address-iter": "0.0.0.1",
+        "gateway": "10.121.0.1",
+        "interface": "ens16",
+        "ipv6": false,
+        "outer-vlan": 2221,
+        "stream-group-id": 400,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "io-slots": 32768,
+    "rx-interval": 0.01,
+    "rx-threads": 4,
+    "tx-interval": 0.01,
+    "tx-threads": 4
+  }
+}

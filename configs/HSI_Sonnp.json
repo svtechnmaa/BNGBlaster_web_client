@@ -1,0 +1,46 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "authentication-protocol": "PAP",
+        "interface": "ens16.66",
+        "stream-group-id": 8,
+        "type": "pppoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "mac-modifier": 10,
+    "network": [
+      {
+        "address": "211.211.211.2/24",
+        "gateway": "211.211.211.1",
+        "interface": "ens17.66"
+      }
+    ]
+  },
+  "ppp": {
+    "authentication": {
+      "password": "juniper@123",
+      "retry": 30,
+      "timeout": 2,
+      "username": "juniper"
+    },
+    "mru": 1492
+  },
+  "pppoe": {
+    "reconnect": true,
+    "session-time": 0
+  },
+  "sessions": {
+    "count": 1
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "name": "HSI_IPv4",
+      "pps": 1000,
+      "stream-group-id": 8,
+      "type": "ipv4"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "authentication-protocol": "PAP",
+        "interface": "ens16.1111",
+        "stream-group-id": 1,
+        "type": "pppoe",
+        "username": "HSI",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "mac-modifier": 10,
+    "network": [
+      {
+        "address": "210.210.210.2/24",
+        "gateway": "210.210.210.1",
+        "interface": "ens17.1111"
+      }
+    ]
+  },
+  "ppp": {
+    "authentication": {
+      "password": "svtech@123",
+      "retry": 30,
+      "timeout": 2,
+      "username": "HSI-IPv4_{session-global}"
+    },
+    "mru": 1492
+  },
+  "pppoe": {
+    "reconnect": true,
+    "session-time": 0
+  },
+  "sessions": {
+    "count": 1000
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "name": "HSI_IPv4",
+      "pps": 1000,
+      "stream-group-id": 1,
+      "type": "ipv4"
+    }
+  ]
+}

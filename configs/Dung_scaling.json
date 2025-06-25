@@ -1,0 +1,39 @@
+{
+  "interfaces": {
+    "io-slots": 65535,
+    "tx-threads": 5,
+    "rx-threads": 5,
+    "access": [
+      {
+        "address": "172.20.3.10",
+        "address-iter": "0.0.0.1",
+        "gateway": "172.20.3.1",
+        "interface": "ens17.301",
+        "ipv6": false,
+        "stream-group-id": 100,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "network": [
+      {
+        "address": "172.20.2.10/24",
+        "gateway": "172.20.2.1",
+        "interface": "ens16.300"
+      }
+    ]
+  },
+  "sessions": {
+    "count": 10
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "length": 3936,
+      "name": "BestEffort",
+      "Gbps": 1,
+      "stream-group-id": 100,
+      "type": "ipv4"
+    }
+  ]
+}

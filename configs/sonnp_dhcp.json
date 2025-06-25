@@ -1,0 +1,24 @@
+{
+  "dhcp": {
+    "broadcast": true,
+    "enable": true
+  },
+  "interfaces": {
+    "io-slots": 65535,
+    "tx-threads": 5,
+    "rx-threads": 5,
+    "access": [
+      {
+        "gateway": "172.16.124.1",
+        "interface": "ens17.301",
+        "ipv6": false,
+        "stream-group-id": 3854,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ]
+  },
+  "sessions": {
+    "count": 100
+  }
+}

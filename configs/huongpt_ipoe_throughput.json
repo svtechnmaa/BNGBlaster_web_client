@@ -1,0 +1,58 @@
+{
+  "sessions": {
+    "count": 1000
+  },
+  "streams": [
+    {
+      "Gbps": 30,
+      "direction": "downstream",
+      "length": 3936,
+      "name": "S1",
+      "network-interface": "ens16",
+      "start-delay": 2,
+      "stream-group-id": 100,
+      "type": "ipv4"
+    },
+    {
+      "Gbps": 30,
+      "direction": "upstream",
+      "length": 3936,
+      "name": "S2",
+      "network-interface": "ens16",
+      "start-delay": 2,
+      "stream-group-id": 100,
+      "type": "ipv4"
+    }
+  ],
+  "interfaces": {
+    "access": [
+      {
+        "address": "2.2.0.10",
+        "address-iter": "0.0.0.1",
+        "gateway": "2.0.0.200",
+        "interface": "ens16",
+        "ipv6": "false",
+        "stream-group-id": 100,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "io-slots": "32768",
+    "links": [
+      {
+        "interface": "ens16",
+        "io-mode": "packet_mmap",
+        "rx-threads": 16,
+        "tx-threads": 16
+      }
+    ],
+    "network": [
+      {
+        "address": "2.0.0.200/8",
+        "gateway": "2.0.0.254",
+        "gateway-resolve-wait": "false",
+        "interface": "ens16"
+      }
+    ]
+  }
+}

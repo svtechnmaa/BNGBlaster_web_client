@@ -14,8 +14,10 @@
   },
   "pppoe": {
     "reconnect": true,
-    "session-time": 0,
-    "sessions": 5
+    "session-time": 0
+  },
+  "sessions": {
+    "count": 5
   },
   "traffic": {
     "stream-delay-calculation": true,

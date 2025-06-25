@@ -1,0 +1,33 @@
+{
+  "ospf": {
+    "instance-id": 1,
+    "version": 2,
+    "router-id": "10.0.0.11",
+    "hostname": "R1"
+  },
+  "interfaces": {
+    "network": [
+      {
+        "address": "172.10.102.2/30",
+        "gateway": "172.10.102.1",
+        "interface": "ens17.102",
+        "ospfv2-instance-id": 1,
+        "ospfv2-type": "p2p"
+      },
+      {
+        "address": "172.10.104.2/30",
+        "gateway": "172.10.104.1",
+        "interface": "ens17.104",
+        "ospfv2-instance-id": 1,
+        "ospfv2-type": "p2p"
+      },
+      {
+        "address": "172.10.105.2/30",
+        "gateway": "172.10.105.1",
+        "interface": "ens17.105",
+        "ospfv2-instance-id": 1,
+        "ospfv2-type": "p2p"
+      }
+    ]
+  }
+}

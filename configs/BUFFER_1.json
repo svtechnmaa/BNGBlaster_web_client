@@ -1,0 +1,42 @@
+{
+  "interfaces": {
+    "tx-interval": 0.01,
+    "rx-interval": 0.01,
+    "tx-threads": 10,
+    "rx-threads": 10,
+    "io-slots": 32768,
+    "access": [
+      {
+        "address": "10.20.10.2",
+        "address-iter": "0.0.0.1",
+        "gateway": "10.20.10.1",
+        "interface": "ens16.2010",
+        "ipv6": false,
+        "stream-group-id": 2010,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "network": [
+      {
+        "address": "10.21.10.2/30",
+        "gateway": "10.21.10.1",
+        "interface": "ens17.2011"
+      }
+    ]
+  },
+  "sessions": {
+    "count": 4
+  },
+  "streams": [
+    {
+      "direction": "upstream",
+      "length": 3000,
+      "name": "IPoE-2010",
+      "network-interface": "ens17.2011",
+      "Gbps": 2,
+      "stream-group-id": 2010,
+      "type": "ipv4"
+    }
+  ]
+}

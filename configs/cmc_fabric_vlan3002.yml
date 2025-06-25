@@ -1,0 +1,245 @@
+access-line:
+  agent-circuit-id:
+    __datatype: str
+    __label: access-line/agent-circuit-id
+    __options: []
+    __value: 0.0.0.2/0.0.0.0 ge-0/0/0
+    __widget: text_input
+interfaces:
+  access:
+  - authentication-protocol:
+      __datatype: str
+      __label: interfaces/access/authentication-protocol
+      __options: []
+      __value: PAP
+      __widget: text_input
+    interface:
+      __datatype: interface_auto
+      __label: interfaces/access/interface
+      __options: []
+      __value: ens16.3002
+      __widget: text_input
+    stream-group-id:
+      __datatype: int
+      __label: interfaces/access/stream-group-id
+      __options:
+        __max: 65535
+        __min: 0
+        __step: 1000
+      __value: 1
+      __widget: number_input
+    vlan-mode:
+      __datatype: str
+      __label: interfaces/access/vlan-mode
+      __options:
+      - '1:1'
+      - N:1
+      __value: N:1
+      __widget: selectbox
+  io-slots:
+    __datatype: str
+    __label: interfaces/io-slots
+    __options: []
+    __value: 32768
+    __widget: text_input
+  network:
+  - address:
+      __datatype: str
+      __label: interfaces/network/address
+      __options: []
+      __value: 180.12.12.2/30
+      __widget: text_input
+    gateway:
+      __datatype: str
+      __label: interfaces/network/gateway
+      __options: []
+      __value: 180.12.12.1
+      __widget: text_input
+    interface:
+      __datatype: interface_auto
+      __label: interfaces/network/interface
+      __options: []
+      __value: ens17.22
+      __widget: text_input
+  rx-interval:
+    __datatype: float
+    __label: interfaces/rx-interval
+    __options:
+      __max: 1000.0
+      __min: 0.0001
+      __step: 100.0
+    __value: 0.03
+    __widget: number_input
+  rx-threads:
+    __datatype: str
+    __label: interfaces/rx-threads
+    __options: []
+    __value: 5
+    __widget: text_input
+  tx-interval:
+    __datatype: float
+    __label: interfaces/tx-interval
+    __options:
+      __max: 1000.0
+      __min: 0.0001
+      __step: 100.0
+    __value: 0.03
+    __widget: number_input
+  tx-threads:
+    __datatype: str
+    __label: interfaces/tx-threads
+    __options: []
+    __value: 5
+    __widget: text_input
+ppp:
+  authentication:
+    password:
+      __datatype: str
+      __label: ppp/authentication/password
+      __options: []
+      __value: svtech@123
+      __widget: text_input
+    retry:
+      __datatype: str
+      __label: ppp/authentication/retry
+      __options: []
+      __value: 30
+      __widget: text_input
+    timeout:
+      __datatype: str
+      __label: ppp/authentication/timeout
+      __options: []
+      __value: 2
+      __widget: text_input
+    username:
+      __datatype: str
+      __label: ppp/authentication/username
+      __options: []
+      __value: cmc3002_{session-global}
+      __widget: text_input
+  mru:
+    __datatype: int
+    __label: ppp/mru
+    __options:
+      __max: 65535
+      __min: 1
+      __step: 1000
+    __value: 1492
+    __widget: number_input
+pppoe:
+  reconnect:
+    __datatype: bool
+    __label: pppoe/reconnect
+    __options:
+    - true
+    - false
+    __value: true
+    __widget: selectbox
+  session-time:
+    __datatype: str
+    __label: pppoe/session-time
+    __options: []
+    __value: 0
+    __widget: text_input
+sessions:
+  count:
+    __datatype: str
+    __label: sessions/count
+    __options: []
+    __value: 1
+    __widget: text_input
+streams:
+- Gbps:
+    __datatype: float
+    __label: streams/Gbps
+    __options:
+      __max: 100.0
+      __min: 0.0
+      __step: 1.0
+    __value: 5.0
+    __widget: number_input
+  direction:
+    __datatype: str
+    __label: streams/direction
+    __options:
+    - both
+    - upstream
+    - downstream
+    __value: both
+    __widget: selectbox
+  length:
+    __datatype: int
+    __label: streams/length
+    __options:
+      __max: 9000
+      __min: 76
+      __step: 100
+    __value: 1000
+    __widget: number_input
+  name:
+    __datatype: str
+    __label: streams/name
+    __options: []
+    __value: IPv4_3M
+    __widget: text_input
+  network-interface:
+    __datatype: interface_auto
+    __label: streams/network-interface
+    __options: []
+    __value: ens17.22
+    __widget: text_input
+  priority:
+    __datatype: int
+    __label: streams/priority
+    __options:
+      __max: 256
+      __min: 0
+      __step: 1
+    __value: 192
+    __widget: number_input
+  start-delay:
+    __datatype: int
+    __label: streams/start-delay
+    __options: []
+    __value: 3
+    __widget: text_input
+  stream-group-id:
+    __datatype: str
+    __label: streams/stream-group-id
+    __options: []
+    __value: 1
+    __widget: text_input
+  type:
+    __datatype: str
+    __label: streams/type
+    __options:
+    - ipv4
+    - ipv6
+    - ipv6pd
+    __value: ipv4
+    __widget: selectbox
+traffic:
+  stream-delay-calculation:
+    __datatype: bool
+    __label: traffic/stream-delay-calculation
+    __options:
+    - true
+    - false
+    __value: true
+    __widget: selectbox
+  stream-rate-calculation:
+    __datatype: bool
+    __label: traffic/stream-rate-calculation
+    __options:
+    - true
+    - false
+    __value: true
+    __widget: selectbox
+  udp-checksum:
+    __datatype: bool
+    __label: traffic/udp-checksum
+    __options:
+    - true
+    - false
+    __value: true
+    __widget: selectbox

@@ -1,0 +1,22 @@
+{
+  "interfaces": {
+    "network": [
+      {
+        "interface": "ens16.1600",
+        "address": "10.0.1.2/24",
+        "gateway": "10.0.1.1"
+      }
+    ]
+  },
+  "bgp": {
+    "local-address": "10.0.1.2",
+    "peer-address": "10.0.1.1",
+    "raw-update-file": "test.bgp",
+    "local-as": 65002,
+    "peer-as": 45899,
+    "family": [
+      "ipv4-unicast",
+      "ipv6-unicast"
+    ]
+  }
+}

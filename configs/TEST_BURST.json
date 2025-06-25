@@ -1,0 +1,39 @@
+{
+  "interfaces": {
+    "io-burst": 500,
+    "rx-interval": 0.01,
+    "network": [
+      {
+        "interface": "ens16.50",
+        "address": "10.20.11.10/2i4",
+        "gateway": "10.20.11.1"
+      }
+    ],
+    "access": [
+      {
+        "interface": "ens17.50",
+        "ipv6": false,
+        "type": "ipoe",
+        "vlan-mode": "N:1",
+        "address": "170.0.0.3",
+        "address-iter": "0.0.0.1",
+        "gateway": "170.0.0.1",
+        "stream-group-id": 300
+      }
+    ]
+  },
+  "streams": [
+    {
+      "name": "TEST_STREAM",
+      "direction": "downstream",
+      "Mbps": 99,
+      "type": "ipv4",
+      "network-interface": "ens16.50",
+      "stream-group-id": 300,
+      "length": 3000
+    }
+  ],
+  "sessions": {
+    "count": 10
+  }
+}

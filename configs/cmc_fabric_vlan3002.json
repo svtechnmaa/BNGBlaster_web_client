@@ -1,0 +1,61 @@
+{
+  "access-line": {
+    "agent-circuit-id": "0.0.0.2/0.0.0.0 ge-0/0/0"
+  },
+  "interfaces": {
+    "tx-interval": 0.03,
+    "rx-interval": 0.03,
+    "tx-threads": 5,
+    "rx-threads": 5,
+    "io-slots": 32768,
+    "access": [
+      {
+        "authentication-protocol": "PAP",
+        "interface": "ens16.3002",
+        "stream-group-id": 1,
+        "vlan-mode": "N:1"
+      }
+    ],
+    "network": [
+      {
+        "address": "180.12.12.2/30",
+        "gateway": "180.12.12.1",
+        "interface": "ens17.22"
+      }
+    ]
+  },
+  "ppp": {
+    "authentication": {
+      "password": "svtech@123",
+      "retry": 30,
+      "timeout": 2,
+      "username": "cmc3002_{session-global}"
+    },
+    "mru": 1492
+  },
+  "pppoe": {
+    "reconnect": true,
+    "session-time": 0
+  },
+  "sessions": {
+    "count": 1
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "length": 1000,
+      "name": "IPv4_3M",
+      "network-interface": "ens17.22",
+      "Gbps": 5,
+      "priority": 192,
+      "start-delay": 3,
+      "stream-group-id": 1,
+      "type": "ipv4"
+    }
+  ],
+  "traffic": {
+    "stream-delay-calculation": true,
+    "stream-rate-calculation": true,
+    "udp-checksum": true
+  }
+}

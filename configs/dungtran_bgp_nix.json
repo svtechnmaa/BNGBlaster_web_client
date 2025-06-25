@@ -1,0 +1,21 @@
+{
+  "bgp": {
+    "family": [
+      "ipv4-unicast"
+    ],
+    "local-address": "113.171.240.246",
+    "local-as": 70000,
+    "peer-address": "113.171.240.245",
+    "peer-as": 45899,
+    "raw-update-file": "/var/bngblaster/dungtran_bgp_nix/NIX.bgp"
+  },
+  "interfaces": {
+    "network": [
+      {
+        "address": "113.171.240.246/30",
+        "gateway": "113.171.240.245",
+        "interface": "ens16.102"
+      }
+    ]
+  }
+}

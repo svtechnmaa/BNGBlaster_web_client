@@ -10,12 +10,60 @@ credentials:
       logged_in: false
       name: Admin
       password: $2b$12$JA/yLgkDSxFX2VZLYHWDluHbmvb51VFsR7P2bF0NtK344Oguk5N3e
+    anhuy:
+      email: anhuy@svtech.com.vn
+      failed_login_attempts: 0
+      logged_in: false
+      name: An Huy
+      password: $2b$12$2tn9ieVFOsFLTp0JD6RRBOBzIz4mXRfejiPvlA8xi/vxKlA9w2.Me
+    diepnk:
+      email: diep.nguyen@svtech.com.vn
+      failed_login_attempts: 0
+      logged_in: false
+      name: Diep Nguyen
+      password: $2b$12$9DKtBiicYazTlachxIt3qen.3UMxQH/9tWtuZR2SRzp7Kpd0bnA06
+    dungngoc:
+      email: dungngoc@svtech.com.vn
+      failed_login_attempts: 0
+      logged_in: false
+      name: Dung Ngoc
+      password: $2b$12$GGeDWneFMRUGD05q1WbneOYSsp8VyPjydYOfDgw7wylM7BiUA4OOG
+    dungtran:
+      email: dung.tran@svtech.com.vn
+      failed_login_attempts: 0
+      logged_in: false
+      name: Dung Tran
+      password: $2b$12$Q0orugUAN4PhDGozDN9xUO.1At3RtcKg3vNJyLcMlSImJ1U0M1g5e
+    hainguyen:
+      email: hai.nguyen@svtech.com.vn
+      failed_login_attempts: 0
+      logged_in: false
+      name: Nguyen Manh Hai
+      password: $2b$12$bY7OfQTY8aafCWH4F7guAO9BdgeueRBWZPBJjvfrWE/DOIbqfpJEO
+    hieunh:
+      email: hieu.nguyenhoang@svtech.com.vn
+      failed_login_attempts: 0
+      logged_in: false
+      name: Hieu Nguyen Hoang
+      password: $2b$12$nho3OyZweGMaCizBVyGHmOSdLV7ZXZoMjYab7JR7jfk8tgkfrAMfa
+    hoangdinh:
+      email: hoang.dinh@svtech.com.vn
+      failed_login_attempts: 0
+      logged_in: false
+      name: Hoang Dinh
+      password: $2b$12$Dc5HZl6S7dOBfsZ0ZyCfKuCUT4gVfUDUHpHDcfiV7cvlyod.0oH0u
     hoanguyen:
       email: hoa.nguyen@svtech.com.vn
       failed_login_attempts: 0
       logged_in: false
       name: Hoa Nguyen
       password: $2b$12$t.m1k8Ebq7A4aOSQSg8llOBVZxA43ehXEocOwSXh6t17S3ffmzn9y
+    hungdq:
+      email: hung.duong@svtech.com.vn
+      failed_login_attempts: 0
+      logged_in: false
+      name: Hung Duong
+      password: $2b$12$jNNZzgup2oJfMw8tXZslW.uk.istIT7oNuCIdtc777wS0U9qhu0HK
     huongphung:
       email: huong.phung@svtech.com.vn
       failed_login_attempts: 0
@@ -27,7 +75,54 @@ credentials:
       failed_login_attempts: 0
       logged_in: false
       name: Nik
-      password: $2b$12$lVyD2jEi5ysP1tWDm0VpN.v2gwP7YfXhPpeLfC3YKIjayELtsuzXC
+      password: $2b$12$MQT.kTB4v4hdxnJwQEEEPerHg/3BSvbEY/gIKN9yxHWJSrODlf.4e
+    namnh:
+      email: nam.hai@svtech.com.vn
+      failed_login_attempts: 0
+      logged_in: false
+      name: Hai Nam
+      password: $2b$12$.bh6Vm5kNc4WLz8EPctE9.nB2Hm5apFcNHD9LvJRE1kv/IYJhbIG6
+    namtd:
+      email: nam.tran@svtech.com.vn
+      failed_login_attempts: 0
+      logged_in: false
+      name: Nam Tran
+      password: $2b$12$z6kwJGUMcGEGZwfl1uWxIuAqrydNqyo3cSwsW/MIc8.vgIsPWrmTS
+    phucnn:
+      email: phuc.nn@svtech.com.vn
+      failed_login_attempts: 0
+      logged_in: false
+      name: Phuc Nhu
+      password: $2b$12$TE3TWkBbwDClxdRXDXcc5OUdmykQXsa3Vs7VAjl4h.UMDhMKafSd6
+    phucson:
+      email: phucson@svtech.com.vn
+      failed_login_attempts: 0
+      logged_in: false
+      name: Phuc Son
+      password: $2b$12$XO9UtrsZ9/GSQjThSvGK/OFhXFdIVDRlsH/rko.uped93Jlqo/5ca
+    sonvuong:
+      email: son.vuong@svtech.com.vn
+      failed_login_attempts: 0
+      logged_in: false
+      name: Son Vuong
+      password: $2b$12$iJlgLBHz5qAj03mtlh9ctuWVtXPR.WCcLo9OaGRXz0e2.LF30m/b6
+    tanpham:
+      email: tanpham@svtech.com.vn
+      failed_login_attempts: 0
+      logged_in: false
+      name: Tan Pham
+      password: $2b$12$2Qk78eXGmjZtkCC58uNX4urKPOsKIqVE3Qksru9PNpZmgnu75kVGO
+    thonv:
+      email: tho.nguyen@svtech.com.vn
+      logged_in: false
+      name: Tho Nguyen
+      password: $2b$12$3Q4CusVn7sgEy9fnXky7GuPRTInf5AKG95wu3Dk9EpKNbTVwF0qjq
+    tuannv:
+      email: tuannv@svtech.com.vn
+      failed_login_attempts: 0
+      logged_in: false
+      name: Tuan Nguyen
+      password: $2b$12$qxFDKCe3sNvfsoBsZ8gFGObUorPba3zb0yOppM6eppKkoU8D1/Ckm
     tudoan:
       email: tu.doan@svtech.com.vn
       failed_login_attempts: 0

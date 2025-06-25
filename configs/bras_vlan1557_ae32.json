@@ -1,0 +1,33 @@
+{
+  "interfaces": {
+    "tx-interval": 0.03,
+    "rx-interval": 0.03,
+    "tx-threads": 5,
+    "rx-threads": 5,
+    "io-slots": 32768,
+    "access": [
+      {
+        "authentication-protocol": "PAP",
+        "interface": "ens17.1557",
+        "stream-group-id": 1,
+        "vlan-mode": "N:1"
+      }
+    ]
+  },
+  "ppp": {
+    "authentication": {
+      "password": "svtech@123",
+      "retry": 30,
+      "timeout": 2,
+      "username": "vlan1557_{session-global}"
+    },
+    "mru": 1492
+  },
+  "pppoe": {
+    "reconnect": true,
+    "session-time": 0
+  },
+  "sessions": {
+    "count": 2162
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "103.145.6.10",
+        "address-iter": "0.0.0.1",
+        "gateway": "103.145.6.1",
+        "interface": "ens17.401",
+        "ipv6": false,
+        "stream-group-id": 102,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "network": [
+      {
+        "address": "103.141.142.128/24",
+        "gateway": "103.141.142.1",
+        "interface": "ens16.401"
+      }
+    ]
+  },
+  "sessions": {
+    "count": 10000
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "length": 1000,
+      "name": "BestEffort",
+      "pps": 100000,
+      "stream-group-id": 102,
+      "type": "ipv4"
+    }
+  ]
+}

@@ -1,0 +1,177 @@
+{
+  "access-line": {
+    "agent-circuit-id": "0.0.0.0/0.0.0.0 ge-0/0/0"
+  },
+  "igmp": {
+    "group": "225.10.10.6",
+    "group-count": 1,
+    "group-iter": "0.0.0.1",
+    "network-interface": "ens8.40",
+    "source": "105.10.10.2",
+    "start-delay": 2,
+    "version": 2
+  },
+  "interfaces": {
+    "access": [
+      {
+        "address": "200.0.0.3",
+        "address-iter": "0.0.0.1",
+        "gateway": "200.0.0.2",
+        "interface": "ens7.103",
+        "ipv6": false,
+        "session-group-id": 1,
+        "stream-group-id": 400,
+        "type": "ipoe",
+        "username": "2G_TDM",
+        "vlan-mode": "N:1"
+      },
+      {
+        "address": "172.10.10.2",
+        "gateway": "172.10.10.1",
+        "interface": "ens6.40",
+        "ipv6": false,
+        "type": "ipoe",
+        "username": "MULTICAST"
+      },
+      {
+        "address": "172.10.102.2",
+        "gateway": "172.10.102.1",
+        "interface": "ens7.102",
+        "ipv6": false,
+        "network-interface": "ens8.20",
+        "session-group-id": 3,
+        "stream-group-id": 402,
+        "type": "ipoe",
+        "username": "4G_TEST",
+        "vlan-mode": "N:1"
+      },
+      {
+        "authentication-protocol": "PAP",
+        "interface": "ens7.101",
+        "network-interface": "ens8.10",
+        "session-group-id": 4,
+        "stream-group-id": 403,
+        "type": "pppoe",
+        "vlan-mode": "N:1"
+      },
+      {
+        "address": "133.10.10.2",
+        "gateway": "133.10.10.1",
+        "interface": "ens7.20",
+        "ipv6": false,
+        "network-interface": "ens8.11",
+        "session-group-id": 5,
+        "stream-group-id": 407,
+        "type": "ipoe",
+        "username": "L3VPN_TEST",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "mac-modifier": 4,
+    "network": [
+      {
+        "address": "103.10.10.2/30",
+        "address-ipv6": "2100:abab:2000::2/112",
+        "gateway": "103.10.10.1",
+        "gateway-ipv6": "2100:abab:2000::1",
+        "interface": "ens8.10"
+      },
+      {
+        "address": "103.10.20.2/30",
+        "address-ipv6": "2200:abab:2000::2/112",
+        "gateway": "103.10.20.1",
+        "gateway-ipv6": "2200:abab:2000::1",
+        "interface": "ens8.20"
+      },
+      {
+        "address": "50.10.10.2/24",
+        "gateway": "50.10.10.1",
+        "interface": "ens8.11"
+      },
+      {
+        "address": "105.10.10.2/30",
+        "gateway": "105.10.10.1",
+        "interface": "ens8.40"
+      },
+      {
+        "address": "200.0.0.2/29",
+        "gateway": "200.0.0.1",
+        "gateway-resolve-wait": false,
+        "interface": "ens8.103"
+      }
+    ]
+  },
+  "ppp": {
+    "authentication": {
+      "password": "juniper@123",
+      "retry": 30,
+      "username": "manhpd5"
+    },
+    "mru": 1492
+  },
+  "sessions": {
+    "count": 5
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "name": "HSI_IPv6_LAN",
+      "network-interface": "ens8.10",
+      "pps": 1,
+      "stream-group-id": 403,
+      "type": "ipv6pd"
+    },
+    {
+      "direction": "both",
+      "name": "HSI_IPv6-WAN",
+      "network-interface": "ens8.10",
+      "pps": 1,
+      "stream-group-id": 403,
+      "type": "ipv6"
+    },
+    {
+      "direction": "both",
+      "name": "HSI_IPv4",
+      "network-interface": "ens8.10",
+      "pps": 1,
+      "stream-group-id": 403,
+      "type": "ipv4"
+    },
+    {
+      "direction": "both",
+      "name": "4G_TEST",
+      "network-interface": "ens8.20",
+      "pps": 1,
+      "stream-group-id": 402,
+      "type": "ipv4"
+    },
+    {
+      "direction": "both",
+      "name": "2G_TEST",
+      "network-interface": "ens8.103",
+      "network-ipv4-address": "200.0.0.2",
+      "pps": 1,
+      "start-delay": 2,
+      "stream-group-id": 400,
+      "type": "ipv4"
+    },
+    {
+      "direction": "both",
+      "name": "L3VPN_TEST",
+      "network-interface": "ens8.11",
+      "network-ipv4-address": "50.10.10.2",
+      "pps": 1,
+      "stream-group-id": 407,
+      "type": "ipv4"
+    },
+    {
+      "destination-ipv4-address": "225.10.10.6",
+      "direction": "downstream",
+      "name": "MULTICAST",
+      "network-interface": "ens8.40",
+      "pps": 10,
+      "priority": 128,
+      "type": "ipv4"
+    }
+  ]
+}

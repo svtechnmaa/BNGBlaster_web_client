@@ -1,0 +1,22 @@
+{
+  "bgp": {
+    "family": [
+      "ipv4-unicast",
+      "ipv6-unicast"
+    ],
+    "local-address": "10.123.1.2",
+    "local-as": 65000,
+    "peer-address": "10.123.1.1",
+    "peer-as": 7000,
+    "raw-update-file": "test.bgp"
+  },
+  "interfaces": {
+    "network": [
+      {
+        "address": "10.123.1.2/30",
+        "gateway": "10.123.1.1",
+        "interface": "ens17.123"
+      }
+    ]
+  }
+}

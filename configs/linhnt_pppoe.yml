@@ -1,0 +1,138 @@
+access-line:
+  agent-circuit-id:
+    __datatype: str
+    __label: access-line/agent-circuit-id
+    __options: []
+    __value: 0.0.0.0/0.0.0.0 ge-0/0/0
+    __widget: text_input
+dhcpv6:
+  enable:
+    __datatype: bool
+    __label: dhcpv6/enable
+    __options:
+    - true
+    - false
+    __value: true
+    __widget: selectbox
+  rapid-commit:
+    __datatype: bool
+    __label: dhcpv6/rapid-commit
+    __options:
+    - true
+    - false
+    __value: true
+    __widget: selectbox
+interfaces:
+  access:
+  - authentication-protocol:
+      __datatype: str
+      __label: interfaces/access/authentication-protocol
+      __options: []
+      __value: PAP
+      __widget: text_input
+    interface:
+      __datatype: interface_auto
+      __label: interfaces/access/interface
+      __options: []
+      __value: ens16.3010
+      __widget: text_input
+    stream-group-id:
+      __datatype: int
+      __label: interfaces/access/stream-group-id
+      __options:
+        __max: 65535
+        __min: 0
+        __step: 1000
+      __value: 1
+      __widget: number_input
+    vlan-mode:
+      __datatype: str
+      __label: interfaces/access/vlan-mode
+      __options:
+      - '1:1'
+      - N:1
+      __value: N:1
+      __widget: selectbox
+  mac-modifier:
+    __datatype: int
+    __label: interfaces/mac-modifier
+    __options:
+      __max: 255
+      __min: 0
+    __value: 10
+    __widget: slider
+ppp:
+  authentication:
+    password:
+      __datatype: str
+      __label: ppp/authentication/password
+      __options: []
+      __value: svtech@123
+      __widget: text_input
+    retry:
+      __datatype: str
+      __label: ppp/authentication/retry
+      __options: []
+      __value: 30
+      __widget: text_input
+    timeout:
+      __datatype: str
+      __label: ppp/authentication/timeout
+      __options: []
+      __value: 2
+      __widget: text_input
+    username:
+      __datatype: str
+      __label: ppp/authentication/username
+      __options: []
+      __value: vlan3000_{session-global}
+      __widget: text_input
+  mru:
+    __datatype: int
+    __label: ppp/mru
+    __options:
+      __max: 65535
+      __min: 1
+      __step: 1000
+    __value: 1492
+    __widget: number_input
+pppoe:
+  reconnect:
+    __datatype: bool
+    __label: pppoe/reconnect
+    __options:
+    - true
+    - false
+    __value: true
+    __widget: selectbox
+  session-time:
+    __datatype: str
+    __label: pppoe/session-time
+    __options: []
+    __value: 0
+    __widget: text_input
+sessions:
+  count:
+    __datatype: str
+    __label: sessions/count
+    __options: []
+    __value: 5000
+    __widget: text_input
+  max-outstanding:
+    __datatype: str
+    __label: sessions/max-outstanding
+    __options: []
+    __value: 800
+    __widget: text_input
+  start-rate:
+    __datatype: str
+    __label: sessions/start-rate
+    __options: []
+    __value: 200
+    __widget: text_input
+  stop-rate:
+    __datatype: str
+    __label: sessions/stop-rate
+    __options: []
+    __value: 200
+    __widget: text_input

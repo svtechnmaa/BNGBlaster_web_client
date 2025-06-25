@@ -1,0 +1,32 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "192.168.168.170",
+        "gateway": "192.168.168.169",
+        "interface": "ens16.3888",
+        "stream-group-id": 1,
+        "ipv6": false,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "network": [
+      {
+        "address": "10.63.1.1/30",
+        "gateway": "10.63.1.2",
+        "interface": "ens17.3887"
+      }
+    ]
+  },
+  "igmp": {
+    "version": 2,
+    "group": "239.1.0.1",
+    "group-count": 1,
+    "group-iter": "0.0.0.1",
+    "start-delay": 2,
+    "source": "10.63.1.1",
+    "send-multicast-traffic": true,
+    "multicast-traffic-pps": 10
+  }
+}

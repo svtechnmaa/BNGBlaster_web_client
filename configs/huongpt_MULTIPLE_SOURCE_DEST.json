@@ -1,0 +1,35 @@
+{
+  "bgp": {
+    "local-address": "174.10.10.1",
+    "peer-address": "174.10.10.2",
+    "local-as": 7552,
+    "peer-as": 7552,
+    "raw-update-file": "/var/bngblaster/47K_HOST.bgp",
+    "family": [
+      "ipv4-unicast"
+    ]
+  },
+  "sessions": {
+    "count": 80
+  },
+  "interfaces": {
+    "access": [
+      {
+        "address": "122.10.10.2",
+        "gateway": "122.10.10.1",
+        "interface": "ens16.801",
+        "ipv6": false,
+        "stream-group-id": 25,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "network": [
+      {
+        "address": "174.10.10.1/30",
+        "gateway": "174.10.10.2",
+        "interface": "ens17.801"
+      }
+    ]
+  }
+}

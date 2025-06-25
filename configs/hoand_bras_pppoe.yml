@@ -1,12 +1,363 @@
----
-hoand_bras_pppoe:
-  ppp_mru: '1492'
-  ppp_passwd: svtech@123
-  ppp_retry: '30'
-  ppp_timeout: '2'
-  ppp_user: testlab{session-global}
-  pppoe_reconnect: 'true'
-  pppoe_session: '5'
-  pppoe_session_time: '0'
-  template: bras_pppoe.j2
-
+dhcpv6:
+  enable:
+    __datatype: bool
+    __label: dhcpv6/enable
+    __options:
+    - true
+    - false
+    __value: true
+    __widget: selectbox
+  rapid-commit:
+    __datatype: bool
+    __label: dhcpv6/rapid-commit
+    __options:
+    - true
+    - false
+    __value: true
+    __widget: selectbox
+interfaces:
+  access:
+  - authentication-protocol:
+      __datatype: str
+      __label: interfaces/access/authentication-protocol
+      __options: []
+      __value: PAP
+      __widget: text_input
+    interface:
+      __datatype: interface_auto
+      __label: interfaces/access/interface
+      __options: []
+      __value: ens4
+      __widget: text_input
+    outer-vlan:
+      __datatype: int
+      __label: interfaces/access/outer-vlan
+      __options:
+        __max: 4094
+        __min: 0
+        __step: 1
+      __value: 60
+      __widget: number_input
+    stream-group-id:
+      __datatype: int
+      __label: interfaces/access/stream-group-id
+      __options:
+        __max: 65535
+        __min: 0
+        __step: 1000
+      __value: 1
+      __widget: number_input
+    vlan-mode:
+      __datatype: str
+      __label: interfaces/access/vlan-mode
+      __options:
+      - '1:1'
+      - N:1
+      __value: N:1
+      __widget: selectbox
+  network:
+  - address:
+      __datatype: str
+      __label: interfaces/network/address
+      __options: []
+      __value: 180.10.10.2/30
+      __widget: text_input
+    address-ipv6:
+      __datatype: str
+      __label: interfaces/network/address-ipv6
+      __options: []
+      __value: 2010:1010:abab::a/112
+      __widget: text_input
+    gateway:
+      __datatype: str
+      __label: interfaces/network/gateway
+      __options: []
+      __value: 180.10.10.1
+      __widget: text_input
+    gateway-ipv6:
+      __datatype: str
+      __label: interfaces/network/gateway-ipv6
+      __options: []
+      __value: 2010:1010:abab::1
+      __widget: text_input
+    interface:
+      __datatype: interface_auto
+      __label: interfaces/network/interface
+      __options: []
+      __value: ens5.10
+      __widget: text_input
+ppp:
+  authentication:
+    password:
+      __datatype: str
+      __label: ppp/authentication/password
+      __options: []
+      __value: svtech@123
+      __widget: text_input
+    retry:
+      __datatype: str
+      __label: ppp/authentication/retry
+      __options: []
+      __value: 30
+      __widget: text_input
+    timeout:
+      __datatype: str
+      __label: ppp/authentication/timeout
+      __options: []
+      __value: 2
+      __widget: text_input
+    username:
+      __datatype: str
+      __label: ppp/authentication/username
+      __options: []
+      __value: testlab{session-global}
+      __widget: text_input
+  mru:
+    __datatype: int
+    __label: ppp/mru
+    __options:
+      __max: 65535
+      __min: 1
+      __step: 1000
+    __value: 1492
+    __widget: number_input
+pppoe:
+  reconnect:
+    __datatype: bool
+    __label: pppoe/reconnect
+    __options:
+    - true
+    - false
+    __value: true
+    __widget: selectbox
+  session-time:
+    __datatype: str
+    __label: pppoe/session-time
+    __options: []
+    __value: 0
+    __widget: text_input
+sessions:
+  count:
+    __datatype: str
+    __label: sessions/count
+    __options: []
+    __value: 5
+    __widget: text_input
+streams:
+- direction:
+    __datatype: str
+    __label: streams/direction
+    __options:
+    - both
+    - upstream
+    - downstream
+    __value: both
+    __widget: selectbox
+  length:
+    __datatype: int
+    __label: streams/length
+    __options:
+      __max: 9000
+      __min: 76
+      __step: 100
+    __value: 1400
+    __widget: number_input
+  name:
+    __datatype: str
+    __label: streams/name
+    __options: []
+    __value: IPv6PD_3M
+    __widget: text_input
+  pps:
+    __datatype: str
+    __label: streams/pps
+    __options: []
+    __value: 1
+    __widget: text_input
+  priority:
+    __datatype: int
+    __label: streams/priority
+    __options:
+      __max: 256
+      __min: 0
+      __step: 1
+    __value: 192
+    __widget: number_input
+  start-delay:
+    __datatype: int
+    __label: streams/start-delay
+    __options: []
+    __value: 3
+    __widget: text_input
+  stream-group-id:
+    __datatype: str
+    __label: streams/stream-group-id
+    __options: []
+    __value: 1
+    __widget: text_input
+  type:
+    __datatype: str
+    __label: streams/type
+    __options:
+    - ipv4
+    - ipv6
+    - ipv6pd
+    __value: ipv6pd
+    __widget: selectbox
+- direction:
+    __datatype: str
+    __label: streams/direction
+    __options:
+    - both
+    - upstream
+    - downstream
+    __value: both
+    __widget: selectbox
+  length:
+    __datatype: int
+    __label: streams/length
+    __options:
+      __max: 9000
+      __min: 76
+      __step: 100
+    __value: 1400
+    __widget: number_input
+  name:
+    __datatype: str
+    __label: streams/name
+    __options: []
+    __value: IPv6_3M
+    __widget: text_input
+  network-interface:
+    __datatype: interface_auto
+    __label: streams/network-interface
+    __options: []
+    __value: ens5.10
+    __widget: text_input
+  pps:
+    __datatype: str
+    __label: streams/pps
+    __options: []
+    __value: 1
+    __widget: text_input
+  priority:
+    __datatype: int
+    __label: streams/priority
+    __options:
+      __max: 256
+      __min: 0
+      __step: 1
+    __value: 192
+    __widget: number_input
+  start-delay:
+    __datatype: int
+    __label: streams/start-delay
+    __options: []
+    __value: 3
+    __widget: text_input
+  stream-group-id:
+    __datatype: str
+    __label: streams/stream-group-id
+    __options: []
+    __value: 1
+    __widget: text_input
+  type:
+    __datatype: str
+    __label: streams/type
+    __options:
+    - ipv4
+    - ipv6
+    - ipv6pd
+    __value: ipv6
+    __widget: selectbox
+- direction:
+    __datatype: str
+    __label: streams/direction
+    __options:
+    - both
+    - upstream
+    - downstream
+    __value: both
+    __widget: selectbox
+  length:
+    __datatype: int
+    __label: streams/length
+    __options:
+      __max: 9000
+      __min: 76
+      __step: 100
+    __value: 1400
+    __widget: number_input
+  name:
+    __datatype: str
+    __label: streams/name
+    __options: []
+    __value: IPv4_3M
+    __widget: text_input
+  network-interface:
+    __datatype: interface_auto
+    __label: streams/network-interface
+    __options: []
+    __value: ens5.10
+    __widget: text_input
+  pps:
+    __datatype: str
+    __label: streams/pps
+    __options: []
+    __value: 1
+    __widget: text_input
+  priority:
+    __datatype: int
+    __label: streams/priority
+    __options:
+      __max: 256
+      __min: 0
+      __step: 1
+    __value: 192
+    __widget: number_input
+  start-delay:
+    __datatype: int
+    __label: streams/start-delay
+    __options: []
+    __value: 3
+    __widget: text_input
+  stream-group-id:
+    __datatype: str
+    __label: streams/stream-group-id
+    __options: []
+    __value: 1
+    __widget: text_input
+  type:
+    __datatype: str
+    __label: streams/type
+    __options:
+    - ipv4
+    - ipv6
+    - ipv6pd
+    __value: ipv4
+    __widget: selectbox
+traffic:
+  stream-delay-calculation:
+    __datatype: bool
+    __label: traffic/stream-delay-calculation
+    __options:
+    - true
+    - false
+    __value: true
+    __widget: selectbox
+  stream-rate-calculation:
+    __datatype: bool
+    __label: traffic/stream-rate-calculation
+    __options:
+    - true
+    - false
+    __value: true
+    __widget: selectbox
+  udp-checksum:
+    __datatype: bool
+    __label: traffic/udp-checksum
+    __options:
+    - true
+    - false
+    __value: true
+    __widget: selectbox

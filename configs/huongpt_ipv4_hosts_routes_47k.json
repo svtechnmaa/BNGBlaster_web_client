@@ -1,0 +1,18 @@
+{
+  "bgp": {
+    "local-address": "192.168.31.2",
+    "peer-address": "192.168.31.1",
+    "local-as": 5000,
+    "peer-as": 4000,
+    "raw-update-file": "/var/bngblaster/47K_HOST.bgp"
+  },
+  "interfaces": {
+    "network": [
+      {
+        "address": "192.168.31.2/30",
+        "gateway": "192.168.31.1",
+        "interface": "ens16.2231"
+      }
+    ]
+  }
+}

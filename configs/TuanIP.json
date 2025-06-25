@@ -1,0 +1,42 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "172.16.0.2",
+        "address-iter": "0.0.0.1",
+        "gateway": "172.16.0.1",
+        "interface": "ens17.94",
+        "ipv6": true,
+        "session-limit": 3050,
+        "stream-group-id": 2,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "io-slots": 65535,
+    "network": [
+      {
+        "address": "172.25.1.2/30",
+        "gateway": "172.25.1.1",
+        "interface": "ens16.95"
+      }
+    ],
+    "rx-threads": 5,
+    "tx-threads": 5
+  },
+  "sessions": {
+    "count": 3050,
+    "max-outstanding": 1500
+  },
+  "streams": [
+    {
+      "Gbps": 1.0,
+      "direction": "both",
+      "length": 76,
+      "name": "IPoE-3854",
+      "network-interface": "ens16.95",
+      "stream-group-id": 2,
+      "type": "ipv4"
+    }
+  ]
+}

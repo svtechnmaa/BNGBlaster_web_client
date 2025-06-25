@@ -1,0 +1,38 @@
+{
+  "streams": [
+    {
+      "direction": "both",
+      "length": 1000,
+      "name": "IPoE-400",
+      "network-interface": "ens16.400",
+      "pps": 1000,
+      "stream-group-id": 400,
+      "raw-tcp": true,
+      "type": "ipv4"
+    }
+  ],
+  "interfaces": {
+    "access": [
+      {
+        "address": "103.145.5.10",
+        "address-iter": "0.0.0.1",
+        "gateway": "103.145.5.1",
+        "stream-group-id": 400,
+        "interface": "ens17.400",
+        "ipv6": false,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "network": [
+      {
+        "address": "103.141.141.128/24",
+        "gateway": "103.141.141.1",
+        "interface": "ens16.400"
+      }
+    ]
+  },
+  "sessions": {
+    "count": 1000
+  }
+}
