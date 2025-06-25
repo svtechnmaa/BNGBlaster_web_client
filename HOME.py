@@ -2059,7 +2059,7 @@ if st.session_state.p3:
                     with col0:
                         st.write(":violet[:material/account_tree: **[BNGBlaster Configs]**]")
                         dict_selection_part_UI_new(data=data, key_up_level="", number_column=0)
-                    st.write(dict_var)
+                    # st.write(dict_var)
                     if dict_var:
                         #For process len(list of dict)
                         for i,v in dict_var.items(): 
