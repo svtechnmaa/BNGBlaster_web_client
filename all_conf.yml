@@ -253,6 +253,12 @@ interfaces:
       __value: ''
       __datatype: 'str'
       __options: []
+    _comment:
+      __label: 'interfaces/network/_comment'
+      __widget: 'text_input'
+      __value: ''
+      __datatype: 'str'
+      __options: []
     gateway:
       __label: 'interfaces/network/gateway'
       __widget: 'text_input'
@@ -405,6 +411,12 @@ interfaces:
       __widget: 'customize'
       __value: ''
       __datatype: 'interface_auto'
+      __options: []
+    _comment:
+      __label: 'interfaces/access/_comment'
+      __widget: 'text_input'
+      __value: ''
+      __datatype: 'str'
       __options: []
     a10nsp-interface:
       __label: 'interfaces/access/a10nsp-interface'

@@ -2059,7 +2059,7 @@ if st.session_state.p3:
                     with col0:
                         st.write(":violet[:material/account_tree: **[BNGBlaster Configs]**]")
                         dict_selection_part_UI_new(data=data, key_up_level="", number_column=0)
-                    # st.write(dict_var)
+                    st.write(dict_var)
                     if dict_var:
                         #For process len(list of dict)
                         for i,v in dict_var.items(): 
@@ -2068,7 +2068,7 @@ if st.session_state.p3:
                                 path= path_ext.split('___')
                                 path.remove("")
                                 for k in path:
-                                    if k.find('_') != -1:
+                                    if k.find('_') != -1 and k != '_comment':
                                         path[path.index(k)]=k.replace('_','-')
                                 str_path=""
                                 for o in path:
@@ -2090,7 +2090,7 @@ if st.session_state.p3:
                                 path.remove("")
                                 path_save.append(path)
                                 for k in path:
-                                    if k.find('_') != -1:
+                                    if k.find('_') != -1 and k != '_comment':
                                         path[path.index(k)]=k.replace('_','-')
                                     try:
                                         path[path.index(k)]=int(k)
@@ -2192,7 +2192,7 @@ if st.session_state.p3:
                                 path.remove("")
                                 # st.write(path)
                                 for k in path:
-                                    if k.find('_') != -1:
+                                    if k.find('_') != -1 and k != '_comment':
                                         path[path.index(k)]=k.replace('_','-')
                                     try:
                                         path[path.index(k)]=int(k)
@@ -2385,14 +2385,32 @@ if st.session_state.p4:
                                     st.warning(':material/warning: Should have file **%s** before start test profile **%s**'%(data_json['bgp']['raw-update-file'],instance))
                                     with st.popover(":green[:material/data_saver_on: Create **raw-update-file**]", use_container_width=True):
                                         with st.form("CREATE_FILE"):
-                                            prefix= st.text_input(f":orange[:material/add: Your prefix you want advertise: ]","", placeholder = "Fill your IP prefix")
-                                            num_prefix= st.text_input(f":orange[:material/add: Your number of prefixs you want advertise: ]","", placeholder = "Fill number")
+                                            asnumber= st.text_input(f":orange[:material/add: Your AS (-a) :]",f"{data_json['bgp']['local-as']}", placeholder = "Fill AS Number")
+                                            nexthop= st.text_input(f":orange[:material/add: Your next-hop (-n) :]",data_json['bgp']['local-address'], placeholder = "Fill next-hop IP")
+                                            nexthop_count= st.text_input(f":orange[:material/add: Your next-hop count (-N) :]",'', placeholder = "Fill next-hop count")
+                                            lp= st.text_input(f":orange[:material/add: Your local_pref (-l) :]",'', placeholder = "Fill LP")
+                                            prefix= st.text_input(f":orange[:material/add: Your prefix (-p):]","", placeholder = "Fill IP prefix")
+                                            num_prefix= st.text_input(f":orange[:material/add: Your number of prefixs (-P): ]","", placeholder = "Fill number")
                                             submitted = st.form_submit_button(label= ":green[:material/send: **CREATE**]", use_container_width=True)
                                             if submitted:
                                                 if "/" in prefix and prefix:
                                                     name_bgp_update = data_json['bgp']['raw-update-file'].split('/')[-1]
                                                     if prefix and num_prefix:
-                                                        result = subprocess.run(["bgpupdate","-f", "./bgp_update/%s"%name_bgp_update,"-a", f"{data_json['bgp']['local-as']}", "-n",data_json['bgp']['local-address'], "-p", prefix, "-P",num_prefix], capture_output=True, text=True)
+                                                        list_bgpupdate=["bgpupdate","-f", "./bgp_update/%s"%name_bgp_update, "-p", prefix, "-P",num_prefix]
+                                                        if asnumber:
+                                                            list_bgpupdate.append("-a")
+                                                            list_bgpupdate.append(asnumber)
+                                                        if nexthop:
+                                                            list_bgpupdate.append("-n")
+                                                            list_bgpupdate.append(nexthop)
+                                                        if nexthop_count:
+                                                            list_bgpupdate.append("-N")
+                                                            list_bgpupdate.append(nexthop_count)
+                                                        if lp:
+                                                            list_bgpupdate.append("-l")
+                                                            list_bgpupdate.append(lp)
+                                                        # st.write(list_bgpupdate)
+                                                        result = subprocess.run(list_bgpupdate, capture_output=True, text=True)
                                                         if 'error' not in str(result):
                                                             # push_file_to_server_by_ftp(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd'],f"{path_bgp_update}/{name_bgp_update}.bgp", f"{data_json['bgp']['raw-update-file']}")
                                                             upload_sc, upload_st = UPLOAD_FILE_BLASTER(blaster_server['ip'], blaster_server['port'], instance, f"{path_bgp_update}/{name_bgp_update}")
@@ -2407,7 +2425,7 @@ if st.session_state.p4:
                                                     else:
                                                         st.error(":violet[Fill prefix advertise above first]", icon="🔥")
                                                 else:
-                                                    st.error('Type your prefix with subnet mask, plz', icon="🚨")
+                                                    st.error('Type your prefix with subnet mask, please', icon="🚨")
             if "started" in str(instance_exist_ct):
                 st.session_state.button_start= True
                 st.session_state.button_stop= False
@@ -2422,9 +2440,13 @@ if st.session_state.p4:
                             col17, col18 =st.columns([1,1])
                             with col17:
                                 with st.form("ADVERTISE"):
-                                    prefix= st.text_input(f":orange[:material/add: Your prefix you want advertise: ]","", placeholder = "Fill your IP prefix")
-                                    num_prefix= st.text_input(f":orange[:material/add: Your number of prefixs you want advertise: ]","", placeholder = "Fill number")
-                                    submitted = st.form_submit_button(label= ":green[:material/send: **ADVERTISE**]")
+                                    asnumber= st.text_input(f":orange[:material/add: Your AS (-a) :]",f"{data_json['bgp']['local-as']}", placeholder = "Fill AS Number")
+                                    nexthop= st.text_input(f":orange[:material/add: Your next-hop (-n) :]",data_json['bgp']['local-address'], placeholder = "Fill next-hop IP")
+                                    nexthop_count= st.text_input(f":orange[:material/add: Your next-hop count (-N) :]",'', placeholder = "Fill next-hop count")
+                                    lp= st.text_input(f":orange[:material/add: Your local_pref (-l) :]",'', placeholder = "Fill LP")
+                                    prefix= st.text_input(f":orange[:material/add: Your prefix (-p):]","", placeholder = "Fill IP prefix")
+                                    num_prefix= st.text_input(f":orange[:material/add: Your number of prefixs (-P): ]","", placeholder = "Fill number")
+                                    submitted = st.form_submit_button(label= ":green[:material/send: **ADVERTISE**]", use_container_width=True)
                                     if submitted:
                                         if "/" in prefix and prefix:
                                             name_bgp_update = instance + "_"+ prefix.split('/')[0]+"_"+num_prefix
@@ -2437,12 +2459,22 @@ if st.session_state.p4:
                                             }
                                             """%(instance, name_bgp_update)
                                             if prefix and num_prefix:
-                                                # subprocess.run(["bgpupdate","-f", "%s.bgp"%instance,"-a", run_template[instance]['local_as'], "-n",run_template[instance]['bgp_local_address'], "-p", prefix, "-P",num_prefix,"-f", "withdraw.bgp","--withdraw"], capture_output=True, text=True)
-                                                # result = subprocess.run(["bgpupdate","-f", "./bgp_update/%s.bgp"%name_bgp_update,"-a", run_template[instance]['bgp_local_as'], "-n",run_template[instance]['bgp_local_address'], "-p", prefix, "-P",num_prefix], capture_output=True, text=True)
-                                                result= subprocess.run(["bgpupdate","-f", "./bgp_update/%s.bgp"%name_bgp_update,"-a", f"{data_json['bgp']['local-as']}", "-n",data_json['bgp']['local-address'], "-p", prefix, "-P",num_prefix], capture_output=True, text=True)
+                                                list_bgpupdate=["bgpupdate","-f", "./bgp_update/%s.bgp"%name_bgp_update, "-p", prefix, "-P",num_prefix]
+                                                if asnumber:
+                                                    list_bgpupdate.append("-a")
+                                                    list_bgpupdate.append(asnumber)
+                                                if nexthop:
+                                                    list_bgpupdate.append("-n")
+                                                    list_bgpupdate.append(nexthop)
+                                                if nexthop_count:
+                                                    list_bgpupdate.append("-N")
+                                                    list_bgpupdate.append(nexthop_count)
+                                                if lp:
+                                                    list_bgpupdate.append("-l")
+                                                    list_bgpupdate.append(lp)
+                                                # st.write(list_bgpupdate)
+                                                result= subprocess.run(list_bgpupdate, capture_output=True, text=True)
                                                 if 'error' not in str(result):
-                                                    # send_file = push_file_to_server_rest_api(blaster_server['ip'], '5000', './bgp_update/%s.bgp'%name_bgp_update)
-                                                    # push_file_to_server_by_ftp(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd'],f"{path_bgp_update}/{name_bgp_update}.bgp", f'/var/bngblaster/uploads/{name_bgp_update}.bgp')
                                                     upload_sc, upload_st = UPLOAD_FILE_BLASTER(blaster_server['ip'], blaster_server['port'], instance, f"{path_bgp_update}/{name_bgp_update}.bgp")
                                                     if upload_sc == 200:
                                                         st.info(':blue[Upload file sucessfully]', icon="🔥")
@@ -2462,9 +2494,16 @@ if st.session_state.p4:
                                             st.error('Type your prefix with subnet mask, plz', icon="🚨")
                             with col18:
                                 with st.form('WITHDRAW'):
-                                    prefix_wd= st.text_input(f":orange[:material/add: Your prefix you want withdraw: ]","", placeholder = "Fill your IP prefix")
-                                    num_prefix_wd= st.text_input(f":orange[:material/add: Your number of prefixs you want withdraw: ]","", placeholder = "Fill number")
-                                    submitted = st.form_submit_button(label= ":green[:material/dangerous: **WITHDRAW**]")
+                                    asnumber_wd= st.text_input(f":orange[:material/add: Your AS (-a) :]",f"{data_json['bgp']['local-as']}", placeholder = "Fill AS Number")
+                                    nexthop_wd= st.text_input(f":orange[:material/add: Your next-hop (-n) :]",data_json['bgp']['local-address'], placeholder = "Fill next-hop IP")
+                                    nexthop_count_wd= st.text_input(f":orange[:material/add: Your next-hop count (-N) :]",'', placeholder = "Fill next-hop count")
+                                    lp_wd= st.text_input(f":orange[:material/add: Your local_pref (-l) :]",'', placeholder = "Fill LP")
+                                    prefix_wd= st.text_input(f":orange[:material/add: Your prefix (-p):]","", placeholder = "Fill IP prefix")
+                                    num_prefix_wd= st.text_input(f":orange[:material/add: Your number of prefixs (-P): ]","", placeholder = "Fill number")
+
+                                    # prefix_wd= st.text_input(f":orange[:material/add: Your prefix you want withdraw: ]","", placeholder = "Fill your IP prefix")
+                                    # num_prefix_wd= st.text_input(f":orange[:material/add: Your number of prefixs you want withdraw: ]","", placeholder = "Fill number")
+                                    submitted = st.form_submit_button(label= ":green[:material/dangerous: **WITHDRAW**]", use_container_width=True)
                                     if submitted:
                                         if "/" in prefix_wd and prefix_wd:
                                             name_bgp_update_wd = instance+"_withdraw_"+ prefix_wd.split('/')[0]+"_"+num_prefix_wd
@@ -2477,11 +2516,23 @@ if st.session_state.p4:
                                             }
                                             """%(instance, name_bgp_update_wd)
                                             if prefix_wd and num_prefix_wd:
+                                                list_bgpupdate_wd=["bgpupdate","-f", "./bgp_update/%s.bgp"%name_bgp_update_wd, "-p", prefix, "-P",num_prefix]
+                                                if asnumber_wd:
+                                                    list_bgpupdate_wd.append("-a")
+                                                    list_bgpupdate_wd.append(asnumber_wd)
+                                                if nexthop_wd:
+                                                    list_bgpupdate_wd.append("-n")
+                                                    list_bgpupdate_wd.append(nexthop_wd)
+                                                if nexthop_count_wd:
+                                                    list_bgpupdate_wd.append("-N")
+                                                    list_bgpupdate_wd.append(nexthop_count_wd)
+                                                if lp_wd:
+                                                    list_bgpupdate_wd.append("-l")
+                                                    list_bgpupdate_wd.append(lp_wd)
+                                                list_bgpupdate_wd.append("--withdraw")
                                                 # result_wd= subprocess.run(["bgpupdate","-a", run_template[instance]['bgp_local_as'], "-n",run_template[instance]['bgp_local_address'], "-p", prefix_wd, "-P",num_prefix_wd,"-f", "./bgp_update/%s.bgp"%name_bgp_update_wd,"--withdraw"], capture_output=True, text=True)
-                                                result_wd= subprocess.run(["bgpupdate","-f", "./bgp_update/%s.bgp"%name_bgp_update_wd,"-a", f"{data_json['bgp']['local-as']}", "-n",data_json['bgp']['local-address'], "-p", prefix, "-P",num_prefix], capture_output=True, text=True)
+                                                result_wd= subprocess.run(list_bgpupdate_wd, capture_output=True, text=True)
                                                 if "error" not in str(result_wd):
-                                                    # send_file_wd = push_file_to_server_rest_api(blaster_server['ip'], '5000', './bgp_update/%s.bgp'%name_bgp_update_wd)
-                                                    # push_file_to_server_by_ftp(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']]['user'],dict_blaster_db_format[blaster_server['ip']]['passwd'] ,f"{path_bgp_update}/{name_bgp_update_wd}.bgp", f'/var/bngblaster/uploads/{name_bgp_update_wd}.bgp')
                                                     upload_sc, upload_st = UPLOAD_FILE_BLASTER(blaster_server['ip'], blaster_server['port'], instance, f"{path_bgp_update}/{name_bgp_update_wd}.bgp")
                                                     if upload_sc == 200:
                                                         st.info(':blue[Upload file sucessfully]', icon="🔥")
