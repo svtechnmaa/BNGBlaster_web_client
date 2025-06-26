@@ -801,13 +801,29 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                         with col_realtime:
                             with st.container(border= True, height=600):
                                 st.write("##### :green[**:material/bolt: INTERFACES STATISTICS**]")
-                                st.write(':violet[**:material/share: NETWORK INTERFACES**]')
-                                exec("display_nw_interface_%s = st.empty()"%i)
-                                st.write(':violet[**:material/share: ACCESS INTERFACES**]')
-                                exec("display_acc_interface_%s = st.empty()"%i)
+                                with st.container(border= True):
+                                    st.write(':violet[**:material/share: NETWORK INTERFACES**]')
+                                    exec("display_nw_interface_%s = st.empty()"%i)
+                                with st.container(border= True):
+                                    st.write(':violet[**:material/share: ACCESS INTERFACES**]')
+                                    exec("display_acc_interface_%s = st.empty()"%i)
                         with st.container(border= True):
-                            st.write('##### :green[:material/bolt: **STREAMS STATISTICS**]')
-                            exec("display_streams_%s = st.empty()"%i)
+                            with st.container(border= True):
+                                col_stream1, col_stream2= st.columns([10,1])
+                                with col_stream1:
+                                    st.write('##### :green[:material/bolt: **STREAMS STATISTICS**]')
+                                with col_stream2:
+                                    if st.button(':orange[:material/bolt: **RESET**]', use_container_width=True):
+                                        payload_command_stream_reset="""
+                                        {
+                                            "command": "stream-reset"
+                                        }
+                                        """
+                                        run_command_streams_reset_sc, run_command_streams_reset_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_stream_reset, '/_command')
+                                        if run_command_streams_reset_sc == 200:
+                                            st.toast(':blue[Reset stream statistic test profile %s successfully]'%i, icon="🔥")
+                            with st.container(border= True):
+                                exec("display_streams_%s = st.empty()"%i)
                         # df_nw_tx_rx = pd.DataFrame([[0, 0]], columns=(["network_tx_packets", "network_rx_packets"]))
                         # df_acc_tx_rx = pd.DataFrame([[0, 0]], columns=(["access_tx_packets", "access_rx_packets"]))
                         with col_graph:
@@ -861,7 +877,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                             temp_nw_int_sc, temp_nw_int_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_network_interface, '/_command')
                                             temp_data_nw_int = json.loads(temp_nw_int_ct)
                                             temp_list.append(filter_dict(temp_data_nw_int, 'network-interfaces.%s.rx-loss-packets-streams'%j))
-                                            time.sleep(0.01)
+                                            time.sleep(0.001)
                                         list_nw_pkt_loss_graph.append(temp_list)
                                     # Create table for network interfaces and access interfaces
                                     table_nw_int = {
@@ -958,13 +974,6 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                     }
                                     exec("display_streams_%s.dataframe(table_streams, column_config={ },use_container_width=True)"%i)
                                 # exec("display_streams_%s.write(data_streams_info)"%i)
-                            # run_command_counter_sc, run_command_counter_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_session_counters, '/_command')
-                            # run_command_nw_int_sc, run_command_nw_int_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_network_interface, '/_command')
-                            # run_command_acc_int_sc, run_command_acc_int_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_access_interface, '/_command')
-                            # data_counter = json.loads(run_command_counter_ct)
-                            # data_nw_int = json.loads(run_command_nw_int_ct)
-                            # st.code(data_nw_int)
-                            # data_acc_int = json.loads(run_command_acc_int_ct)
                             if run_command_nw_int_sc == 200:
                                 # add_nw_df = pd.DataFrame([[filter_dict(data_nw_int, 'network-interfaces.0.tx-packets'), filter_dict(data_nw_int, 'network-interfaces.0.rx-packets')]], columns=(["network_tx_packets", "network_rx_packets"]))
                                 # eval(f'nw_int_chart_{i}.add_rows(add_nw_df)')
@@ -972,15 +981,10 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                 for j in range(num_nw_int):
                                     add_nw_pps_df = pd.DataFrame([[filter_dict(data_nw_int, 'network-interfaces.%s.tx-pps'%j), filter_dict(data_nw_int, 'network-interfaces.%s.rx-pps'%j)]], columns=(["network_tx_pps", "network_rx_pps"]))
                                     eval(f'nw_int_chart_{i}_{j}_pps.add_rows(add_nw_pps_df)')
-                                # add_acc_df = pd.DataFrame([[filter_dict(data_acc_int, 'access-interfaces.0.tx-packets'), filter_dict(data_acc_int, 'access-interfaces.0.rx-packets')]], columns=(["access_tx_packets", "access_rx_packets"]))
-                                # eval(f'acc_int_chart_{i}.add_rows(add_acc_df)')
-                                # num_acc_int = len(data_acc_int['access-interfaces'])
                             if run_command_acc_int_sc == 200:
                                 for j in range(num_acc_int):
                                     add_acc_pps_df = pd.DataFrame([[filter_dict(data_acc_int, 'access-interfaces.%s.tx-pps'%j), filter_dict(data_acc_int, 'access-interfaces.%s.rx-pps'%j)]], columns=(["access_tx_pps", "access_rx_pps"]))
                                     eval(f'acc_int_chart_{i}_{j}_pps.add_rows(add_acc_pps_df)')
-                                # add_acc_pps_df = pd.DataFrame([[filter_dict(data_acc_int, 'access-interfaces.%s.tx-pps'%j), filter_dict(data_acc_int, 'access-interfaces.0.rx-pps')]], columns=(["access_tx_pps", "access_rx_pps"]))
-                                # eval(f'acc_int_chart_{i}_pps.add_rows(add_acc_pps_df)')
                         # time.sleep(0.5)
 #################### Function for copy dict by path ####################################
 def get_value_by_path(root, path):
@@ -2666,6 +2670,7 @@ if st.session_state.p4:
                             execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo -S ip link delete link {i.split('.')[0]} name {i} type vlan id {i.split('.')[1]}")
                             time.sleep(0.02)
                     st.info(":green[Stop successfully]", icon="🔥")
+                    time.sleep(2)
                     st.rerun()
     with col5:
         with st.container(border= True):
