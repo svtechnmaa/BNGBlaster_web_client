@@ -730,7 +730,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
             # Note: dict_blaster_db_format is var global
             list_int_server = find_interface(ip, dict_blaster_db_format[ip]['user'], dict_blaster_db_format[ip]['passwd'])
             for i in list_int_server:
-                st.write(':green[ :material/share: *Interface %s used vlan: %s*]'%(i, find_used_vlans(ip, dict_blaster_db_format[ip]['user'], dict_blaster_db_format[ip]['passwd'], i)))
+                st.write(':green[ :material/share: *Interface %s existed sub: %s*]'%(i, find_used_vlans(ip, dict_blaster_db_format[ip]['user'], dict_blaster_db_format[ip]['passwd'], i)))
         col_select, col_display= st.columns([1,2])
         with col_select:
             with st.container(border=True):
@@ -787,6 +787,15 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                 st.write(":fire: :violet[**GRAPH**]")
             with st.container(border=True, height= 400):
                 for i in select_running_instance_cb:
+                    st.markdown("""
+                        <style>
+                        /* This targets the actual popover container */
+                        div[data-testid="stPopoverBody"] {
+                            width: 1680px;  /* Change as needed */
+                            max-width: 10000px;
+                        }
+                        </style>
+                    """, unsafe_allow_html=True)
                     with st.popover(f":orange[:material/timeline: *{i}*]", use_container_width=True):
                         col_realtime, col_graph= st.columns([1,1])
                         with col_realtime:
@@ -2412,6 +2421,8 @@ if st.session_state.p4:
                                                         # st.write(list_bgpupdate)
                                                         result = subprocess.run(list_bgpupdate, capture_output=True, text=True)
                                                         if 'error' not in str(result):
+                                                            execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), "sudo -S mkdir /var/bngblaster/%s"%instance)
+                                                            time.sleep(0.1)
                                                             # push_file_to_server_by_ftp(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd'],f"{path_bgp_update}/{name_bgp_update}.bgp", f"{data_json['bgp']['raw-update-file']}")
                                                             upload_sc, upload_st = UPLOAD_FILE_BLASTER(blaster_server['ip'], blaster_server['port'], instance, f"{path_bgp_update}/{name_bgp_update}")
                                                             # st.write(upload_sc, upload_st)
