@@ -2643,35 +2643,37 @@ if st.session_state.p4:
                 if st.button('**STOP** :material/stop_circle:', type= 'primary', use_container_width=True, disabled= st.session_state.button_stop):
                     stop_sc, stop_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'POST', payload_stop, '/_stop')
                     # st.write(stop_sc, stop_ct)
-                    st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, True, False
                     log_authorize(st.session_state.user,blaster_server['ip'], f'RUN STOP test profile {instance}')
-                    
-                    stop_pg = st.progress(0)
-                    for percent_complete3 in range(100):
-                        time.sleep(0.004)
-                        stop_pg.progress(percent_complete3 + 1, text= f':violet[{percent_complete3+1}%]')
-                    # time.sleep(1)
-                    list_inf = []
-                    with open(f"{path_configs}/{instance}.json", "r") as json_run:
-                        val_json=json.load(json_run)
-                    try:
-                        for i in range(len(val_json['interfaces']['access'])):
-                            list_inf.append(val_json['interfaces']['access'][i]['interface'])
-                    except:
-                        pass
-                    try:
-                        for i in range(len(val_json['interfaces']['network'])):
-                            list_inf.append(val_json['interfaces']['network'][i]['interface'])
-                    except:
-                        pass
-                    for i in list_inf:
-                        if '.' in i:
-                            # st.toast(i)
-                            execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo -S ip link delete link {i.split('.')[0]} name {i} type vlan id {i.split('.')[1]}")
-                            time.sleep(0.02)
-                    st.info(":green[Stop successfully]", icon="🔥")
-                    time.sleep(2)
-                    st.rerun()
+                    if stop_sc == 202:
+                        st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, True, False
+                        log_authorize(st.session_state.user,blaster_server['ip'], f'STOP test profile {instance} successfully')
+                        
+                        stop_pg = st.progress(0)
+                        for percent_complete3 in range(100):
+                            time.sleep(0.004)
+                            stop_pg.progress(percent_complete3 + 1, text= f':violet[{percent_complete3+1}%]')
+                        time.sleep(2)
+                        list_inf = []
+                        with open(f"{path_configs}/{instance}.json", "r") as json_run:
+                            val_json=json.load(json_run)
+                        try:
+                            for i in range(len(val_json['interfaces']['access'])):
+                                list_inf.append(val_json['interfaces']['access'][i]['interface'])
+                        except:
+                            pass
+                        try:
+                            for i in range(len(val_json['interfaces']['network'])):
+                                list_inf.append(val_json['interfaces']['network'][i]['interface'])
+                        except:
+                            pass
+                        for i in list_inf:
+                            if '.' in i:
+                                # st.toast(i)
+                                execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo -S ip link delete link {i.split('.')[0]} name {i} type vlan id {i.split('.')[1]}")
+                                time.sleep(0.02)
+                        st.info(":green[Stop successfully]", icon="🔥")
+                        time.sleep(1)
+                        st.rerun()
     with col5:
         with st.container(border= True):
             st.subheader(':sunny: :green[OUTPUT LOGGING]')
