@@ -800,7 +800,8 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                         col_realtime, col_graph= st.columns([1,1])
                         with col_realtime:
                             with st.container(border= True, height=600):
-                                st.write("##### :green[**:material/bolt: INTERFACES STATISTICS**]")
+                                with st.container(border= True):
+                                    st.write("##### :green[**:material/bolt: INTERFACES STATISTICS**]")
                                 with st.container(border= True):
                                     st.write(':violet[**:material/share: NETWORK INTERFACES**]')
                                     exec("display_nw_interface_%s = st.empty()"%i)
@@ -809,11 +810,25 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                     exec("display_acc_interface_%s = st.empty()"%i)
                         with st.container(border= True):
                             with st.container(border= True):
-                                col_stream1, col_stream2= st.columns([10,1])
+                                col_stream1, col_stream2,col_stream3,col_stream4,col_stream5= st.columns([1,0.2,3,0.2,1])
                                 with col_stream1:
-                                    st.write('##### :green[:material/bolt: **STREAMS STATISTICS**]')
-                                with col_stream2:
-                                    if st.button(':orange[:material/bolt: **RESET**]', use_container_width=True):
+                                    with st.container(border= True):
+                                        st.write('##### :green[:material/bolt: **STREAMS STATISTICS**]')
+                                with col_stream3:
+                                    payload_command_stream_stats="""
+                                    {
+                                        "command": "stream-stats"
+                                    }
+                                    """
+                                    run_command_streams_stats_sc, run_command_streams_stats_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_stream_stats, '/_command')
+                                    if run_command_streams_stats_sc == 200:
+                                        data_streams_stats = json.loads(run_command_streams_stats_ct)
+                                        total_flows = data_streams_stats['stream-stats']['total-flows']
+                                    if total_flows > 0:
+                                        with st.container(border= True):
+                                            exec("flow_selection_%s = st.multiselect(':green[:material/add: Select flow-id]', options=range(1,%s), default=[1])"%(i,total_flows))
+                                with col_stream5:
+                                    if st.button(':orange[:material/bolt: **RESET**]', use_container_width=True, key='%s'%i):
                                         payload_command_stream_reset="""
                                         {
                                             "command": "stream-reset"
@@ -828,7 +843,8 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                         # df_acc_tx_rx = pd.DataFrame([[0, 0]], columns=(["access_tx_packets", "access_rx_packets"]))
                         with col_graph:
                             with st.container(border= True, height=600):
-                                st.write("##### :green[**:material/diagonal_line: GRAPH**]")
+                                with st.container(border= True):
+                                    st.write("##### :green[**:material/diagonal_line: GRAPH**]")
                                 with st.expander(":violet[:material/arrow_drop_down_circle: **NETWORK-INTERFACES**]"):
                                     df_nw_tx_rx_pps = pd.DataFrame([[0, 0]], columns=(["network_tx_pps", "network_rx_pps"]))
                                     run_command_nw_int_sc, run_command_nw_int_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_network_interface, '/_command')
@@ -860,7 +876,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                     while True:
                         for i in select_running_instance_cb:
                             with st.container(border= True):
-                                # Call API for network interface value
+                                # Call API for network interface value====================
                                 run_command_nw_int_sc, run_command_nw_int_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_network_interface, '/_command')
                                 if run_command_nw_int_sc == 200:
                                     data_nw_int = json.loads(run_command_nw_int_ct)
@@ -890,7 +906,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                     # Display table for network interfaces
                                     exec("display_nw_interface_%s.dataframe(table_nw_int, column_config={\"NW-LOSS-GRAPH\": st.column_config.AreaChartColumn(\"PKT-LOSS-GRAPH\")},use_container_width=True)"%i) # Edit configure by st.column_config.AreaChartColumn
                                     
-                                # Call API for access interface value
+                                # Call API for access interface value =================
                                 run_command_acc_int_sc, run_command_acc_int_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_access_interface, '/_command')
                                 if run_command_acc_int_sc == 200:
                                     data_acc_int = json.loads(run_command_acc_int_ct)
@@ -924,39 +940,34 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                     exec("display_acc_interface_%s.dataframe(table_acc_int, column_config={\"AC-LOSS-GRAPH\": st.column_config.AreaChartColumn(\"PKT-LOSS-GRAPH\")},use_container_width=True)"%i) # Edit configure by st.column_config.AreaChartColumn
                                     
                                 # ====================== Call API for stream summary ======================
-                                run_command_streams_sum_sc, run_command_streams_sum_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_stream_summary, '/_command')
-                                if run_command_streams_sum_sc == 200:
-                                    data_streams_summary = json.loads(run_command_streams_sum_ct)
-                                    num_flows =len(data_streams_summary['stream-summary']) # Number network interfaces in json
-                                    list_streams_name,list_streams_flowid, list_streams_direction, list_streams_sessionid, list_streams_tx_pps, list_streams_tx_bps, list_streams_rx_pps, list_streams_rx_bps, list_streams_loss=[],[],[],[],[],[],[],[],[]
-                                    
-                                    for n in range(num_flows): # Loop for make table of flow-ids
-                                        list_streams_name.append(filter_dict(data_streams_summary, 'stream-summary.%s.name'%n))
-                                        list_streams_flowid.append(filter_dict(data_streams_summary, 'stream-summary.%s.flow-id'%n))
-                                        
-                                        # Block for get stream-info
-                                        flowid= filter_dict(data_streams_summary, 'stream-summary.%s.flow-id'%n)
+                                payload_command_stream_stats="""
+                                {
+                                    "command": "stream-stats"
+                                }
+                                """
+                                run_command_streams_stats_sc, run_command_streams_stats_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_stream_stats, '/_command')
+                                if run_command_streams_stats_sc == 200:
+                                    data_streams_stats = json.loads(run_command_streams_stats_ct)
+                                    total_flows = data_streams_stats['stream-stats']['total-flows']
+                                if total_flows > 0:
+                                    list_streams_name, list_streams_flowid, list_streams_direction, list_streams_sessionid, list_streams_tx_pps, list_streams_tx_bps, list_streams_rx_pps, list_streams_rx_bps, list_streams_loss=[],[],[],[],[],[],[],[],[]
+                                    for n in eval("flow_selection_%s"%i): # Loop for make table of flow-ids
                                         payload_command_stream_info="""
                                         {
                                             "command": "stream-info",
                                             "arguments": {"flow-id": %s}
                                         }
-                                        """%flowid
+                                        """%n
                                         run_command_streams_info_sc, run_command_streams_info_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_stream_info, '/_command')
                                         if run_command_streams_info_sc == 200:
                                             data_streams_info = json.loads(run_command_streams_info_ct)
 
+                                            list_streams_name.append(filter_dict(data_streams_info, 'stream-info.name'))
+                                            list_streams_flowid.append(filter_dict(data_streams_info, 'stream-info.flow-id'))
                                             list_streams_tx_pps.append(filter_dict(data_streams_info, 'stream-info.tx-pps'))
                                             list_streams_tx_bps.append(filter_dict(data_streams_info, 'stream-info.tx-bps-l2'))
                                             list_streams_rx_pps.append(filter_dict(data_streams_info, 'stream-info.rx-pps'))
                                             list_streams_rx_bps.append(filter_dict(data_streams_info, 'stream-info.rx-bps-l2'))
-                                            # temp_list=[]
-                                            # for o in range(10):
-                                            #     temp_streams_info_sc, temp_streams_info_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_stream_info, '/_command')
-                                            #     temp_data_streams_info = json.loads(temp_streams_info_ct)
-                                            #     temp_list.append(filter_dict(temp_data_streams_info, 'stream-info.rx-loss'))
-                                            #     time.sleep(0.001)
-                                            # list_streams_loss.append(temp_list)
                                             list_streams_loss.append(filter_dict(data_streams_info, 'stream-info.rx-loss'))
                                             list_streams_direction.append(filter_dict(data_streams_info, 'stream-info.direction'))
                                             list_streams_sessionid.append(filter_dict(data_streams_info, 'stream-info.session-id'))
@@ -973,7 +984,6 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                         "PKT-LOSS(pkts)": list_streams_loss,
                                     }
                                     exec("display_streams_%s.dataframe(table_streams, column_config={ },use_container_width=True)"%i)
-                                # exec("display_streams_%s.write(data_streams_info)"%i)
                             if run_command_nw_int_sc == 200:
                                 # add_nw_df = pd.DataFrame([[filter_dict(data_nw_int, 'network-interfaces.0.tx-packets'), filter_dict(data_nw_int, 'network-interfaces.0.rx-packets')]], columns=(["network_tx_packets", "network_rx_packets"]))
                                 # eval(f'nw_int_chart_{i}.add_rows(add_nw_df)')
