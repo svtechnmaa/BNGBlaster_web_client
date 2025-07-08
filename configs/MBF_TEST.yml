@@ -4,7 +4,7 @@ interfaces:
       __datatype: str
       __label: interfaces/access/address
       __options: []
-      __value: 103.145.6.10
+      __value: 172.40.10.2
       __widget: text_input
     address-iter:
       __datatype: str
@@ -16,22 +16,14 @@ interfaces:
       __datatype: str
       __label: interfaces/access/gateway
       __options: []
-      __value: 103.145.6.1
+      __value: 172.40.10.1
       __widget: text_input
     interface:
       __datatype: interface_auto
       __label: interfaces/access/interface
       __options: []
-      __value: ens17.401
+      __value: ens16.1001
       __widget: text_input
-    ipv6:
-      __datatype: bool
-      __label: interfaces/access/ipv6
-      __options:
-      - true
-      - false
-      __value: false
-      __widget: selectbox
     stream-group-id:
       __datatype: int
       __label: interfaces/access/stream-group-id
@@ -39,7 +31,7 @@ interfaces:
         __max: 65535
         __min: 0
         __step: 1000
-      __value: 102
+      __value: 1000
       __widget: number_input
     type:
       __datatype: str
@@ -57,31 +49,49 @@ interfaces:
       - N:1
       __value: N:1
       __widget: selectbox
+  io-slots:
+    __datatype: str
+    __label: interfaces/io-slots
+    __options: []
+    __value: '1500'
+    __widget: text_input
   network:
   - address:
       __datatype: str
       __label: interfaces/network/address
       __options: []
-      __value: 103.141.142.128/24
+      __value: 172.20.10.2/30
       __widget: text_input
     gateway:
       __datatype: str
       __label: interfaces/network/gateway
       __options: []
-      __value: 103.141.142.1
+      __value: 172.20.10.1
       __widget: text_input
     interface:
       __datatype: interface_auto
       __label: interfaces/network/interface
       __options: []
-      __value: ens16.401
+      __value: ens17.1000
       __widget: text_input
+  rx-threads:
+    __datatype: str
+    __label: interfaces/rx-threads
+    __options: []
+    __value: '5'
+    __widget: text_input
+  tx-threads:
+    __datatype: str
+    __label: interfaces/tx-threads
+    __options: []
+    __value: '5'
+    __widget: text_input
 sessions:
   count:
     __datatype: str
     __label: sessions/count
     __options: []
-    __value: 10000
+    __value: '20'
     __widget: text_input
 streams:
 - direction:
@@ -106,25 +116,25 @@ streams:
     __datatype: str
     __label: streams/name
     __options: []
-    __value: BestEffort
+    __value: MBF_TEST
     __widget: text_input
   network-interface:
     __datatype: interface_auto
     __label: streams/network-interface
     __options: []
-    __value: ens16.401
+    __value: ens17.1000
     __widget: text_input
   pps:
     __datatype: str
     __label: streams/pps
     __options: []
-    __value: 100000
+    __value: '5000'
     __widget: text_input
   stream-group-id:
     __datatype: str
     __label: streams/stream-group-id
     __options: []
-    __value: 102
+    __value: '1000'
     __widget: text_input
   type:
     __datatype: str

@@ -29,6 +29,7 @@
       "length": 1000,
       "name": "BestEffort",
       "pps": 100000,
+      "network-interface": "ens16.401",
       "stream-group-id": 102,
       "type": "ipv4"
     }

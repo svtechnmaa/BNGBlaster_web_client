@@ -1,0 +1,39 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "30.31.31.1",
+        "address-iter": "0.0.0.1",
+        "gateway": "30.31.31.254",
+        "interface": "ens16.2801",
+        "stream-group-id": 2801,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "io-slots": 20000,
+    "network": [
+      {
+        "address": "30.31.32.1/30",
+        "gateway": "30.31.32.2",
+        "interface": "ens17.2801"
+      }
+    ],
+    "rx-threads": 5,
+    "tx-threads": 5
+  },
+  "sessions": {
+    "count": 230
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "length": 3500,
+      "name": "TEST_400G",
+      "network-interface": "ens17.2801",
+      "pps": 3000,
+      "stream-group-id": 2801,
+      "type": "ipv4"
+    }
+  ]
+}

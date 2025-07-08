@@ -1,0 +1,33 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "10.1.1.254",
+        "gateway": "10.1.1.1",
+        "interface": "ens16.4000",
+        "ipv6": false,
+        "stream-group-id": 4000,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "network": [
+      {
+        "address": "10.1.0.2/24",
+        "gateway": "10.1.0.1",
+        "interface": "ens17.4000"
+      }
+    ]
+  },
+  "streams": [
+    {
+      "Gbps": 1.0,
+      "direction": "both",
+      "length": 3000,
+      "name": "CRC test",
+      "network-interface": "ens17.4000",
+      "stream-group-id": 4000,
+      "type": "ipv4"
+    }
+  ]
+}

@@ -1,0 +1,177 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "10.31.31.1",
+        "address-iter": "0.0.0.1",
+        "gateway": "10.31.31.254",
+        "interface": "ens16.2601",
+        "stream-group-id": 2601,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      },
+      {
+        "address": "10.31.33.1",
+        "address-iter": "0.0.0.1",
+        "gateway": "10.31.33.254",
+        "interface": "ens16.2602",
+        "stream-group-id": 2602,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      },
+      {
+        "address": "10.31.34.1",
+        "address-iter": "0.0.0.1",
+        "gateway": "10.31.34.254",
+        "interface": "ens16.2603",
+        "stream-group-id": 2603,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      },
+      {
+        "address": "10.32.31.1",
+        "address-iter": "0.0.0.1",
+        "gateway": "10.32.31.254",
+        "interface": "ens16.2604",
+        "stream-group-id": 2604,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      },
+      {
+        "address": "10.32.33.1",
+        "address-iter": "0.0.0.1",
+        "gateway": "10.32.33.254",
+        "interface": "ens16.2605",
+        "stream-group-id": 2605,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      },
+      {
+        "address": "10.32.34.1",
+        "address-iter": "0.0.0.1",
+        "gateway": "10.32.34.254",
+        "interface": "ens16.2606",
+        "stream-group-id": 2606,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      },
+      {
+        "address": "10.31.35.1",
+        "address-iter": "0.0.0.1",
+        "gateway": "10.31.35.254",
+        "interface": "ens16.2607",
+        "stream-group-id": 2607,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "io-slots": 20000,
+    "network": [
+      {
+        "address": "10.31.32.1/30",
+        "gateway": "10.31.32.2",
+        "interface": "ens17.2601"
+      },
+      {
+        "address": "10.31.33.11/24",
+        "gateway": "10.31.33.254",
+        "interface": "ens17.2602"
+      },
+      {
+        "address": "11.11.14.1/24",
+        "gateway": "11.11.14.254",
+        "interface": "ens17.2603"
+      },
+      {
+        "address": "10.32.32.1/30",
+        "gateway": "10.32.32.2",
+        "interface": "ens17.2604"
+      },
+      {
+        "address": "10.32.33.11/24",
+        "gateway": "10.32.33.254",
+        "interface": "ens17.2605"
+      },
+      {
+        "address": "11.12.14.1/24",
+        "gateway": "11.12.14.254",
+        "interface": "ens17.2606"
+      },
+      {
+        "address": "11.11.15.1/24",
+        "gateway": "11.11.15.254",
+        "interface": "ens17.2607"
+      }
+    ],
+    "rx-threads": 5,
+    "tx-threads": 5
+  },
+  "sessions": {
+    "count": 200
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "length": 3800,
+      "name": "L3VPN",
+      "network-interface": "ens17.2601",
+      "pps": 2000,
+      "stream-group-id": 2601,
+      "type": "ipv4"
+    },
+    {
+      "direction": "both",
+      "length": 3800,
+      "name": "L2VPN",
+      "network-interface": "ens17.2602",
+      "pps": 2000,
+      "stream-group-id": 2602,
+      "type": "ipv4"
+    },
+    {
+      "direction": "both",
+      "length": 3800,
+      "name": "L3LL",
+      "network-interface": "ens17.2603",
+      "pps": 2000,
+      "stream-group-id": 2603,
+      "type": "ipv4"
+    },
+    {
+      "direction": "both",
+      "length": 3800,
+      "name": "L3VPN-2",
+      "network-interface": "ens17.2604",
+      "pps": 2000,
+      "stream-group-id": 2604,
+      "type": "ipv4"
+    },
+    {
+      "direction": "both",
+      "length": 3800,
+      "name": "L2VPN-2",
+      "network-interface": "ens17.2605",
+      "pps": 2000,
+      "stream-group-id": 2605,
+      "type": "ipv4"
+    },
+    {
+      "direction": "both",
+      "length": 3800,
+      "name": "L3LL-2",
+      "network-interface": "ens17.2606",
+      "pps": 2000,
+      "stream-group-id": 2606,
+      "type": "ipv4"
+    },
+    {
+      "direction": "both",
+      "length": 3800,
+      "name": "IP",
+      "network-interface": "ens17.2607",
+      "pps": 2000,
+      "stream-group-id": 2607,
+      "type": "ipv4"
+    }
+  ]
+}

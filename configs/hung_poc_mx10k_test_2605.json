@@ -1,0 +1,39 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "10.32.33.1",
+        "address-iter": "0.0.0.1",
+        "gateway": "10.32.33.254",
+        "interface": "ens16.2605",
+        "stream-group-id": 2605,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "io-slots": 20000,
+    "network": [
+      {
+        "address": "10.32.33.11/24",
+        "gateway": "10.32.33.254",
+        "interface": "ens17.2605"
+      }
+    ],
+    "rx-threads": 5,
+    "tx-threads": 5
+  },
+  "sessions": {
+    "count": 240
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "length": 3800,
+      "name": "L2VPN-2",
+      "network-interface": "ens17.2605",
+      "pps": 3000,
+      "stream-group-id": 2605,
+      "type": "ipv4"
+    }
+  ]
+}

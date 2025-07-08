@@ -1,0 +1,30 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "authentication-protocol": "PAP",
+        "interface": "ens16.1112",
+        "type": "pppoe",
+        "username": "HSI",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "mac-modifier": 10
+  },
+  "ppp": {
+    "authentication": {
+      "password": "svtech@123",
+      "retry": 30,
+      "timeout": 2,
+      "username": "HSI-IPv4_{session-global}"
+    },
+    "mru": 1492
+  },
+  "pppoe": {
+    "reconnect": true,
+    "session-time": 0
+  },
+  "sessions": {
+    "count": 1
+  }
+}

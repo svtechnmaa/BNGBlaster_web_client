@@ -151,7 +151,7 @@ interfaces:
     __datatype: str
     __label: interfaces/io-slots
     __options: []
-    __value: '65535'
+    __value: 65535
     __widget: text_input
   network:
   - address:
@@ -212,20 +212,20 @@ interfaces:
     __datatype: str
     __label: interfaces/rx-threads
     __options: []
-    __value: '5'
+    __value: 5
     __widget: text_input
   tx-threads:
     __datatype: str
     __label: interfaces/tx-threads
     __options: []
-    __value: '5'
+    __value: 5
     __widget: text_input
 sessions:
   count:
     __datatype: str
     __label: sessions/count
     __options: []
-    __value: '100'
+    __value: 100
     __widget: text_input
 streams:
 - direction:
@@ -262,13 +262,115 @@ streams:
     __datatype: str
     __label: streams/pps
     __options: []
-    __value: '1000'
+    __value: 1000
     __widget: text_input
   stream-group-id:
     __datatype: str
     __label: streams/stream-group-id
     __options: []
-    __value: '2601'
+    __value: 2601
+    __widget: text_input
+  type:
+    __datatype: str
+    __label: streams/type
+    __options:
+    - ipv4
+    - ipv6
+    - ipv6pd
+    __value: ipv4
+    __widget: selectbox
+- direction:
+    __datatype: str
+    __label: streams/direction
+    __options:
+    - both
+    - upstream
+    - downstream
+    __value: both
+    __widget: selectbox
+  length:
+    __datatype: int
+    __label: streams/length
+    __options:
+      __max: 9000
+      __min: 76
+      __step: 100
+    __value: 1000
+    __widget: number_input
+  name:
+    __datatype: str
+    __label: streams/name
+    __options: []
+    __value: L2VPN
+    __widget: text_input
+  network-interface:
+    __datatype: interface_auto
+    __label: streams/network-interface
+    __options: []
+    __value: ens17.2602
+    __widget: text_input
+  pps:
+    __datatype: str
+    __label: streams/pps
+    __options: []
+    __value: 1000
+    __widget: text_input
+  stream-group-id:
+    __datatype: str
+    __label: streams/stream-group-id
+    __options: []
+    __value: 2602
+    __widget: text_input
+  type:
+    __datatype: str
+    __label: streams/type
+    __options:
+    - ipv4
+    - ipv6
+    - ipv6pd
+    __value: ipv4
+    __widget: selectbox
+- direction:
+    __datatype: str
+    __label: streams/direction
+    __options:
+    - both
+    - upstream
+    - downstream
+    __value: both
+    __widget: selectbox
+  length:
+    __datatype: int
+    __label: streams/length
+    __options:
+      __max: 9000
+      __min: 76
+      __step: 100
+    __value: 1000
+    __widget: number_input
+  name:
+    __datatype: str
+    __label: streams/name
+    __options: []
+    __value: L3LL
+    __widget: text_input
+  network-interface:
+    __datatype: interface_auto
+    __label: streams/network-interface
+    __options: []
+    __value: ens17.2603
+    __widget: text_input
+  pps:
+    __datatype: str
+    __label: streams/pps
+    __options: []
+    __value: 1000
+    __widget: text_input
+  stream-group-id:
+    __datatype: str
+    __label: streams/stream-group-id
+    __options: []
+    __value: 2603
     __widget: text_input
   type:
     __datatype: str

@@ -1,0 +1,39 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "20.31.31.1",
+        "address-iter": "0.0.0.1",
+        "gateway": "20.31.31.254",
+        "interface": "ens16.2701",
+        "stream-group-id": 2701,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "io-slots": 20000,
+    "network": [
+      {
+        "address": "20.31.32.1/30",
+        "gateway": "20.31.32.2",
+        "interface": "ens17.2701"
+      }
+    ],
+    "rx-threads": 5,
+    "tx-threads": 5
+  },
+  "sessions": {
+    "count": 200
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "length": 3000,
+      "name": "L3VPN-3",
+      "network-interface": "ens17.2701",
+      "pps": 2000,
+      "stream-group-id": 2701,
+      "type": "ipv4"
+    }
+  ]
+}

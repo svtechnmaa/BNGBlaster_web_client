@@ -9,24 +9,6 @@
         "stream-group-id": 2601,
         "type": "ipoe",
         "vlan-mode": "N:1"
-      },
-      {
-        "address": "10.31.33.1",
-        "address-iter": "0.0.0.1",
-        "gateway": "10.31.33.254",
-        "interface": "ens16.2602",
-        "stream-group-id": 2602,
-        "type": "ipoe",
-        "vlan-mode": "N:1"
-      },
-      {
-        "address": "10.31.34.1",
-        "address-iter": "0.0.0.1",
-        "gateway": "10.31.34.254",
-        "interface": "ens16.2603",
-        "stream-group-id": 2603,
-        "type": "ipoe",
-        "vlan-mode": "N:1"
       }
     ],
     "io-slots": 65535,
@@ -35,16 +17,6 @@
         "address": "10.31.32.1/30",
         "gateway": "10.31.32.2",
         "interface": "ens17.2601"
-      },
-      {
-        "address": "10.31.33.11/24",
-        "gateway": "10.31.33.254",
-        "interface": "ens17.2602"
-      },
-      {
-        "address": "11.11.14.1/24",
-        "gateway": "11.11.14.254",
-        "interface": "ens17.2603"
       }
     ],
     "rx-threads": 5,

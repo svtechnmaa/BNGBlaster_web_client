@@ -1,0 +1,39 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "172.40.10.2",
+        "address-iter": "0.0.0.1",
+        "gateway": "172.40.10.1",
+        "interface": "ens16.1001",
+        "stream-group-id": 1000,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "io-slots": 1500,
+    "network": [
+      {
+        "address": "172.20.10.2/30",
+        "gateway": "172.20.10.1",
+        "interface": "ens17.1000"
+      }
+    ],
+    "rx-threads": 5,
+    "tx-threads": 5
+  },
+  "sessions": {
+    "count": 20
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "length": 1000,
+      "name": "MBF_TEST",
+      "network-interface": "ens17.1000",
+      "pps": 5000,
+      "stream-group-id": 1000,
+      "type": "ipv4"
+    }
+  ]
+}

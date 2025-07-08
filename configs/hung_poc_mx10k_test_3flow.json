@@ -29,7 +29,6 @@
         "vlan-mode": "N:1"
       }
     ],
-    "io-slots": 65535,
     "network": [
       {
         "address": "10.31.32.1/30",
@@ -48,7 +47,8 @@
       }
     ],
     "rx-threads": 5,
-    "tx-threads": 5
+    "tx-threads": 5,
+    "io-slots": 65535
   },
   "sessions": {
     "count": 100
@@ -61,6 +61,24 @@
       "network-interface": "ens17.2601",
       "pps": 1000,
       "stream-group-id": 2601,
+      "type": "ipv4"
+    },
+    {
+      "direction": "both",
+      "length": 1000,
+      "name": "L2VPN",
+      "network-interface": "ens17.2602",
+      "pps": 1000,
+      "stream-group-id": 2602,
+      "type": "ipv4"
+    },
+    {
+      "direction": "both",
+      "length": 1000,
+      "name": "L3LL",
+      "network-interface": "ens17.2603",
+      "pps": 1000,
+      "stream-group-id": 2603,
       "type": "ipv4"
     }
   ]
