@@ -2405,7 +2405,8 @@ if st.session_state.p4:
                         if 'bgp' in data_json.keys():
                             if 'raw-update-file' in data_json['bgp'].keys():
                                 with st.container(border= True):
-                                    st.warning(':material/warning: Should have file **%s** before start test profile **%s**'%(data_json['bgp']['raw-update-file'],instance))
+                                    st.warning(':material/warning: Define absolute path when your define \'raw-update-file\' .Example: **/var/bngblaster/<profile>/test.bgp**')
+                                    st.warning(':material/warning: Should have file **%s** before start test profile **%s**'%(data_json['bgp']['raw-update-file'], instance))
                                     with st.popover(":green[:material/data_saver_on: Create **raw-update-file**]", use_container_width=True):
                                         with st.form("CREATE_FILE"):
                                             asnumber= st.text_input(f":orange[:material/add: Your AS (-a) :]",f"{data_json['bgp']['local-as']}", placeholder = "Fill AS Number")
