@@ -2613,7 +2613,7 @@ if st.session_state.p4:
                     except Exception as e:
                         st.info(f'Error {e}')
                     if exist_sc == 200:
-                        st.write(':orange[Start traffic generating ...]')
+                        st.write(':orange[:material/done: Start traffic generating ...]')
                         with open(f'{path_configs}/{instance}.json') as file:
                             exist_put_body= json.load(file)
                         CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'PUT', json.dumps(exist_put_body, indent=2))
@@ -2627,14 +2627,14 @@ if st.session_state.p4:
                         ######## Push config.json ##############################
                         with open(f'{path_configs}/{instance}.json') as file:
                             put_body= json.load(file)
-                        st.write(':orange[Put config.json ...]')
+                        st.write(':orange[:material/upload: Put config.json ...]')
                         put_sc, put_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'PUT', json.dumps(put_body, indent=2))
                         put_pg = st.progress(0)
                         for percent_complete1 in range(100):
                             time.sleep(0.01)
                             put_pg.progress(percent_complete1 + 1, text= f':violet[{percent_complete1+1}%]')
                         ######## Start trafffic ##############################
-                        st.write(':orange[Start traffic generating ...]')
+                        st.write(':orange[:material/done: Start traffic generating ...]')
                         start_sc, start_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'POST', payload_start, '/_start')
                         # st.write(start_sc, start_ct)
                         run_pg = st.progress(0)
@@ -2659,31 +2659,45 @@ if st.session_state.p4:
                         log_authorize(st.session_state.user,blaster_server['ip'], f'STOP test profile {instance} successfully')
                         
                         stop_pg = st.progress(0)
-                        for percent_complete3 in range(100):
-                            time.sleep(0.004)
-                            stop_pg.progress(percent_complete3 + 1, text= f':violet[{percent_complete3+1}%]')
-                        time.sleep(2)
-                        list_inf = []
-                        with open(f"{path_configs}/{instance}.json", "r") as json_run:
-                            val_json=json.load(json_run)
-                        try:
-                            for i in range(len(val_json['interfaces']['access'])):
-                                list_inf.append(val_json['interfaces']['access'][i]['interface'])
-                        except:
-                            pass
-                        try:
-                            for i in range(len(val_json['interfaces']['network'])):
-                                list_inf.append(val_json['interfaces']['network'][i]['interface'])
-                        except:
-                            pass
-                        for i in list_inf:
-                            if '.' in i:
-                                # st.toast(i)
-                                execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo -S ip link delete link {i.split('.')[0]} name {i} type vlan id {i.split('.')[1]}")
-                                time.sleep(0.02)
-                        st.info(":green[Stop successfully]", icon="🔥")
-                        time.sleep(1)
-                        st.rerun()
+                        # for percent_complete3 in range(100):
+                        #     time.sleep(0.004)
+                        #     stop_pg.progress(percent_complete3 + 1, text= f':violet[{percent_complete3+1}%]')
+                        m = False # this var for display warning if for below out of range, user need wait more and refresh page
+                        for i in range(10):
+                            check_instance_st, check_instance_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'GET', payload_start)
+                            # st.write(check_instance_st,check_instance_ct)
+                            if "stopped" in str(check_instance_ct):
+                                list_inf = []
+                                with open(f"{path_configs}/{instance}.json", "r") as json_run:
+                                    val_json=json.load(json_run)
+                                try:
+                                    for i in range(len(val_json['interfaces']['access'])):
+                                        list_inf.append(val_json['interfaces']['access'][i]['interface'])
+                                except:
+                                    pass
+                                try:
+                                    for i in range(len(val_json['interfaces']['network'])):
+                                        list_inf.append(val_json['interfaces']['network'][i]['interface'])
+                                except:
+                                    pass
+                                for i in list_inf:
+                                    if '.' in i:
+                                        # st.toast(i)
+                                        execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo -S ip link delete link {i.split('.')[0]} name {i} type vlan id {i.split('.')[1]}")
+                                        time.sleep(0.02)
+                                stop_pg.progress(100, text= f':violet[100%]')
+                                st.info(":green[Stop successfully]", icon="🔥")
+                                time.sleep(1)
+                                break
+                            if i == 9:
+                                m = True
+                            stop_pg.progress(i*10, text= f':violet[{i*10}%]')
+                            time.sleep(2)
+                        if m:
+                            st.warning("Your profile can still running, wait and refresh again", icon="🔥")
+                        else:
+                            time.sleep(1)
+                            st.rerun()
     with col5:
         with st.container(border= True):
             st.subheader(':sunny: :green[OUTPUT LOGGING]')
