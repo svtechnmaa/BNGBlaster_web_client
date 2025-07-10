@@ -2580,13 +2580,14 @@ if st.session_state.p4:
                 with col19:
                     st.session_state.button_start= False
                     st.session_state.button_stop= True
+                    st.session_state.button_kill= True
                     with st.container(border= True):
                         if instance in list_instance_avail_from_blaster:
                             st.warning(f'Test profile **{instance}** can start but its config will be overrided', icon="🔥")
                         else:
                             st.info("You can start this test profile", icon="🔥")
             with col19:
-                if st.button('**START** :material/sound_sampler: ', type = 'primary',use_container_width=True, disabled= st.session_state.button_start):
+                if st.button(':material/sound_sampler: **START**', type = 'primary',use_container_width=True, disabled= st.session_state.button_start):
                     list_inf = []
                     with open(f"{path_configs}/{instance}.json", "r") as json_run:
                         val_json=json.load(json_run)
@@ -2651,7 +2652,7 @@ if st.session_state.p4:
                     time.sleep(1)
                     st.rerun()
                 # with st.container(border= True):
-                if st.button('**STOP** :material/stop_circle:', type= 'primary', use_container_width=True, disabled= st.session_state.button_stop):
+                if st.button(':material/stop_circle: **STOP**', type= 'primary', use_container_width=True, disabled= st.session_state.button_stop):
                     stop_sc, stop_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'POST', payload_stop, '/_stop')
                     # st.write(stop_sc, stop_ct)
                     log_authorize(st.session_state.user,blaster_server['ip'], f'RUN STOP test profile {instance}')
@@ -2695,10 +2696,17 @@ if st.session_state.p4:
                             stop_pg.progress(i*10, text= f':violet[{i*10}%]')
                             time.sleep(2)
                         if m:
-                            st.warning("Your profile can still running, wait and refresh again", icon="🔥")
+                            st.warning("Your profile can still running, wait and refresh again or use kill below", icon="🔥")
+                            st.session_state.button_kill= False
                         else:
                             time.sleep(1)
                             st.rerun()
+                if st.button(':material/offline_bolt: **KILL**', type= 'primary', use_container_width=True, disabled= st.session_state.button_kill):
+                    kill_sc, kill_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'POST', payload_stop, '/_kill')
+                    if kill_sc == 202:
+                        st.warning("You used KILL button, report after testing which couldn't be generated", icon="🔥")
+                        time.sleep(1)
+                        st.rerun()
     with col5:
         with st.container(border= True):
             st.subheader(':sunny: :green[OUTPUT LOGGING]')
