@@ -899,7 +899,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                     table_nw_int = {
                                         "NAME": list_nw_name,
                                         "NW-TX(pps)": list_nw_tx_pps,
-                                        "NW-RX(pps)": list_nw_tx_pps,
+                                        "NW-RX(pps)": list_nw_rx_pps,
                                         "NW-LOSS(pkt)": list_nw_pkt_loss,
                                         "NW-LOSS-GRAPH": list_nw_pkt_loss_graph,
                                     }
@@ -932,7 +932,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                     table_acc_int = {
                                         "NAME": list_acc_name,
                                         "AC-TX(pps)": list_acc_tx_pps,
-                                        "AC-RX(pps)": list_acc_tx_pps,
+                                        "AC-RX(pps)": list_acc_rx_pps,
                                         "AC-LOSS(pkt)": list_acc_pkt_loss,
                                         "AC-LOSS-GRAPH": list_acc_pkt_loss_graph,
                                     }
