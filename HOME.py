@@ -708,6 +708,7 @@ def UPLOAD_FILE_BLASTER(server, port, instance, file_path):
         return response.status_code, response.content
     except Exception as e:
         print(f'Cannot request API blaster server. Error: {e}')
+        return None, None
 def GET_ALL_INTANCES_BLASTER(server,port):
     try:
         # print(f'http://{server}:{port}/api/v1/instances/{instance}{action}')
@@ -2437,7 +2438,7 @@ if st.session_state.p4:
                                                         result = subprocess.run(list_bgpupdate, capture_output=True, text=True)
                                                         if 'error' not in str(result):
                                                             execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), "sudo -S mkdir /var/bngblaster/%s"%instance)
-                                                            time.sleep(0.1)
+                                                            time.sleep(1)
                                                             # push_file_to_server_by_ftp(blaster_server['ip'],dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd'],f"{path_bgp_update}/{name_bgp_update}.bgp", f"{data_json['bgp']['raw-update-file']}")
                                                             upload_sc, upload_st = UPLOAD_FILE_BLASTER(blaster_server['ip'], blaster_server['port'], instance, f"{path_bgp_update}/{name_bgp_update}")
                                                             # st.write(upload_sc, upload_st)
