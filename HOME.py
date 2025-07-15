@@ -2416,6 +2416,8 @@ if st.session_state.p4:
                                             lp= st.text_input(f":orange[:material/add: Your local_pref (-l) :]",'', placeholder = "Fill LP")
                                             prefix= st.text_input(f":orange[:material/add: Your prefix (-p):]","", placeholder = "Fill IP prefix")
                                             num_prefix= st.text_input(f":orange[:material/add: Your number of prefixs (-P): ]","", placeholder = "Fill number")
+                                            label= st.text_input(f":orange[:material/add: Your label base (-m): ]","", placeholder = "Fill label")
+                                            num_label= st.text_input(f":orange[:material/add: Your label count (-M): ]","", placeholder = "Fill number")
                                             submitted = st.form_submit_button(label= ":green[:material/send: **CREATE**]", use_container_width=True)
                                             if submitted:
                                                 if "/" in prefix and prefix:
@@ -2434,6 +2436,12 @@ if st.session_state.p4:
                                                         if lp:
                                                             list_bgpupdate.append("-l")
                                                             list_bgpupdate.append(lp)
+                                                        if label:
+                                                            list_bgpupdate.append("-m")
+                                                            list_bgpupdate.append(label)
+                                                        if num_label:
+                                                            list_bgpupdate.append("-M")
+                                                            list_bgpupdate.append(num_label)
                                                         # st.write(list_bgpupdate)
                                                         result = subprocess.run(list_bgpupdate, capture_output=True, text=True)
                                                         if 'error' not in str(result):
@@ -2473,6 +2481,8 @@ if st.session_state.p4:
                                     lp= st.text_input(f":orange[:material/add: Your local_pref (-l) :]",'', placeholder = "Fill LP")
                                     prefix= st.text_input(f":orange[:material/add: Your prefix (-p):]","", placeholder = "Fill IP prefix")
                                     num_prefix= st.text_input(f":orange[:material/add: Your number of prefixs (-P): ]","", placeholder = "Fill number")
+                                    label= st.text_input(f":orange[:material/add: Your label base (-m): ]","", placeholder = "Fill label")
+                                    num_label= st.text_input(f":orange[:material/add: Your label count (-M): ]","", placeholder = "Fill number")
                                     submitted = st.form_submit_button(label= ":green[:material/send: **ADVERTISE**]", use_container_width=True)
                                     if submitted:
                                         if "/" in prefix and prefix:
@@ -2499,6 +2509,12 @@ if st.session_state.p4:
                                                 if lp:
                                                     list_bgpupdate.append("-l")
                                                     list_bgpupdate.append(lp)
+                                                if label:
+                                                    list_bgpupdate.append("-m")
+                                                    list_bgpupdate.append(label)
+                                                if num_label:
+                                                    list_bgpupdate.append("-M")
+                                                    list_bgpupdate.append(num_label)
                                                 # st.write(list_bgpupdate)
                                                 result= subprocess.run(list_bgpupdate, capture_output=True, text=True)
                                                 if 'error' not in str(result):
@@ -2527,7 +2543,8 @@ if st.session_state.p4:
                                     lp_wd= st.text_input(f":orange[:material/add: Your local_pref (-l) :]",'', placeholder = "Fill LP")
                                     prefix_wd= st.text_input(f":orange[:material/add: Your prefix (-p):]","", placeholder = "Fill IP prefix")
                                     num_prefix_wd= st.text_input(f":orange[:material/add: Your number of prefixs (-P): ]","", placeholder = "Fill number")
-
+                                    label_wd= st.text_input(f":orange[:material/add: Your label base (-m): ]","", placeholder = "Fill label")
+                                    num_label_wd= st.text_input(f":orange[:material/add: Your label count (-M): ]","", placeholder = "Fill number")
                                     # prefix_wd= st.text_input(f":orange[:material/add: Your prefix you want withdraw: ]","", placeholder = "Fill your IP prefix")
                                     # num_prefix_wd= st.text_input(f":orange[:material/add: Your number of prefixs you want withdraw: ]","", placeholder = "Fill number")
                                     submitted = st.form_submit_button(label= ":green[:material/dangerous: **WITHDRAW**]", use_container_width=True)
@@ -2556,6 +2573,12 @@ if st.session_state.p4:
                                                 if lp_wd:
                                                     list_bgpupdate_wd.append("-l")
                                                     list_bgpupdate_wd.append(lp_wd)
+                                                if label_wd:
+                                                    list_bgpupdate.append("-m")
+                                                    list_bgpupdate.append(label_wd)
+                                                if num_label_wd:
+                                                    list_bgpupdate.append("-M")
+                                                    list_bgpupdate.append(num_label_wd)
                                                 list_bgpupdate_wd.append("--withdraw")
                                                 # result_wd= subprocess.run(["bgpupdate","-a", run_template[instance]['bgp_local_as'], "-n",run_template[instance]['bgp_local_address'], "-p", prefix_wd, "-P",num_prefix_wd,"-f", "./bgp_update/%s.bgp"%name_bgp_update_wd,"--withdraw"], capture_output=True, text=True)
                                                 result_wd= subprocess.run(list_bgpupdate_wd, capture_output=True, text=True)
