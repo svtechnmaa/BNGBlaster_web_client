@@ -2464,6 +2464,7 @@ if st.session_state.p4:
             if "started" in str(instance_exist_ct):
                 st.session_state.button_start= True
                 st.session_state.button_stop= False
+                st.session_state.button_kill= True
                 with col19:
                     st.warning("This test profile already running", icon="🔥")
                 if os.path.exists('%s/%s.yml'%(path_configs,instance)):
