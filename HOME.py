@@ -720,7 +720,7 @@ def GET_ALL_INTANCES_BLASTER(server,port):
 ################## Function for blaster-status ############################################
 def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_avail_from_blaster):
     with st.container(border=True):
-        bscol1, bscol2 = st.columns([1,2], border=True)
+        bscol1, bscol2 = st.columns([1,1.5], border=True)
         with bscol1:
             st.subheader(f':sunny: :green[BNG-BLASTER [{ip}] STATUS]')
             version_sc, version_ct = VERSION_BLASTER(blaster_server['ip'], blaster_server['port'])
@@ -732,17 +732,44 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
             list_int_server = find_interface(ip, dict_blaster_db_format[ip]['user'], dict_blaster_db_format[ip]['passwd'])
             for i in list_int_server:
                 st.write(':green[ :material/share: *Interface %s existed sub: %s*]'%(i, find_used_vlans(ip, dict_blaster_db_format[ip]['user'], dict_blaster_db_format[ip]['passwd'], i)))
-        col_select, col_display= st.columns([1,2])
+        col_select, col_display= st.columns([1,1.5])
         with col_select:
             with st.container(border=True):
                 st.write(":fire: :violet[**TEST PROFILE RUNNING**]")
             with st.container(border=True, height= 400):   
                 select_running_instance={}
                 for i in list_instance_running_from_blaster:
-                    col111, col112= st.columns([4,1], border= True)
+                    col111, col112, col113= st.columns([3,1,1], border= True)
                     with col111:
                         exec(f"""select_running_instance['{i}'] = st.checkbox(f":orange[*{i}*]")""") 
                     with col112:
+                        if st.button(':orange[:material/restart_alt:]', use_container_width=True, key='restart_%s'%i):
+                            log_authorize(st.session_state.user,blaster_server['ip'], f'Restart test profile {i}')
+                            restart_kill_sc, restart_kill_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_stop, '/_kill')
+                            if restart_kill_sc == 202:
+                                st.toast(":green[You select restart button]", icon="🔥")
+                                log_authorize(st.session_state.user,blaster_server['ip'], f'RUN STOP test profile {i}')
+                                time.sleep(1)
+                            while True:
+                                restart_check_instance_st, restart_check_instance_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'GET', payload_start)
+                                # st.write(restart_check_instance_st,restart_check_instance_ct)
+                                if "stopped" in str(restart_check_instance_ct):
+                                    st.toast(':green[Starting restart traffic, wait please]', icon="🔥")
+                                    with open(f'{path_configs}/{i}.json') as file:
+                                        exist_put_body= json.load(file)
+                                    CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'PUT', json.dumps(exist_put_body, indent=2))
+                                    start_exist_sc, start_exist_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_start, '/_start')
+                                    log_authorize(st.session_state.user,blaster_server['ip'], f'RUN START test profile {i}')
+                                    time.sleep(0.5)
+                                    break
+                            while True:
+                                restart_check_instance_st, restart_check_instance_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'GET', payload_start)
+                                # st.write(restart_check_instance_st,restart_check_instance_ct)
+                                if "started" in str(restart_check_instance_ct):
+                                    st.toast(':green[Restart traffic successfully]', icon="🔥")
+                                    time.sleep(0.5)
+                                    break
+                    with col113:
                         with st.popover(':orange[:material/access_time:]', use_container_width=True):
                         # with st.container(border=True):
                             time_start = find_and_split_line_from_file('auth.log', 'RUN START test profile %s'%i)
@@ -882,37 +909,40 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                 if run_command_nw_int_sc == 200:
                                     data_nw_int = json.loads(run_command_nw_int_ct)
                                     num_nw_int =len(data_nw_int['network-interfaces']) # Number network interfaces in json
-                                    list_nw_name,list_nw_tx_pps, list_nw_rx_pps, list_nw_pkt_loss, list_nw_pkt_loss_graph=[],[],[],[],[]
+                                    # list_nw_name,list_nw_tx_pps, list_nw_rx_pps, list_nw_pkt_loss, list_nw_pkt_loss_graph=[],[],[],[],[]
+                                    list_nw_name,list_nw_tx_pps, list_nw_rx_pps, list_nw_pkt_loss=[],[],[],[]
                                     # Loop for multiple network interfaces
                                     for j in range(num_nw_int):
                                         list_nw_name.append(filter_dict(data_nw_int, 'network-interfaces.%s.name'%j))
                                         list_nw_tx_pps.append(filter_dict(data_nw_int, 'network-interfaces.%s.tx-pps'%j))
                                         list_nw_rx_pps.append(filter_dict(data_nw_int, 'network-interfaces.%s.rx-pps'%j))
                                         list_nw_pkt_loss.append(filter_dict(data_nw_int, 'network-interfaces.%s.rx-loss-packets-streams'%j))
-                                        temp_list=[]
-                                        for o in range(10): # this loop  for linechart column
-                                            temp_nw_int_sc, temp_nw_int_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_network_interface, '/_command')
-                                            temp_data_nw_int = json.loads(temp_nw_int_ct)
-                                            temp_list.append(filter_dict(temp_data_nw_int, 'network-interfaces.%s.rx-loss-packets-streams'%j))
-                                            time.sleep(0.001)
-                                        list_nw_pkt_loss_graph.append(temp_list)
+                                        # temp_list=[]
+                                        # for o in range(10): # this loop  for linechart column
+                                        #     temp_nw_int_sc, temp_nw_int_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_network_interface, '/_command')
+                                        #     temp_data_nw_int = json.loads(temp_nw_int_ct)
+                                        #     temp_list.append(filter_dict(temp_data_nw_int, 'network-interfaces.%s.rx-loss-packets-streams'%j))
+                                        #     time.sleep(0.001)
+                                        # list_nw_pkt_loss_graph.append(temp_list)
                                     # Create table for network interfaces and access interfaces
                                     table_nw_int = {
                                         "NAME": list_nw_name,
                                         "NW-TX(pps)": list_nw_tx_pps,
                                         "NW-RX(pps)": list_nw_rx_pps,
-                                        "NW-LOSS(pkt)": list_nw_pkt_loss,
-                                        "NW-LOSS-GRAPH": list_nw_pkt_loss_graph,
+                                        "NW-LOSS(pkts-stream)": list_nw_pkt_loss,
+                                        # "NW-LOSS-STREAMS-GRAPH": list_nw_pkt_loss_graph,
                                     }
                                     # Display table for network interfaces
-                                    exec("display_nw_interface_%s.dataframe(table_nw_int, column_config={\"NW-LOSS-GRAPH\": st.column_config.AreaChartColumn(\"PKT-LOSS-GRAPH\")},use_container_width=True)"%i) # Edit configure by st.column_config.AreaChartColumn
+                                    # exec("display_nw_interface_%s.dataframe(table_nw_int, column_config={\"NW-LOSS-STREAMS-GRAPH\": st.column_config.AreaChartColumn(\"PKT-LOSS-STREAMS-GRAPH\")},use_container_width=True)"%i) # Edit configure by st.column_config.AreaChartColumn
+                                    exec("display_nw_interface_%s.dataframe(table_nw_int,use_container_width=True)"%i) # Edit configure by st.column_config.AreaChartColumn
                                     
                                 # Call API for access interface value =================
                                 run_command_acc_int_sc, run_command_acc_int_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_access_interface, '/_command')
                                 if run_command_acc_int_sc == 200:
                                     data_acc_int = json.loads(run_command_acc_int_ct)
                                     num_acc_int =len(data_acc_int['access-interfaces']) # Number network interfaces in json
-                                    list_acc_name,list_acc_tx_pps, list_acc_rx_pps, list_acc_pkt_loss, list_acc_pkt_loss_graph=[],[],[],[],[]
+                                    # list_acc_name,list_acc_tx_pps, list_acc_rx_pps, list_acc_pkt_loss, list_acc_pkt_loss_multicast , list_acc_pkt_loss_graph, list_acc_pkt_loss_mul_graph=[],[],[],[],[],[],[]
+                                    list_acc_name,list_acc_tx_pps, list_acc_rx_pps, list_acc_pkt_loss, list_acc_pkt_loss_multicast =[],[],[],[],[]
 
                                     # Loop for multiple access interfaces
                                     for k in range(num_acc_int):
@@ -920,25 +950,32 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                         list_acc_tx_pps.append(filter_dict(data_acc_int, 'access-interfaces.%s.tx-pps'%k))
                                         list_acc_rx_pps.append(filter_dict(data_acc_int, 'access-interfaces.%s.rx-pps'%k))
                                         list_acc_pkt_loss.append(filter_dict(data_acc_int, 'access-interfaces.%s.rx-loss-packets-streams'%k))
-                                        temp_list=[]
-                                        for o in range(10): # this loop  for linechart column
-                                            temp_acc_int_sc, temp_acc_int_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_access_interface, '/_command')
-                                            temp_data_acc_int = json.loads(temp_acc_int_ct)
-                                            temp_list.append(filter_dict(temp_data_acc_int, 'access-interfaces.%s.rx-loss-packets-streams'%k))
-                                            time.sleep(0.001)
-                                        
-                                        list_acc_pkt_loss_graph.append(temp_list)
+                                        list_acc_pkt_loss_multicast.append(filter_dict(data_acc_int, 'access-interfaces.%s.rx-loss-packets-multicast'%k))
+                                        # temp_list=[]
+                                        # temp_list_mul=[]
+                                        # for o in range(10): # this loop  for linechart column
+                                        #     temp_acc_int_sc, temp_acc_int_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_access_interface, '/_command')
+                                        #     temp_data_acc_int = json.loads(temp_acc_int_ct)
+                                        #     temp_list.append(filter_dict(temp_data_acc_int, 'access-interfaces.%s.rx-loss-packets-streams'%k))
+                                        #     temp_list_mul.append(filter_dict(temp_data_acc_int, 'access-interfaces.%s.rx-loss-packets-multicast'%k))
+                                        #     time.sleep(0.001)
+                                        # list_acc_pkt_loss_graph.append(temp_list)
+                                        # list_acc_pkt_loss_mul_graph.append(temp_list_mul)
                                     
                                     # df_nw_int= pd.DataFrame.from_dict(table_nw_int)
                                     table_acc_int = {
                                         "NAME": list_acc_name,
                                         "AC-TX(pps)": list_acc_tx_pps,
                                         "AC-RX(pps)": list_acc_rx_pps,
-                                        "AC-LOSS(pkt)": list_acc_pkt_loss,
-                                        "AC-LOSS-GRAPH": list_acc_pkt_loss_graph,
+                                        "AC-LOSS(pkts-stream)": list_acc_pkt_loss,
+                                        # "AC-LOSS-STREAMS-GRAPH": list_acc_pkt_loss_graph,
+                                        "AC-LOSS(pkts-multicast)": list_acc_pkt_loss_multicast,
+                                        # "AC-LOSS-MULTICAST-GRAPH": list_acc_pkt_loss_mul_graph,
                                     }
                                     # Display table for access interfaces
-                                    exec("display_acc_interface_%s.dataframe(table_acc_int, column_config={\"AC-LOSS-GRAPH\": st.column_config.AreaChartColumn(\"PKT-LOSS-GRAPH\")},use_container_width=True)"%i) # Edit configure by st.column_config.AreaChartColumn
+                                    # exec("display_acc_interface_%s.dataframe(table_acc_int, column_config={\"AC-LOSS-STREAMS-GRAPH\": st.column_config.AreaChartColumn(\"PKTS-LOSS-STREAMS-GRAPH\")},use_container_width=True)"%i) # Edit configure by st.column_config.AreaChartColumn
+                                    # exec("display_acc_interface_%s.dataframe(table_acc_int, column_config={\"AC-LOSS-MULTICAST-GRAPH\": st.column_config.AreaChartColumn(\"PKTS-LOSS-MULTICAST-GRAPH\")},use_container_width=True)"%i) # Edit configure by st.column_config.AreaChartColumn
+                                    exec("display_acc_interface_%s.dataframe(table_acc_int,use_container_width=True)"%i) # Edit configure by st.column_config.AreaChartColumn
                                     
                                 # ====================== Call API for stream summary ======================
                                 payload_command_stream_stats="""
