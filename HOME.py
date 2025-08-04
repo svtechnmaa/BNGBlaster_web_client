@@ -569,8 +569,8 @@ def find_used_vlans(hostname, username, password, interface): # Function find un
         # Execute the command to check network interfaces
         # stdin, stdout, stderr = client.exec_command("sudo -S netstat -i | grep -e ens -e eth")
         stdin, stdout, stderr = client.exec_command("ip link show | grep '@%s' | awk -F '@' '{print $1}' | awk -F '.' '{print $2}'"%interface)
-        stdin.write(password + "\n")
-        stdin.flush()
+        # stdin.write(password + "\n")
+        # stdin.flush()
         # Read the command output
         output = stdout.read().decode()
         error = stderr.read().decode()
