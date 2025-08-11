@@ -40,7 +40,7 @@ interfaces:
     __datatype: str
     __label: interfaces/io-slots
     __options: []
-    __value: 32768
+    __value: '32768'
     __widget: text_input
   network:
   - address:
@@ -74,7 +74,7 @@ interfaces:
     __datatype: str
     __label: interfaces/rx-threads
     __options: []
-    __value: 5
+    __value: '5'
     __widget: text_input
   tx-interval:
     __datatype: float
@@ -89,7 +89,7 @@ interfaces:
     __datatype: str
     __label: interfaces/tx-threads
     __options: []
-    __value: 5
+    __value: '5'
     __widget: text_input
 ppp:
   authentication:
@@ -103,13 +103,13 @@ ppp:
       __datatype: str
       __label: ppp/authentication/retry
       __options: []
-      __value: 30
+      __value: '30'
       __widget: text_input
     timeout:
       __datatype: str
       __label: ppp/authentication/timeout
       __options: []
-      __value: 2
+      __value: '2'
       __widget: text_input
     username:
       __datatype: str
@@ -139,14 +139,14 @@ pppoe:
     __datatype: str
     __label: pppoe/session-time
     __options: []
-    __value: 0
+    __value: '0'
     __widget: text_input
 sessions:
   count:
     __datatype: str
     __label: sessions/count
     __options: []
-    __value: 1
+    __value: '1'
     __widget: text_input
 streams:
 - Gbps:
@@ -207,7 +207,7 @@ streams:
     __datatype: str
     __label: streams/stream-group-id
     __options: []
-    __value: 1
+    __value: '1'
     __widget: text_input
   type:
     __datatype: str

@@ -10,7 +10,7 @@ interfaces:
       __datatype: interface_auto
       __label: interfaces/access/interface
       __options: []
-      __value: ens16.1114
+      __value: ens16.1113
       __widget: text_input
     type:
       __datatype: str
@@ -60,13 +60,13 @@ ppp:
       __datatype: str
       __label: ppp/authentication/timeout
       __options: []
-      __value: '2'
+      __value: '3'
       __widget: text_input
     username:
       __datatype: str
       __label: ppp/authentication/username
       __options: []
-      __value: user{session-global}
+      __value: user100
       __widget: text_input
   mru:
     __datatype: int
@@ -84,18 +84,18 @@ pppoe:
     __options:
     - true
     - false
-    __value: true
+    __value: false
     __widget: selectbox
   session-time:
     __datatype: str
     __label: pppoe/session-time
     __options: []
-    __value: '0'
+    __value: '900'
     __widget: text_input
 sessions:
   count:
     __datatype: str
     __label: sessions/count
     __options: []
-    __value: '20000'
+    __value: '10'
     __widget: text_input

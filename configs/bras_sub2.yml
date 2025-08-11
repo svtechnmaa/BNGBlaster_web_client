@@ -10,7 +10,7 @@ interfaces:
       __datatype: interface_auto
       __label: interfaces/access/interface
       __options: []
-      __value: ens16.1114
+      __value: ens16.1112
       __widget: text_input
     type:
       __datatype: str
@@ -20,12 +20,6 @@ interfaces:
       - ipoe
       __value: pppoe
       __widget: selectbox
-    username:
-      __datatype: str
-      __label: interfaces/access/username
-      __options: []
-      __value: ''
-      __widget: text_input
     vlan-mode:
       __datatype: str
       __label: interfaces/access/vlan-mode
@@ -97,5 +91,5 @@ sessions:
     __datatype: str
     __label: sessions/count
     __options: []
-    __value: '20000'
+    __value: '20'
     __widget: text_input

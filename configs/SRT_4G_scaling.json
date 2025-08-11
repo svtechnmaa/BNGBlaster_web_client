@@ -1,0 +1,21 @@
+{
+  "bgp": {
+    "family": [
+      "ipv4-unicast"
+    ],
+    "local-address": "10.200.200.2",
+    "local-as": 2112,
+    "peer-address": "10.200.200.1",
+    "peer-as": 7552,
+    "raw-update-file": "/var/bngblaster/SRT_4G_scaling/scale.bgp"
+  },
+  "interfaces": {
+    "network": [
+      {
+        "address": "10.200.200.2/24",
+        "gateway": "10.200.200.1",
+        "interface": "ens16.2000"
+      }
+    ]
+  }
+}

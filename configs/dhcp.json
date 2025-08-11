@@ -1,0 +1,26 @@
+{
+  "dhcp": {
+    "broadcast": true,
+    "enable": true
+  },
+  "interfaces": {
+    "access": [
+      {
+        "interface": "ens16.36",
+        "ipv6": false,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "network": [
+      {
+        "address": "10.77.77.10",
+        "gateway": "10.77.77.1",
+        "interface": "ens17.36"
+      }
+    ]
+  },
+  "sessions": {
+    "count": 1000
+  }
+}

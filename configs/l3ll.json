@@ -1,0 +1,34 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "10.123.123.2",
+        "gateway": "10.123.123.1",
+        "interface": "ens16.2710",
+        "ipv6": false,
+        "stream-group-id": 2710,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "network": [
+      {
+        "address": "10.55.55.2/24",
+        "gateway": "10.55.55.1",
+        "gateway-resolve-wait": true,
+        "interface": "ens17.2710"
+      }
+    ]
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "length": 1000,
+      "name": "L3LL",
+      "network-interface": "ens17.2710",
+      "pps": 1000,
+      "stream-group-id": 2710,
+      "type": "ipv4"
+    }
+  ]
+}

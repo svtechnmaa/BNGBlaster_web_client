@@ -1,0 +1,39 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "10.200.200.1",
+        "address-iter": "0.0.0.1",
+        "gateway": "10.200.200.2",
+        "interface": "ens16.140",
+        "ipv6": false,
+        "stream-group-id": 3,
+        "type": "ipoe",
+        "username": "ACX710",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "network": [
+      {
+        "address": "10.200.200.2/24",
+        "gateway": "10.200.200.1",
+        "gateway-resolve-wait": false,
+        "interface": "ens17.140"
+      }
+    ]
+  },
+  "sessions": {
+    "count": 1
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "length": 1500,
+      "name": "ACX710",
+      "network-interface": "ens17.140",
+      "pps": 1000,
+      "stream-group-id": 3,
+      "type": "ipv4"
+    }
+  ]
+}

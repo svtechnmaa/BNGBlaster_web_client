@@ -1,0 +1,44 @@
+{
+  "icmp-client": {
+    "destination-address": "10.11.0.1",
+    "icmp-client-group-id": 100,
+    "interval": 0,
+    "size": 1000
+  },
+  "interfaces": {
+    "access": [
+      {
+        "address": "10.11.0.201",
+        "address-iter": "0.0.0.1",
+        "gateway": "10.11.0.200",
+        "icmp-client-group-id": 100,
+        "interface": "ens17.1911",
+        "ipv6": false,
+        "stream-group-id": 101,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "network": [
+      {
+        "address": "10.11.0.1",
+        "gateway": "10.11.0.10",
+        "interface": "ens16.1911"
+      }
+    ]
+  },
+  "sessions": {
+    "count": 10
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "length": 1000,
+      "name": "BestEffort",
+      "network-interface": "ens16.1911",
+      "Mbps": 10,
+      "stream-group-id": 101,
+      "type": "ipv4"
+    }
+  ]
+}

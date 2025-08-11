@@ -1,0 +1,86 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "10.22.22.2",
+        "gateway": "10.22.22.1",
+        "interface": "ens16.1022",
+        "ipv6": false,
+        "stream-group-id": 1022,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      },
+      {
+        "address": "10.21.21.2",
+        "address-iter": "0.0.0.1",
+        "gateway": "10.21.21.1",
+        "interface": "ens16.1046",
+        "ipv6": false,
+        "stream-group-id": 1046,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      },
+      {
+        "address": "10.123.123.2",
+        "address-iter": "0.0.0.1",
+        "gateway": "10.123.123.1",
+        "interface": "ens16.2710",
+        "ipv6": false,
+        "stream-group-id": 2710,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "network": [
+      {
+        "address": "10.22.22.1/24",
+        "gateway": "10.22.22.2",
+        "gateway-resolve-wait": false,
+        "interface": "ens17.1022"
+      },
+      {
+        "address": "10.21.21.1/24",
+        "gateway": "10.21.21.2",
+        "gateway-resolve-wait": false,
+        "interface": "ens17.1046"
+      },
+      {
+        "address": "10.55.55.2/24",
+        "gateway": "10.55.55.1",
+        "interface": "ens17.2710"
+      }
+    ]
+  },
+  "sessions": {
+    "count": 3
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "length": 1000,
+      "name": "2G",
+      "network-interface": "ens17.1022",
+      "pps": 1000,
+      "stream-group-id": 1022,
+      "type": "ipv4"
+    },
+    {
+      "direction": "both",
+      "length": 776,
+      "name": "L2VPN",
+      "network-interface": "ens17.1046",
+      "pps": 1000,
+      "stream-group-id": 1046,
+      "type": "ipv4"
+    },
+    {
+      "direction": "both",
+      "length": 1000,
+      "name": "L3LL",
+      "network-interface": "ens17.2710",
+      "pps": 1000,
+      "stream-group-id": 2710,
+      "type": "ipv4"
+    }
+  ]
+}

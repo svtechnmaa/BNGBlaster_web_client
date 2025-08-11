@@ -1,0 +1,21 @@
+{
+  "bgp": {
+    "family": [
+      "ipv4-unicast"
+    ],
+    "local-address": "10.15.15.2",
+    "local-as": 1401,
+    "peer-address": "10.15.15.1",
+    "peer-as": 7552,
+    "raw-update-file": "/var/bngblaster/PE_3G_scaling/scale.bgp"
+  },
+  "interfaces": {
+    "network": [
+      {
+        "address": "10.15.15.2/24",
+        "gateway": "10.15.15.1",
+        "interface": "ens17.1500"
+      }
+    ]
+  }
+}

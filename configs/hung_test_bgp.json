@@ -1,0 +1,22 @@
+{
+  "bgp": {
+    "family": [
+      "ipv4-unicast",
+      "ipv6-unicast"
+    ],
+    "local-address": "124.24.24.2",
+    "local-as": 18403,
+    "peer-address": "124.24.24.1",
+    "peer-as": 45899,
+    "raw-update-file": "/var/bngblaster/hung_test_bgp/hung_test_1M.bgp"
+  },
+  "interfaces": {
+    "network": [
+      {
+        "address": "124.24.24.2/30",
+        "gateway": "124.24.24.1",
+        "interface": "ens16.2699"
+      }
+    ]
+  }
+}

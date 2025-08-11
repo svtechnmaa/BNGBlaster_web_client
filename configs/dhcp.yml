@@ -1,0 +1,75 @@
+dhcp:
+  broadcast:
+    __datatype: bool
+    __label: dhcp/broadcast
+    __options:
+    - true
+    - false
+    __value: true
+    __widget: selectbox
+  enable:
+    __datatype: bool
+    __label: dhcp/enable
+    __options:
+    - true
+    - false
+    __value: true
+    __widget: selectbox
+interfaces:
+  access:
+  - interface:
+      __datatype: interface_auto
+      __label: interfaces/access/interface
+      __options: []
+      __value: ens16.36
+      __widget: text_input
+    ipv6:
+      __datatype: bool
+      __label: interfaces/access/ipv6
+      __options:
+      - true
+      - false
+      __value: false
+      __widget: selectbox
+    type:
+      __datatype: str
+      __label: interfaces/access/type
+      __options:
+      - pppoe
+      - ipoe
+      __value: ipoe
+      __widget: selectbox
+    vlan-mode:
+      __datatype: str
+      __label: interfaces/access/vlan-mode
+      __options:
+      - '1:1'
+      - N:1
+      __value: N:1
+      __widget: selectbox
+  network:
+  - address:
+      __datatype: str
+      __label: interfaces/network/address
+      __options: []
+      __value: 10.77.77.10
+      __widget: text_input
+    gateway:
+      __datatype: str
+      __label: interfaces/network/gateway
+      __options: []
+      __value: 10.77.77.1
+      __widget: text_input
+    interface:
+      __datatype: interface_auto
+      __label: interfaces/network/interface
+      __options: []
+      __value: ens17.36
+      __widget: text_input
+sessions:
+  count:
+    __datatype: str
+    __label: sessions/count
+    __options: []
+    __value: 1000
+    __widget: text_input

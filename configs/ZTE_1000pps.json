@@ -1,0 +1,42 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "172.95.1.2",
+        "address-iter": "0.0.0.1",
+        "gateway": "172.95.1.1",
+        "interface": "ens16.95",
+        "ipv6": true,
+        "session-limit": 3050,
+        "stream-group-id": 2,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "io-slots": 65535,
+    "network": [
+      {
+        "address": "172.94.1.2/24",
+        "gateway": "172.94.1.1",
+        "interface": "ens17.94"
+      }
+    ],
+    "rx-threads": 5,
+    "tx-threads": 5
+  },
+  "sessions": {
+    "count": 1,
+    "max-outstanding": 100
+  },
+  "streams": [
+    {
+      "pps": 1000,
+      "direction": "both",
+      "length": 1000,
+      "name": "Tuanip1000pps",
+      "network-interface": "ens17.94",
+      "stream-group-id": 2,
+      "type": "ipv4"
+    }
+  ]
+}

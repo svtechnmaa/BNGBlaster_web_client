@@ -1,0 +1,21 @@
+{
+  "bgp": {
+    "family": [
+      "ipv4-unicast"
+    ],
+    "local-address": "10.33.33.2",
+    "local-as": 1401,
+    "peer-address": "10.33.33.1",
+    "peer-as": 7552,
+    "raw-update-file": "/var/bngblaster/linhnt_test/scale.bgp"
+  },
+  "interfaces": {
+    "network": [
+      {
+        "address": "10.33.33.2/24",
+        "gateway": "10.33.33.1",
+        "interface": "ens17.2653"
+      }
+    ]
+  }
+}

@@ -4,7 +4,7 @@ interfaces:
       __datatype: str
       __label: interfaces/access/address
       __options: []
-      __value: 10.33.33.2
+      __value: 10.22.22.1
       __widget: text_input
     address-iter:
       __datatype: str
@@ -16,13 +16,13 @@ interfaces:
       __datatype: str
       __label: interfaces/access/gateway
       __options: []
-      __value: 10.33.33.1
+      __value: 10.22.22.2
       __widget: text_input
     interface:
       __datatype: interface_auto
       __label: interfaces/access/interface
       __options: []
-      __value: ens16.2652
+      __value: ens16.1022
       __widget: text_input
     ipv6:
       __datatype: bool
@@ -39,7 +39,7 @@ interfaces:
         __max: 65535
         __min: 0
         __step: 1000
-      __value: 12
+      __value: 1000
       __widget: number_input
     type:
       __datatype: str
@@ -61,26 +61,26 @@ interfaces:
     __datatype: str
     __label: interfaces/io-slots
     __options: []
-    __value: 32768
+    __value: '32768'
     __widget: text_input
   network:
   - address:
       __datatype: str
       __label: interfaces/network/address
       __options: []
-      __value: 10.30.30.2/30
+      __value: 10.22.22.2
       __widget: text_input
     gateway:
       __datatype: str
       __label: interfaces/network/gateway
       __options: []
-      __value: 10.30.30.1
+      __value: 10.22.22.1
       __widget: text_input
     interface:
       __datatype: interface_auto
       __label: interfaces/network/interface
       __options: []
-      __value: ens17.3737
+      __value: ens17.1022
       __widget: text_input
   rx-interval:
     __datatype: float
@@ -95,7 +95,7 @@ interfaces:
     __datatype: str
     __label: interfaces/rx-threads
     __options: []
-    __value: 5
+    __value: '5'
     __widget: text_input
   tx-interval:
     __datatype: float
@@ -110,7 +110,7 @@ interfaces:
     __datatype: str
     __label: interfaces/tx-threads
     __options: []
-    __value: 5
+    __value: '5'
     __widget: text_input
 streams:
 - direction:
@@ -129,7 +129,7 @@ streams:
       __max: 9000
       __min: 76
       __step: 100
-    __value: 3000
+    __value: 1000
     __widget: number_input
   name:
     __datatype: str
@@ -141,19 +141,19 @@ streams:
     __datatype: interface_auto
     __label: streams/network-interface
     __options: []
-    __value: ens17.3737
+    __value: ens17.1022
     __widget: text_input
   pps:
     __datatype: str
     __label: streams/pps
     __options: []
-    __value: 1000000
+    __value: '1000'
     __widget: text_input
   stream-group-id:
     __datatype: str
     __label: streams/stream-group-id
     __options: []
-    __value: 12
+    __value: '1022'
     __widget: text_input
   type:
     __datatype: str

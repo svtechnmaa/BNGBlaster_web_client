@@ -3,7 +3,7 @@
     "access": [
       {
         "authentication-protocol": "PAP",
-        "interface": "ens16.1114",
+        "interface": "ens16.1113",
         "type": "pppoe",
         "vlan-mode": "N:1"
       }
@@ -15,15 +15,14 @@
       "password": 123456,
       "retry": 30,
       "timeout": 2,
-      "username": "user{session-global}"
+      "username": "user2{session-global}"
     },
     "mru": 1492
   },
   "pppoe": {
-    "reconnect": true,
-    "session-time": 0
+    "reconnect": true
   },
   "sessions": {
-    "count": 20000
+    "count": 1000
   }
 }

@@ -1,0 +1,35 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "interface": "ens16.36",
+        "ipv6": false,
+        "stream-group-id": 36,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "network": [
+      {
+        "address": "10.77.77.10",
+        "gateway": "10.77.77.1",
+        "interface": "ens17.36"
+      }
+    ]
+  },
+  "dhcp": {
+    "enable": true,
+    "broadcast": true
+  },
+  "streams": [
+    {
+      "pps": 1000,
+      "direction": "both",
+      "length": 1000,
+      "name": "VT VOD",
+      "network-interface": "ens17.36",
+      "stream-group-id": 36,
+      "type": "ipv4"
+    }
+  ]
+}

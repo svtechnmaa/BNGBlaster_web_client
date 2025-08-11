@@ -3,7 +3,7 @@
     "access": [
       {
         "authentication-protocol": "PAP",
-        "interface": "ens16.1114",
+        "interface": "ens16.1112",
         "type": "pppoe",
         "vlan-mode": "N:1"
       }
@@ -24,6 +24,6 @@
     "session-time": 0
   },
   "sessions": {
-    "count": 20000
+    "count": 20
   }
 }

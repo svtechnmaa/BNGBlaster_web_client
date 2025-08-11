@@ -3,11 +3,6 @@
     "agent-circuit-id": "0.0.0.3/0.0.0.0 ge-0/0/0"
   },
   "interfaces": {
-    "tx-interval": 0.03,
-    "rx-interval": 0.03,
-    "tx-threads": 5,
-    "rx-threads": 5,
-    "io-slots": 32768,
     "access": [
       {
         "authentication-protocol": "PAP",
@@ -16,13 +11,18 @@
         "vlan-mode": "N:1"
       }
     ],
+    "io-slots": 32768,
     "network": [
       {
         "address": "180.13.13.2/30",
         "gateway": "180.13.13.1",
         "interface": "ens17.23"
       }
-    ]
+    ],
+    "rx-interval": 0.03,
+    "rx-threads": 5,
+    "tx-interval": 0.03,
+    "tx-threads": 5
   },
   "ppp": {
     "authentication": {
@@ -42,11 +42,11 @@
   },
   "streams": [
     {
+      "Gbps": 5.0,
       "direction": "both",
       "length": 1000,
       "name": "IPv4_3M",
       "network-interface": "ens17.23",
-      "Gbps": 5,
       "priority": 192,
       "start-delay": 3,
       "stream-group-id": 1,
