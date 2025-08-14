@@ -854,7 +854,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                         total_flows = data_streams_stats['stream-stats']['total-flows']
                                     if total_flows > 0:
                                         with st.container(border= True):
-                                            exec("flow_selection_%s = st.multiselect(':green[:material/add: Select flow-id]', options=range(1,%s), default=[1])"%(i,total_flows))
+                                            exec("flow_selection_%s = st.multiselect(':green[:material/add: Select flow-id]', options=range(1,%s), default=[1])"%(i,total_flows+1))
                                 with col_stream5:
                                     if st.button(':orange[:material/bolt: **RESET**]', use_container_width=True, key='%s'%i):
                                         payload_command_stream_reset="""
