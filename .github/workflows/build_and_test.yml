@@ -10,234 +10,241 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-dind
+    runs-on: bngblaster
     permissions:
       contents: read
       packages: write
     steps:
-      
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v2
-      with:
-        registry: ghcr.io
-        username: '${{ github.repository_owner }}'
-        password: '${{ secrets.GITHUB_TOKEN }}'
-
-    - name: Downcase REPO
+    - name: Debug
       run: |
-        echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+        echo "GITHUB_REPOSITORY=${GITHUB_REPOSITORY}"
+        echo "GITHUB_REPOSITORY_OWNER=${GITHUB_REPOSITORY_OWNER}"
+        echo "GITHUB_REF=${GITHUB_REF}"
+        echo "GITHUB_SHA=${GITHUB_SHA}"
+        echo "GITHUB_RUN_NUMBER=${GITHUB_RUN_NUMBER}"
+        echo "GITHUB_WORKFLOW=${GITHUB_WORKFLOW}"
+  #   - name: Checkout code
+  #     uses: actions/checkout@v3
+
+  #   - name: Login to GitHub Container Registry
+  #     uses: docker/login-action@v2
+  #     with:
+  #       registry: ghcr.io
+  #       username: '${{ github.repository_owner }}'
+  #       password: '${{ secrets.GITHUB_TOKEN }}'
+
+  #   - name: Downcase REPO
+  #     run: |
+  #       echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
         
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+  #   - name: Set up Docker Buildx
+  #     uses: docker/setup-buildx-action@v3
 
-    - name: Build image
-      run: |
-        docker buildx build \
-          --cache-from=type=registry,ref=ghcr.io/${{ env.REPO }}:cache \
-          --load \
-          --tag ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }} .
+  #   - name: Build image
+  #     run: |
+  #       docker buildx build \
+  #         --cache-from=type=registry,ref=ghcr.io/${{ env.REPO }}:cache \
+  #         --load \
+  #         --tag ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }} .
 
-    - name: Run bngblaster app
-      run: |
-        docker run -d --name bngblaster-container -p 8505:8505 ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
-        sleep 15
+  #   - name: Run bngblaster app
+  #     run: |
+  #       docker run -d --name bngblaster-container -p 8505:8505 ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
+  #       sleep 15
 
-    - name: Check container status
-      run: |
-        docker ps -a
-        docker images
-        STATUS=$(docker inspect --format='{{.State.Status}}' bngblaster-container)
-        echo "Container status: $STATUS"
-        if [ "$STATUS" != "running" ]; then
-          echo "Container failed to start!"
-          docker logs bngblaster-container
-          exit 1
-        fi
-        echo "Container is running successfully!"
+  #   - name: Check container status
+  #     run: |
+  #       docker ps -a
+  #       docker images
+  #       STATUS=$(docker inspect --format='{{.State.Status}}' bngblaster-container)
+  #       echo "Container status: $STATUS"
+  #       if [ "$STATUS" != "running" ]; then
+  #         echo "Container failed to start!"
+  #         docker logs bngblaster-container
+  #         exit 1
+  #       fi
+  #       echo "Container is running successfully!"
 
-    - name: Build and push image to ghcr.io
-      if: success()
-      run: |
-        docker buildx build --platform linux/amd64 \
-          --cache-from=type=registry,ref=ghcr.io/${{ env.REPO }}:cache \
-          --cache-to=type=registry,ref=ghcr.io/${{ env.REPO }}:cache \
-          --push \
-          --tag ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }} . 
+  #   - name: Build and push image to ghcr.io
+  #     if: success()
+  #     run: |
+  #       docker buildx build --platform linux/amd64 \
+  #         --cache-from=type=registry,ref=ghcr.io/${{ env.REPO }}:cache \
+  #         --cache-to=type=registry,ref=ghcr.io/${{ env.REPO }}:cache \
+  #         --push \
+  #         --tag ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }} . 
 
-  test:
-    runs-on: robot-dind
-    needs: build
-    permissions:
-      contents: read
-      packages: write
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+  # test:
+  #   runs-on: robot-dind
+  #   needs: build
+  #   permissions:
+  #     contents: read
+  #     packages: write
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v3
 
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v2
-      with:
-        registry: ghcr.io
-        username: '${{ github.repository_owner }}'
-        password: '${{ secrets.GITHUB_TOKEN }}'
+  #   - name: Login to GitHub Container Registry
+  #     uses: docker/login-action@v2
+  #     with:
+  #       registry: ghcr.io
+  #       username: '${{ github.repository_owner }}'
+  #       password: '${{ secrets.GITHUB_TOKEN }}'
 
-    - name: Downcase REPO
-      run: |
-        echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+  #   - name: Downcase REPO
+  #     run: |
+  #       echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
-    - name: Pull Docker image
-      run: docker pull ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
+  #   - name: Pull Docker image
+  #     run: docker pull ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
 
-    - name: Run bngblaster app
-      run: |
-        docker run -d --name bngblaster-container -p 8505:8505 ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
-        sleep 15
+  #   - name: Run bngblaster app
+  #     run: |
+  #       docker run -d --name bngblaster-container -p 8505:8505 ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
+  #       sleep 15
 
-    - name: Check container status
-      run: |
-        docker ps -a
-        docker images
-        STATUS=$(docker inspect --format='{{.State.Status}}' bngblaster-container)
-        echo "Container status: $STATUS"
-        if [ "$STATUS" != "running" ]; then
-          echo "Container failed to start!"
-          docker logs bngblaster-container
-          exit 1
-        else
-          echo "Container is running successfully!"
-        fi
+  #   - name: Check container status
+  #     run: |
+  #       docker ps -a
+  #       docker images
+  #       STATUS=$(docker inspect --format='{{.State.Status}}' bngblaster-container)
+  #       echo "Container status: $STATUS"
+  #       if [ "$STATUS" != "running" ]; then
+  #         echo "Container failed to start!"
+  #         docker logs bngblaster-container
+  #         exit 1
+  #       else
+  #         echo "Container is running successfully!"
+  #       fi
 
-    - name: Run Robot Framework tests
-      run: robot tests/
+  #   - name: Run Robot Framework tests
+  #     run: robot tests/
 
-    - name: Delete image if test fail
-      if: failure()
-      run: |
-        REPO_NAME=$(echo ${{ env.REPO }} | cut -d'/' -f2)
-        echo "Repo name: $REPO_NAME"
+  #   - name: Delete image if test fail
+  #     if: failure()
+  #     run: |
+  #       REPO_NAME=$(echo ${{ env.REPO }} | cut -d'/' -f2)
+  #       echo "Repo name: $REPO_NAME"
 
-        VERSION_ID=$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-        "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions" \
-        | jq -r '.[] | select(.metadata.container.tags[] == "v1.${{ github.run_number }}") | .id')
+  #       VERSION_ID=$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+  #       "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions" \
+  #       | jq -r '.[] | select(.metadata.container.tags[] == "v1.${{ github.run_number }}") | .id')
 
-        echo "VERSION_ID=$VERSION_ID" >> $GITHUB_ENV
-        echo "Package version ID: $VERSION_ID"
+  #       echo "VERSION_ID=$VERSION_ID" >> $GITHUB_ENV
+  #       echo "Package version ID: $VERSION_ID"
 
-        curl -X DELETE -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-        -H "Accept: application/vnd.github.v3+json" \
-        "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions/$VERSION_ID"
+  #       curl -X DELETE -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+  #       -H "Accept: application/vnd.github.v3+json" \
+  #       "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions/$VERSION_ID"
 
-    - name: Tag latest image and push to GitHub Container Registry
-      if: success()
-      run: |
-        docker buildx imagetools create -t ghcr.io/${{ env.REPO }}:latest ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
-        docker buildx imagetools inspect ghcr.io/${{ env.REPO }}:latest
+  #   - name: Tag latest image and push to GitHub Container Registry
+  #     if: success()
+  #     run: |
+  #       docker buildx imagetools create -t ghcr.io/${{ env.REPO }}:latest ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
+  #       docker buildx imagetools inspect ghcr.io/${{ env.REPO }}:latest
 
-    - name: 'Upload robot test result'
-      if: always()
-      uses: actions/upload-artifact@v4.6.0
-      with:
-        name: robot-test-result-#${{ github.run_number }}
-        path: |
-          ./output.xml
-          ./log.html
-          ./report.html
+  #   - name: 'Upload robot test result'
+  #     if: always()
+  #     uses: actions/upload-artifact@v4.6.0
+  #     with:
+  #       name: robot-test-result-#${{ github.run_number }}
+  #       path: |
+  #         ./output.xml
+  #         ./log.html
+  #         ./report.html
    
-  update: 
-    needs: test
-    runs-on: ubuntu-dind
-    steps:
-    - name: Install Helm
-      uses: azure/setup-helm@v3
-      with:
-        version: 'latest'
+  # update: 
+  #   needs: test
+  #   runs-on: ubuntu-dind
+  #   steps:
+  #   - name: Install Helm
+  #     uses: azure/setup-helm@v3
+  #     with:
+  #       version: 'latest'
 
-    - name: Setup Python
-      uses: actions/setup-python@v5.3.0
-      with:
-        python-version: "3.13"
+  #   - name: Setup Python
+  #     uses: actions/setup-python@v5.3.0
+  #     with:
+  #       python-version: "3.13"
     
-    - name: Clone charts Repository
-      uses: actions/checkout@v4
-      with:
-        repository: '${{ github.repository_owner }}/charts'
-        ref: 'main'
-        token: ${{ secrets.PUSH_TOKEN }}
-        path: charts
+  #   - name: Clone charts Repository
+  #     uses: actions/checkout@v4
+  #     with:
+  #       repository: '${{ github.repository_owner }}/charts'
+  #       ref: 'main'
+  #       token: ${{ secrets.PUSH_TOKEN }}
+  #       path: charts
 
-    - name: Clone stack_charts Repository
-      uses: actions/checkout@v4
-      with:
-        repository: '${{ github.repository_owner }}/stacked_charts'
-        ref: 'master'
-        token: '${{ secrets.PUSH_TOKEN }}'
-        path: stacked_charts
+  #   - name: Clone stack_charts Repository
+  #     uses: actions/checkout@v4
+  #     with:
+  #       repository: '${{ github.repository_owner }}/stacked_charts'
+  #       ref: 'master'
+  #       token: '${{ secrets.PUSH_TOKEN }}'
+  #       path: stacked_charts
 
-    - name: Clone SVTECH_CI_utilities Repository
-      uses: actions/checkout@v4
-      with:
-        repository: '${{ github.repository_owner }}/SVTECH_CI_utilities'
-        ref: 'dev-jenkins'
-        token: '${{ secrets.PUSH_TOKEN }}'
-        path: SVTECH_CI_utilities
+  #   - name: Clone SVTECH_CI_utilities Repository
+  #     uses: actions/checkout@v4
+  #     with:
+  #       repository: '${{ github.repository_owner }}/SVTECH_CI_utilities'
+  #       ref: 'dev-jenkins'
+  #       token: '${{ secrets.PUSH_TOKEN }}'
+  #       path: SVTECH_CI_utilities
 
-    - name: Import GPG key
-      uses: crazy-max/ghaction-import-gpg@v6.2.0
-      with:
-        gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+  #   - name: Import GPG key
+  #     uses: crazy-max/ghaction-import-gpg@v6.2.0
+  #     with:
+  #       gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
     
-    - name: Modify image version in charts
-      run: |
-        sed -i '/^  repository: svtechnmaa\/bngblaster_web_client/{N;s/  tag: .*/  tag: '"v1.${{ github.run_number}}"'/}' charts/kubernetes/bngblaster/values.yaml
+  #   - name: Modify image version in charts
+  #     run: |
+  #       sed -i '/^  repository: svtechnmaa\/bngblaster_web_client/{N;s/  tag: .*/  tag: '"v1.${{ github.run_number}}"'/}' charts/kubernetes/bngblaster/values.yaml
     
-    - name: Modify image version in stack_charts
-      run: |
-        pip install requests pyyaml
-        python3 SVTECH_CI_utilities/auto_testing/python_script/public_helmchart_release.py --BUILD_VARS_PATH='.' --ID='.' --GITHUB_TOKEN=${{secrets.PUSH_TOKEN}} --OWNER=${{ github.repository_owner}} --charts_string=bngblaster --REPO=charts
+  #   - name: Modify image version in stack_charts
+  #     run: |
+  #       pip install requests pyyaml
+  #       python3 SVTECH_CI_utilities/auto_testing/python_script/public_helmchart_release.py --BUILD_VARS_PATH='.' --ID='.' --GITHUB_TOKEN=${{secrets.PUSH_TOKEN}} --OWNER=${{ github.repository_owner}} --charts_string=bngblaster --REPO=charts
 
-    - name: Update image version in charts
-      env:
-        GIT_USER_NAME: "svtechnmaa"
-        GIT_USER_EMAIL: "nmaa@svtech.com.vn"
-      run: |
-        cd charts
-        helm repo index artifacthub
+  #   - name: Update image version in charts
+  #     env:
+  #       GIT_USER_NAME: "svtechnmaa"
+  #       GIT_USER_EMAIL: "nmaa@svtech.com.vn"
+  #     run: |
+  #       cd charts
+  #       helm repo index artifacthub
 
-        if [[ `git diff --name-only` ]]; then  
-          git config user.name "${{ env.GIT_USER_NAME }}"
-          git config user.email "${{ env.GIT_USER_EMAIL }}"
-          git config commit.gpgSign true
-          git config user.signingkey ${{ secrets.GPG_KEY_ID }}
+  #       if [[ `git diff --name-only` ]]; then  
+  #         git config user.name "${{ env.GIT_USER_NAME }}"
+  #         git config user.email "${{ env.GIT_USER_EMAIL }}"
+  #         git config commit.gpgSign true
+  #         git config user.signingkey ${{ secrets.GPG_KEY_ID }}
 
-          git add .
-          git commit --no-verify -m "no-ci: Update BNGBlaster image version to v1.${{ github.run_number}}"
-          # git remote set-url origin https://svtechnmaa:${{secrets.PUSH_TOKEN}}@github.com/svtechnmaa/charts.git
-          git push origin main
-        else 
-          echo "No changes to commit" 
-        fi
+  #         git add .
+  #         git commit --no-verify -m "no-ci: Update BNGBlaster image version to v1.${{ github.run_number}}"
+  #         # git remote set-url origin https://svtechnmaa:${{secrets.PUSH_TOKEN}}@github.com/svtechnmaa/charts.git
+  #         git push origin main
+  #       else 
+  #         echo "No changes to commit" 
+  #       fi
     
-    - name: Update image version in stack_charts
-      env:
-        GIT_USER_NAME: "svtechnmaa"
-        GIT_USER_EMAIL: "nmaa@svtech.com.vn"
+  #   - name: Update image version in stack_charts
+  #     env:
+  #       GIT_USER_NAME: "svtechnmaa"
+  #       GIT_USER_EMAIL: "nmaa@svtech.com.vn"
 
-      run: |
-        cd stacked_charts
-        if [[ `git diff --name-only` ]]; then 
+  #     run: |
+  #       cd stacked_charts
+  #       if [[ `git diff --name-only` ]]; then 
 
-          git config user.name "${{ env.GIT_USER_NAME }}"
-          git config user.email "${{ env.GIT_USER_EMAIL }}"
-          git config commit.gpgSign true
-          git config user.signingkey ${{ secrets.GPG_KEY_ID }}
+  #         git config user.name "${{ env.GIT_USER_NAME }}"
+  #         git config user.email "${{ env.GIT_USER_EMAIL }}"
+  #         git config commit.gpgSign true
+  #         git config user.signingkey ${{ secrets.GPG_KEY_ID }}
 
-          git add .
-          git commit -S -m "no-ci: Update BNGBlaster image version to v1.${{ github.run_number}}" 
-          # git remote set-url origin https://svtechnmaa:${{secrets.PUSH_TOKEN}}@github.com/svtechnmaa/stacked_charts.git
-          git push origin master  
-        else 
-          echo "No changes to commit" 
-        fi
+  #         git add .
+  #         git commit -S -m "no-ci: Update BNGBlaster image version to v1.${{ github.run_number}}" 
+  #         # git remote set-url origin https://svtechnmaa:${{secrets.PUSH_TOKEN}}@github.com/svtechnmaa/stacked_charts.git
+  #         git push origin master  
+  #       else 
+  #         echo "No changes to commit" 
+  #       fi
