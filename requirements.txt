@@ -11,3 +11,4 @@ selenium
 coverage
 scapy
 mysql-connector-python
+graphviz
