@@ -3,10 +3,10 @@ name: Build and Test BNGBLASTER App
 on:
   push:
     branches:
-      - main
+      - kien
   pull_request:
     branches:
-      - main
+      - kien
   workflow_dispatch:
     inputs:
       commit_id:
