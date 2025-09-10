@@ -3,79 +3,170 @@ name: Build and Test BNGBLASTER App
 on:
   push:
     branches:
-      - kien
+      - main
   pull_request:
     branches:
-      - kien
+      - main
+  workflow_dispatch:
+    inputs:
+      commit_id:
+        description: 'Full commit ID to build (default: latest commit). e.g daae94a0f72a13f7092812fa42d684b2af827xxx. WARNING: release job will NOT run by this trigger'
+        type: string
+      run_test:
+        description: 'Run test'
+        default: true
+        type: boolean
+      keep_image: 
+        description: 'Keep image in GHCR even test fails'
+        type: boolean
+        default: false
+
+env:
+  IMAGE_TEST_TAG: ${{ format('test-v{0}', github.run_number) }}
+  IMAGE_NAME: 'bngblaster_web_client'
+  CONTAINER_NAME: 'bngblaster_web_client'
+  CONTAINER_MAPPING_PORT: '8505:8505'
+  COMMIT_FULL_ID: ${{ inputs.commit_id || github.sha }}
 
 jobs:
   build:
-    runs-on: redfish
+    runs-on: ubuntu-dind
     permissions:
       contents: read
       packages: write
+      security-events: write
     steps:
-    - name: Debug
+      
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ env.COMMIT_FULL_ID }}
+
+    - name: Downcase REPO and shorten COMMIT ID
       run: |
-        echo "GITHUB_REPOSITORY=${GITHUB_REPOSITORY}"
-        echo "GITHUB_REPOSITORY_OWNER=${GITHUB_REPOSITORY_OWNER}"
-        echo "GITHUB_REF=${GITHUB_REF}"
-        echo "GITHUB_SHA=${GITHUB_SHA}"
-        echo "GITHUB_RUN_NUMBER=${GITHUB_RUN_NUMBER}"
-        echo "GITHUB_WORKFLOW=${GITHUB_WORKFLOW}"
+        COMMIT_SHORT_ID=$(git rev-parse --short ${{ env.COMMIT_FULL_ID }})
+        echo "COMMIT_SHORT_ID=${COMMIT_SHORT_ID}" >>${GITHUB_ENV}
+        echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+        echo "COMMIT_SHORT_ID=${{ env.COMMIT_SHORT_ID }}"
+        echo "REPO=${{ env.REPO }}"
+
+    - name: Check existing image in GHCR
+      id: check_existing_image
+      run: |
+        REPO_NAME=$(echo ${{ env.REPO }} | cut -d'/' -f2)
         
-  #   - name: Checkout code
-  #     uses: actions/checkout@v3
+        IMAGES=$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions" | jq -r ' .[] | {tags: .metadata.container.tags, updated_at: .updated_at, id: .id} ')
 
-  #   - name: Login to GitHub Container Registry
-  #     uses: docker/login-action@v2
-  #     with:
-  #       registry: ghcr.io
-  #       username: '${{ github.repository_owner }}'
-  #       password: '${{ secrets.GITHUB_TOKEN }}'
+        EXISTED_IMAGE=$(echo $IMAGES | jq -c 'select(.tags | contains(["${{ env.COMMIT_SHORT_ID }}"]))')
 
-  #   - name: Downcase REPO
-  #     run: |
-  #       echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+        if [[ -z $EXISTED_IMAGE ]]; then
+          echo "is_image_tag_by_commit_id_existed=false" >> $GITHUB_OUTPUT
+        else
+          FULL_TAGS=$(echo $EXISTED_IMAGE | jq -c '.tags')
+          if [[ $FULL_TAGS == *"latest"* || $FULL_TAGS =~ v[0-9]+\.[0-9]+\.[0-9]+ ]]; then    
+            echo "is_latest_or_release_image=true" >> $GITHUB_OUTPUT
+            echo "is_latest_or_release_image=true"
+          else
+            echo "is_latest_or_release_image=false" >> $GITHUB_OUTPUT
+            echo "is_latest_or_release_image=false"
+          fi
+
+          echo "Image which has tag ${{ env.COMMIT_SHORT_ID }} is existed. The full tags are $FULL_TAGS. Skipping the rest of the build job..."
+          echo "is_image_tag_by_commit_id_existed=true" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Get Job ID
+      id: get_job_id
+      run: |
+        curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+        "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs" \
+        | jq '.jobs[] | select(.name=="build") | .id' > job_id.txt
+        echo "job_id=$(cat job_id.txt)" >> $GITHUB_OUTPUT
+
+    - name: Determine Commit ID and Comitter Email
+      id: determine_commit_id_and_email_author
+      run: |
+        if [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
+          COMMIT_ID=${{ github.event.inputs.commit_id }}
+          COMMIT_AUTHOR_EMAIL=$(git show -s --format='%ae' $COMMIT_ID)
+          COMMIT_AUTHOR_NAME=$(git show -s --format='%aN' $COMMIT_ID)
+        else
+          COMMIT_ID=${{ github.event.head_commit.id }}
+          COMMIT_AUTHOR_EMAIL=${{ github.event.head_commit.author.email }}
+          COMMIT_AUTHOR_NAME=${{ github.event.head_commit.author.name }}
+        fi
+
+        echo "COMMIT_ID=${COMMIT_ID}" >> $GITHUB_OUTPUT
+        echo "COMMIT_AUTHOR_EMAIL=${COMMIT_AUTHOR_EMAIL}" >> $GITHUB_OUTPUT
+        echo "COMMIT_AUTHOR_NAME=${COMMIT_AUTHOR_NAME}" >> $GITHUB_OUTPUT
+
+    - name: Login to dockerhub
+      uses: docker/login-action@v2
+      with:
+        registry: docker.io
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+    - name: Scan Dockerfile using Trivy and send mail if vulnerabilities detected
+      uses: svtechnmaa/.github/actions/run_trivy_scan_dockerfile@main
+      with:
+        dockerfile_path: './Dockerfile'
+        commit_id: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_ID }}
+        mail_username: ${{ vars.MAIL_USERNAME }}
+        mail_password: ${{ secrets.MAIL_PASSWORD }}
+        commit_author_email: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_AUTHOR_EMAIL }}
+        commit_author_name: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_AUTHOR_NAME }}
+        job_id: ${{ steps.get_job_id.outputs.job_id }}
+
+    - name: Build Docker image
+      if: github.event_name == 'push' || github.event_name == 'pull_request' || steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed == 'false'
+      run: |
+        echo ${{ steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed }}
+        docker build -t ${{ env.IMAGE_NAME }} .
+
+    - name: Scan Docker image using Trivy and send mail if vulnerabilities detected
+      uses: svtechnmaa/.github/actions/run_trivy_scan_image@main
+      with:
+        trivy_server: ${{ secrets.TRIVY_SERVER }}
+        image_name: ${{env.IMAGE_NAME}}
+        image_tag: 'latest'
+        commit_id: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_ID }}
+        mail_username: ${{ vars.MAIL_USERNAME }}
+        mail_password: ${{ secrets.MAIL_PASSWORD }}
+        commit_author_email: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_AUTHOR_EMAIL }}
+        commit_author_name: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_AUTHOR_NAME }}
+        job_id: ${{ steps.get_job_id.outputs.job_id }}
+
+    - id: run_and_check_container_status
+      if: github.event_name == 'push' || github.event_name == 'pull_request' || steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed == 'false'
+      name: Run BNGBlaster app
+      uses: svtechnmaa/.github/actions/run_docker_container@main
+      with:
+        imageName: '${{ env.IMAGE_NAME }}'
+        containerName: '${{ env.CONTAINER_NAME }}'
+        containerMappingPort: '${{ env.CONTAINER_MAPPING_PORT }}'
+
+    - name: Login to GitHub Container Registry
+      if: github.event_name == 'push' || github.event_name == 'pull_request' || steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed == 'false'
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: '${{ github.repository_owner }}'
+        password: '${{ secrets.GITHUB_TOKEN }}'
         
-  #   - name: Set up Docker Buildx
-  #     uses: docker/setup-buildx-action@v3
-
-  #   - name: Build image
-  #     run: |
-  #       docker buildx build \
-  #         --cache-from=type=registry,ref=ghcr.io/${{ env.REPO }}:cache \
-  #         --load \
-  #         --tag ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }} .
-
-  #   - name: Run bngblaster app
-  #     run: |
-  #       docker run -d --name bngblaster-container -p 8505:8505 ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
-  #       sleep 15
-
-  #   - name: Check container status
-  #     run: |
-  #       docker ps -a
-  #       docker images
-  #       STATUS=$(docker inspect --format='{{.State.Status}}' bngblaster-container)
-  #       echo "Container status: $STATUS"
-  #       if [ "$STATUS" != "running" ]; then
-  #         echo "Container failed to start!"
-  #         docker logs bngblaster-container
-  #         exit 1
-  #       fi
-  #       echo "Container is running successfully!"
-
-  #   - name: Build and push image to ghcr.io
-  #     if: success()
-  #     run: |
-  #       docker buildx build --platform linux/amd64 \
-  #         --cache-from=type=registry,ref=ghcr.io/${{ env.REPO }}:cache \
-  #         --cache-to=type=registry,ref=ghcr.io/${{ env.REPO }}:cache \
-  #         --push \
-  #         --tag ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }} . 
+    - name: Push image to GitHub Container Registry
+      if: github.event_name == 'push' || github.event_name == 'pull_request' || steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed == 'false'
+      run: |
+        docker tag ${{ env.IMAGE_NAME }}:latest ghcr.io/${{ env.REPO }}:${{ env.IMAGE_TEST_TAG }}
+        docker tag ${{ env.IMAGE_NAME }}:latest ghcr.io/${{ env.REPO }}:${{ env.COMMIT_SHORT_ID }}
+        docker push ghcr.io/${{ env.REPO }}:${{ env.IMAGE_TEST_TAG }}
+        docker push ghcr.io/${{ env.REPO }}:${{ env.COMMIT_SHORT_ID }}
 
   # test:
+  #   if: |
+  #     github.event_name == 'push'|| 
+  #     github.event_name == 'pull_request' || 
+  #     ( github.event_name == 'workflow_dispatch' && inputs.run_test ) 
   #   runs-on: robot-dind
   #   needs: build
   #   permissions:
@@ -83,7 +174,17 @@ jobs:
   #     packages: write
   #   steps:
   #   - name: Checkout code
-  #     uses: actions/checkout@v3
+  #     uses: actions/checkout@v4
+  #     with:
+  #       ref: ${{ env.COMMIT_FULL_ID }}
+
+  #   - name: Downcase REPO and shorten COMMIT ID
+  #     run: |
+  #       COMMIT_SHORT_ID=$(git rev-parse --short ${{ env.COMMIT_FULL_ID }})
+  #       echo "COMMIT_SHORT_ID=${COMMIT_SHORT_ID}" >>${GITHUB_ENV}
+  #       echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+  #       echo "COMMIT_SHORT_ID=${{ env.COMMIT_SHORT_ID }}"
+  #       echo "REPO=${{ env.REPO }}"
 
   #   - name: Login to GitHub Container Registry
   #     uses: docker/login-action@v2
@@ -97,52 +198,35 @@ jobs:
   #       echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
   #   - name: Pull Docker image
-  #     run: docker pull ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
+  #     run: docker pull ghcr.io/${{ env.REPO }}:${{ env.COMMIT_SHORT_ID }}
 
-  #   - name: Run bngblaster app
-  #     run: |
-  #       docker run -d --name bngblaster-container -p 8505:8505 ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
-  #       sleep 15
-
-  #   - name: Check container status
-  #     run: |
-  #       docker ps -a
-  #       docker images
-  #       STATUS=$(docker inspect --format='{{.State.Status}}' bngblaster-container)
-  #       echo "Container status: $STATUS"
-  #       if [ "$STATUS" != "running" ]; then
-  #         echo "Container failed to start!"
-  #         docker logs bngblaster-container
-  #         exit 1
-  #       else
-  #         echo "Container is running successfully!"
-  #       fi
+  #   - id: run_and_check_container_status
+  #     name: Run BNGBlaster app
+  #     uses: svtechnmaa/.github/actions/run_docker_container@main
+  #     with:
+  #       imageName: 'ghcr.io/${{ env.REPO }}:${{ env.COMMIT_SHORT_ID }}'
+  #       containerName: '${{ env.CONTAINER_NAME }}'
+  #       containerMappingPort: '${{ env.CONTAINER_MAPPING_PORT }}'
 
   #   - name: Run Robot Framework tests
-  #     run: robot tests/
-
-  #   - name: Delete image if test fail
-  #     if: failure()
   #     run: |
-  #       REPO_NAME=$(echo ${{ env.REPO }} | cut -d'/' -f2)
-  #       echo "Repo name: $REPO_NAME"
+  #       echo "##[command]robot tests/"
+  #       robot tests/
 
-  #       VERSION_ID=$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-  #       "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions" \
-  #       | jq -r '.[] | select(.metadata.container.tags[] == "v1.${{ github.run_number }}") | .id')
-
-  #       echo "VERSION_ID=$VERSION_ID" >> $GITHUB_ENV
-  #       echo "Package version ID: $VERSION_ID"
-
-  #       curl -X DELETE -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-  #       -H "Accept: application/vnd.github.v3+json" \
-  #       "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions/$VERSION_ID"
-
-  #   - name: Tag latest image and push to GitHub Container Registry
-  #     if: success()
+  #   - name: Delete package from GHCR if test fails
+  #     if: failure() && !inputs.keep_image 
   #     run: |
-  #       docker buildx imagetools create -t ghcr.io/${{ env.REPO }}:latest ghcr.io/${{ env.REPO }}:v1.${{ github.run_number }}
-  #       docker buildx imagetools inspect ghcr.io/${{ env.REPO }}:latest
+  #       if [[ "${{ needs.build.outputs.is_latest_or_release_image }}" == "true" ]]; then
+  #         echo "Image with tag ${{ env.COMMIT_SHORT_ID }} must NOT be deleted as it is release or latest image."
+  #       else
+  #         echo "Robot test failed, deleting package from GHCR..."
+  #         REPO_NAME=$(echo ${{ env.REPO }} | cut -d'/' -f2)
+  #         echo "Repo name: $REPO_NAME"
+  #         VERSION_ID=$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions" | jq -r '.[] | select(.metadata.container.tags[] == "${{ env.COMMIT_SHORT_ID }}") | .id')
+  #         echo "Package version ID: $VERSION_ID"
+  #         curl -i -X DELETE -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' -H "Accept: application/vnd.github.v3+json" "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions/$VERSION_ID"
+  #       fi
+
 
   #   - name: 'Upload robot test result'
   #     if: always()
@@ -154,21 +238,91 @@ jobs:
   #         ./log.html
   #         ./report.html
    
-  # update: 
+  # release: 
+  #   if: github.event_name == 'push' || github.event_name == 'pull_request'
   #   needs: test
   #   runs-on: ubuntu-dind
   #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
+      
+  #   - name: Semantic Release
+  #     uses: cycjimmy/semantic-release-action@v4
+  #     id: semantic
+  #     env:
+  #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # If permission denied for protected branch, use ${{ secrets.PUSH_TOKEN }} instead.
+    
+  #   - name: No release published
+  #     if: ${{ steps.semantic.outputs.new_release_published == 'false' }}
+  #     run: |
+  #       echo "No release published, skipping the rest of the job..."
+
+    
+  #   - name: Downcase REPO and shorten COMMIT ID
+  #     if: steps.semantic.outputs.new_release_published == 'true'
+  #     run: |
+  #         COMMIT_SHORT_ID=$(git rev-parse --short ${{ env.COMMIT_FULL_ID }})
+  #         echo "COMMIT_SHORT_ID=${COMMIT_SHORT_ID}" >>${GITHUB_ENV}
+  #         echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+  #         echo "COMMIT_SHORT_ID=${{ env.COMMIT_SHORT_ID }}"
+  #         echo "REPO=${{ env.REPO }}"
+
+  #   - name: Login to GitHub Container Registry
+  #     if: steps.semantic.outputs.new_release_published == 'true'
+  #     uses: docker/login-action@v2
+  #     with:
+  #       registry: ghcr.io
+  #       username: '${{ github.repository_owner }}'
+  #       password: '${{ secrets.GITHUB_TOKEN }}'
+    
+  #   - name: Pull image from GitHub Container Registry
+  #     if: steps.semantic.outputs.new_release_published == 'true'
+  #     run: |
+  #       docker pull ghcr.io/${{ env.REPO }}:${{ env.COMMIT_SHORT_ID }}
+
+  #   - name: Delete package from GHCR after successful release
+  #     if: steps.semantic.outputs.new_release_published == 'true'
+  #     run: |
+  #       if [[ "${{ needs.build.outputs.is_latest_or_release_image }}" == "true" ]]; then
+  #         echo "Image with tag ${{ env.COMMIT_SHORT_ID }} must NOT be deleted as it is release or latest image."
+  #       else
+  #         echo "New release ${{ env.RELEASE_IMAGE_TAG }} was published, deleting image ${{ env.COMMIT_SHORT_ID }} from GHCR..."
+  #         REPO_NAME=$(echo ${{ env.REPO }} | cut -d'/' -f2)
+  #         echo "Repo name: $REPO_NAME"
+  #         VERSION_ID=$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions" | jq -r '.[] | select(.metadata.container.tags[] == "${{ env.COMMIT_SHORT_ID }}") | .id')
+  #         echo "Package version ID: $VERSION_ID"
+  #         curl -i -X DELETE -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' -H "Accept: application/vnd.github.v3+json" "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions/$VERSION_ID"
+  #       fi
+  #     env: 
+  #       RELEASE_IMAGE_TAG: v${{ steps.semantic.outputs.new_release_version }}
+        
+  #   - name: Push latest released image to GitHub Container Registry
+  #     if: steps.semantic.outputs.new_release_published == 'true'
+  #     run: |
+  #       docker push ghcr.io/${{ env.REPO }}:${{ env.COMMIT_SHORT_ID }}  
+
+  #       docker tag ghcr.io/${{ env.REPO }}:${{ env.COMMIT_SHORT_ID }} ghcr.io/${{ env.REPO }}:${{ env.RELEASE_IMAGE_TAG }}
+  #       docker tag ghcr.io/${{ env.REPO }}:${{ env.COMMIT_SHORT_ID }} ghcr.io/${{ env.REPO }}:latest
+
+  #       docker push ghcr.io/${{ env.REPO }}:${{ env.RELEASE_IMAGE_TAG }}
+  #       docker push ghcr.io/${{ env.REPO }}:latest
+  #     env: 
+  #       RELEASE_IMAGE_TAG: v${{ steps.semantic.outputs.new_release_version }}
+
   #   - name: Install Helm
+  #     if: steps.semantic.outputs.new_release_published == 'true'
   #     uses: azure/setup-helm@v3
   #     with:
   #       version: 'latest'
 
   #   - name: Setup Python
+  #     if: steps.semantic.outputs.new_release_published == 'true'
   #     uses: actions/setup-python@v5.3.0
   #     with:
   #       python-version: "3.13"
     
   #   - name: Clone charts Repository
+  #     if: steps.semantic.outputs.new_release_published == 'true'
   #     uses: actions/checkout@v4
   #     with:
   #       repository: '${{ github.repository_owner }}/charts'
@@ -177,6 +331,7 @@ jobs:
   #       path: charts
 
   #   - name: Clone stack_charts Repository
+  #     if: steps.semantic.outputs.new_release_published == 'true'
   #     uses: actions/checkout@v4
   #     with:
   #       repository: '${{ github.repository_owner }}/stacked_charts'
@@ -185,6 +340,7 @@ jobs:
   #       path: stacked_charts
 
   #   - name: Clone SVTECH_CI_utilities Repository
+  #     if: steps.semantic.outputs.new_release_published == 'true'
   #     uses: actions/checkout@v4
   #     with:
   #       repository: '${{ github.repository_owner }}/SVTECH_CI_utilities'
@@ -193,23 +349,32 @@ jobs:
   #       path: SVTECH_CI_utilities
 
   #   - name: Import GPG key
+  #     if: steps.semantic.outputs.new_release_published == 'true'
   #     uses: crazy-max/ghaction-import-gpg@v6.2.0
   #     with:
   #       gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+  #       # git_user_signingkey: true
+  #       # git_commit_gpgsign: true
     
   #   - name: Modify image version in charts
+  #     if: steps.semantic.outputs.new_release_published == 'true'
   #     run: |
-  #       sed -i '/^  repository: svtechnmaa\/bngblaster_web_client/{N;s/  tag: .*/  tag: '"v1.${{ github.run_number}}"'/}' charts/kubernetes/bngblaster/values.yaml
-    
+  #       sed -i '/^  repository: svtechnmaa\/bngblaster_web_client/{N;s/  tag: .*/  tag: '"${{ env.RELEASE_IMAGE_TAG }}"'/}' charts/kubernetes/bngblaster/values.yaml
+  #     env:
+  #       RELEASE_IMAGE_TAG: v${{ steps.semantic.outputs.new_release_version }}
+
   #   - name: Modify image version in stack_charts
+  #     if: steps.semantic.outputs.new_release_published == 'true'
   #     run: |
   #       pip install requests pyyaml
   #       python3 SVTECH_CI_utilities/auto_testing/python_script/public_helmchart_release.py --BUILD_VARS_PATH='.' --ID='.' --GITHUB_TOKEN=${{secrets.PUSH_TOKEN}} --OWNER=${{ github.repository_owner}} --charts_string=bngblaster --REPO=charts
 
   #   - name: Update image version in charts
+  #     if: steps.semantic.outputs.new_release_published == 'true'
   #     env:
   #       GIT_USER_NAME: "svtechnmaa"
   #       GIT_USER_EMAIL: "nmaa@svtech.com.vn"
+  #       RELEASE_IMAGE_TAG: v${{ steps.semantic.outputs.new_release_version }}
   #     run: |
   #       cd charts
   #       helm repo index artifacthub
@@ -221,7 +386,7 @@ jobs:
   #         git config user.signingkey ${{ secrets.GPG_KEY_ID }}
 
   #         git add .
-  #         git commit --no-verify -m "no-ci: Update BNGBlaster image version to v1.${{ github.run_number}}"
+  #         git commit --no-verify -m "no-ci: Update BNGBlaster image version to ${{ env.RELEASE_IMAGE_TAG }}"
   #         # git remote set-url origin https://svtechnmaa:${{secrets.PUSH_TOKEN}}@github.com/svtechnmaa/charts.git
   #         git push origin main
   #       else 
@@ -229,9 +394,11 @@ jobs:
   #       fi
     
   #   - name: Update image version in stack_charts
+  #     if: steps.semantic.outputs.new_release_published == 'true'
   #     env:
   #       GIT_USER_NAME: "svtechnmaa"
   #       GIT_USER_EMAIL: "nmaa@svtech.com.vn"
+  #       RELEASE_IMAGE_TAG: v${{ steps.semantic.outputs.new_release_version }}
 
   #     run: |
   #       cd stacked_charts
@@ -243,7 +410,7 @@ jobs:
   #         git config user.signingkey ${{ secrets.GPG_KEY_ID }}
 
   #         git add .
-  #         git commit -S -m "no-ci: Update BNGBlaster image version to v1.${{ github.run_number}}" 
+  #         git commit -S -m "no-ci: Update BNGBlaster image version to ${{ env.RELEASE_IMAGE_TAG }}" 
   #         # git remote set-url origin https://svtechnmaa:${{secrets.PUSH_TOKEN}}@github.com/svtechnmaa/stacked_charts.git
   #         git push origin master  
   #       else 
