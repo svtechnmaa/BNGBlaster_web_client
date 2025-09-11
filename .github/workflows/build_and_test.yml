@@ -122,9 +122,8 @@ jobs:
       if: github.event_name == 'push' || github.event_name == 'pull_request' || steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed == 'false'
       run: |
         echo ${{ steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed }}
-        docker pull ghcr.io/${{ env.REPO }}:latest || true
-        docker build --build-arg BUILDKIT_INLINE_CACHE=1 \
-          --cache-from ghcr.io/${{ env.REPO }}:latest -t ${{ env.IMAGE_NAME }} .
+        # docker pull ghcr.io/${{ env.REPO }}:latest || true
+        docker build -t ${{ env.IMAGE_NAME }} .
 
     - name: Scan Docker image using Trivy and send mail if vulnerabilities detected
       uses: svtechnmaa/.github/actions/run_trivy_scan_image@main
