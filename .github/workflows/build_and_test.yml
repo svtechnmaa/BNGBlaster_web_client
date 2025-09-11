@@ -100,12 +100,12 @@ jobs:
         echo "COMMIT_AUTHOR_EMAIL=${COMMIT_AUTHOR_EMAIL}" >> $GITHUB_OUTPUT
         echo "COMMIT_AUTHOR_NAME=${COMMIT_AUTHOR_NAME}" >> $GITHUB_OUTPUT
 
-    - name: Login to dockerhub
-      uses: docker/login-action@v2
-      with:
-        registry: docker.io
-        username: ${{ secrets.DOCKER_HUB_USERNAME }}
-        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+    # - name: Login to dockerhub
+    #   uses: docker/login-action@v2
+    #   with:
+    #     registry: docker.io
+    #     username: ${{ secrets.DOCKER_HUB_USERNAME }}
+    #     password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
     - name: Scan Dockerfile using Trivy and send mail if vulnerabilities detected
       uses: svtechnmaa/.github/actions/run_trivy_scan_dockerfile@main
@@ -122,7 +122,9 @@ jobs:
       if: github.event_name == 'push' || github.event_name == 'pull_request' || steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed == 'false'
       run: |
         echo ${{ steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed }}
-        docker build -t ${{ env.IMAGE_NAME }} .
+        docker pull ghcr.io/${{ env.REPO }}:latest || true
+        docker build --build-arg BUILDKIT_INLINE_CACHE=1 \
+          --cache-from ghcr.io/${{ env.REPO }}:latest -t ${{ env.IMAGE_NAME }} .
 
     - name: Scan Docker image using Trivy and send mail if vulnerabilities detected
       uses: svtechnmaa/.github/actions/run_trivy_scan_image@main
@@ -154,13 +156,13 @@ jobs:
         username: '${{ github.repository_owner }}'
         password: '${{ secrets.GITHUB_TOKEN }}'
         
-    - name: Push image to GitHub Container Registry
-      if: github.event_name == 'push' || github.event_name == 'pull_request' || steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed == 'false'
-      run: |
-        docker tag ${{ env.IMAGE_NAME }}:latest ghcr.io/${{ env.REPO }}:${{ env.IMAGE_TEST_TAG }}
-        docker tag ${{ env.IMAGE_NAME }}:latest ghcr.io/${{ env.REPO }}:${{ env.COMMIT_SHORT_ID }}
-        docker push ghcr.io/${{ env.REPO }}:${{ env.IMAGE_TEST_TAG }}
-        docker push ghcr.io/${{ env.REPO }}:${{ env.COMMIT_SHORT_ID }}
+    # - name: Push image to GitHub Container Registry
+    #   if: github.event_name == 'push' || github.event_name == 'pull_request' || steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed == 'false'
+    #   run: |
+    #     docker tag ${{ env.IMAGE_NAME }}:latest ghcr.io/${{ env.REPO }}:${{ env.IMAGE_TEST_TAG }}
+    #     docker tag ${{ env.IMAGE_NAME }}:latest ghcr.io/${{ env.REPO }}:${{ env.COMMIT_SHORT_ID }}
+    #     docker push ghcr.io/${{ env.REPO }}:${{ env.IMAGE_TEST_TAG }}
+    #     docker push ghcr.io/${{ env.REPO }}:${{ env.COMMIT_SHORT_ID }}
 
   # test:
   #   if: |
