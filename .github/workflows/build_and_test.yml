@@ -189,16 +189,17 @@ jobs:
         containerName: '${{ env.CONTAINER_NAME }}'
         containerMappingPort: '${{ env.CONTAINER_MAPPING_PORT }}'
         
-    # - name: Push image to GitHub Container Registry
-    #   if: |
-    #     (github.event_name == 'push' || github.event_name == 'pull_request' || 
-    #     steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed == 'false') && 
-    #     steps.check_commit_message.outputs.no_ci != 'true'
-    #   run: |
-    #     docker tag ${{ env.IMAGE_NAME }}:latest ghcr.io/${{ env.REPO }}:${{ env.IMAGE_TEST_TAG }}
-    #     docker tag ${{ env.IMAGE_NAME }}:latest ghcr.io/${{ env.REPO }}:${{ env.COMMIT_SHORT_ID }}
-    #     docker push ghcr.io/${{ env.REPO }}:${{ env.IMAGE_TEST_TAG }}
-    #     docker push ghcr.io/${{ env.REPO }}:${{ env.COMMIT_SHORT_ID }}
+    - name: Push image to GitHub Container Registry
+      if: |
+        (github.event_name == 'push' || github.event_name == 'pull_request' || 
+        steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed == 'false') && 
+        steps.check_commit_message.outputs.no_ci != 'true'
+      run: |
+        docker tag ${{ env.IMAGE_NAME }}:latest ghcr.io/${{ env.REPO }}:${{ env.IMAGE_TEST_TAG }}
+        docker tag ${{ env.IMAGE_NAME }}:latest ghcr.io/${{ env.REPO }}:${{ env.COMMIT_SHORT_ID }}
+        docker push ghcr.io/${{ env.REPO }}:${{ env.IMAGE_TEST_TAG }}
+        docker push ghcr.io/${{ env.REPO }}:${{ env.COMMIT_SHORT_ID }}
+
 
   test:
     if: |
