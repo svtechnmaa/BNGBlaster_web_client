@@ -161,7 +161,7 @@ jobs:
       run: |
         docker pull ghcr.io/${{ env.REPO }}:latest || true
         docker build --build-arg BUILDKIT_INLINE_CACHE=1 --build-arg CACHEBUST=$(date +%s) \
-          --cache-from --cache-from ghcr.io/${{ env.REPO }}:latest -t ${{ env.IMAGE_NAME }} .
+          --cache-from ghcr.io/${{ env.REPO }}:latest -t ${{ env.IMAGE_NAME }} .
 
     - name: Scan Docker image using Trivy and send mail if vulnerabilities detected
       if: steps.check_commit_message.outputs.no_ci != 'true' && steps.check_commit_message.outputs.no_scan != 'true'
