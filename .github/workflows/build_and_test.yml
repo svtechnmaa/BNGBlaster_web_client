@@ -202,10 +202,9 @@ jobs:
 
   test:
     if: |
-      github.event_name == 'push'|| 
+      (github.event_name == 'push'|| 
       github.event_name == 'pull_request' || 
-      ( github.event_name == 'workflow_dispatch' && inputs.run_test ) &&
-      ( needs.build.outputs.check_no_ci != 'true' )
+      github.event_name == 'workflow_dispatch' && inputs.run_test) && needs.build.outputs.check_no_ci != 'true'
     runs-on: robot-dind
     needs: build
     permissions:
