@@ -150,14 +150,14 @@ jobs:
     - name: Build Docker image (no cache)
       if: |
         (github.event_name == 'push' || github.event_name == 'pull_request') &&
-        steps.check_commit_message.outputs.no_cache == 'true'
+        (steps.check_commit_message.outputs.no_cache == 'true' && steps.check_commit_message.outputs.no_ci != 'true')
       run: |
         docker build --no-cache -t ${{ env.IMAGE_NAME }} .
 
     - name: Build Docker image (with cache)
       if: |
         (github.event_name == 'push' || github.event_name == 'pull_request') &&
-        steps.check_commit_message.outputs.no_cache != 'true'
+        (steps.check_commit_message.outputs.no_cache == 'true' && steps.check_commit_message.outputs.no_ci != 'true')
       run: |
         docker pull ghcr.io/${{ env.REPO }}:latest || true
         docker build --build-arg BUILDKIT_INLINE_CACHE=1 --build-arg CACHEBUST=$(date +%s) \
