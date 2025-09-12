@@ -63,11 +63,11 @@ jobs:
             echo "❌ Found 'no-ci' in commit message. Stopping workflow!"
             echo "no_ci=true" >> $GITHUB_OUTPUT
 
-        elif [[ "$commit_message" =~ .*"no_scan".* ]]; then
+        elif [[ "$commit_message" =~ .*"no-scan".* ]]; then
             echo "🛑 Found 'no_scan' in commit message. Skipping image and Dockerfile scan!"
             echo "no_scan=true" >> $GITHUB_OUTPUT
             
-        elif [[ "$commit_message" =~ .*"no_cache".* ]]; then
+        elif [[ "$commit_message" =~ .*"no-cache".* ]]; then
             echo "⚡ Found 'no_cache' in commit message. Skipping caching during image build!"
             echo "no_cache=true" >> $GITHUB_OUTPUT
         fi
@@ -147,7 +147,7 @@ jobs:
         commit_author_name: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_AUTHOR_NAME }}
         job_id: ${{ steps.get_job_id.outputs.job_id }}
 
-        
+
     - name: Build Docker image (no cache)
       if: |
         (github.event_name == 'push' || github.event_name == 'pull_request') &&
