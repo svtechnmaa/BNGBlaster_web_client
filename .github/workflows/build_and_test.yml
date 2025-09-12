@@ -239,6 +239,7 @@ jobs:
   #   - name: Pull Docker image
   #     run: docker pull ghcr.io/${{ env.REPO }}:${{ env.COMMIT_SHORT_ID }}
 
+  
   #   - id: run_and_check_container_status
   #     name: Run BNGBlaster app
   #     uses: svtechnmaa/.github/actions/run_docker_container@main
