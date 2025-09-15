@@ -54,6 +54,7 @@ jobs:
         echo "COMMIT_SHORT_ID=${{ env.COMMIT_SHORT_ID }}"
         echo "REPO=${{ env.REPO }}"
 
+    ## Check commit message for no-ci, no-scan, no-cache
     - name: Check commit message
       id: check_commit_message
       run: |
@@ -72,6 +73,7 @@ jobs:
             echo "no_cache=true" >> $GITHUB_OUTPUT
         fi
 
+    ## Check existing image in GHCR to skip building if image with commit ID tag is existed
     - name: Check existing image in GHCR
       if: steps.check_commit_message.outputs.no_ci != 'true'
       id: check_existing_image
@@ -125,6 +127,21 @@ jobs:
         echo "COMMIT_AUTHOR_EMAIL=${COMMIT_AUTHOR_EMAIL}" >> $GITHUB_OUTPUT
         echo "COMMIT_AUTHOR_NAME=${COMMIT_AUTHOR_NAME}" >> $GITHUB_OUTPUT
 
+    - name: Login to Docker Container Registry (no cache)
+      if: |
+        (github.event_name == 'push' || github.event_name == 'pull_request' || steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed == 'false') && 
+        (steps.check_commit_message.outputs.no_cache == 'true' && steps.check_commit_message.outputs.no_ci != 'true')
+      uses: docker/login-action@v2
+      with:
+        registry: docker.io
+        username: '${{ secrets.DOCKER_HUB_USERNAME }}'
+        password: '${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}'
+    - name: Build Docker image (no cache)
+      if: |
+        (github.event_name == 'push' || github.event_name == 'pull_request' || steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed == 'false') &&
+        (steps.check_commit_message.outputs.no_cache == 'true' && steps.check_commit_message.outputs.no_ci != 'true')
+      run: |
+        docker build --no-cache -t ${{ env.IMAGE_NAME }} .
     - name: Login to GitHub Container Registry
       if: |
         (github.event_name == 'push' || github.event_name == 'pull_request' || 
@@ -135,6 +152,15 @@ jobs:
         registry: ghcr.io
         username: '${{ github.repository_owner }}'
         password: '${{ secrets.GITHUB_TOKEN }}'
+    - name: Build Docker image (with cache)
+      if: |
+        (github.event_name == 'push' || github.event_name == 'pull_request') &&
+        (steps.check_commit_message.outputs.no_cache != 'true' && steps.check_commit_message.outputs.no_ci != 'true')
+      run: |
+        docker pull ghcr.io/${{ env.REPO }}:latest || true
+        docker build --build-arg BUILDKIT_INLINE_CACHE=1 --build-arg CACHEBUST=$(date +%s) \
+          --cache-from ghcr.io/${{ env.REPO }}:latest -t ${{ env.IMAGE_NAME }} .
+
     - name: Scan Dockerfile using Trivy and send mail if vulnerabilities detected
       if: steps.check_commit_message.outputs.no_ci != 'true' && steps.check_commit_message.outputs.no_scan != 'true'
       uses: svtechnmaa/.github/actions/run_trivy_scan_dockerfile@main
@@ -146,22 +172,6 @@ jobs:
         commit_author_email: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_AUTHOR_EMAIL }}
         commit_author_name: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_AUTHOR_NAME }}
         job_id: ${{ steps.get_job_id.outputs.job_id }}
-
-    - name: Build Docker image (no cache)
-      if: |
-        (github.event_name == 'push' || github.event_name == 'pull_request') &&
-        (steps.check_commit_message.outputs.no_cache == 'true' && steps.check_commit_message.outputs.no_ci != 'true')
-      run: |
-        docker build --no-cache -t ${{ env.IMAGE_NAME }} .
-
-    - name: Build Docker image (with cache)
-      if: |
-        (github.event_name == 'push' || github.event_name == 'pull_request') &&
-        (steps.check_commit_message.outputs.no_cache != 'true' && steps.check_commit_message.outputs.no_ci != 'true')
-      run: |
-        docker pull ghcr.io/${{ env.REPO }}:latest || true
-        docker build --build-arg BUILDKIT_INLINE_CACHE=1 --build-arg CACHEBUST=$(date +%s) \
-          --cache-from ghcr.io/${{ env.REPO }}:latest -t ${{ env.IMAGE_NAME }} .
 
     - name: Scan Docker image using Trivy and send mail if vulnerabilities detected
       if: steps.check_commit_message.outputs.no_ci != 'true' && steps.check_commit_message.outputs.no_scan != 'true'
