@@ -66,7 +66,7 @@ ppp:
       __datatype: str
       __label: ppp/authentication/username
       __options: []
-      __value: user{session-global}
+      __value: user{session-global}2
       __widget: text_input
   mru:
     __datatype: int
@@ -97,5 +97,5 @@ sessions:
     __datatype: str
     __label: sessions/count
     __options: []
-    __value: '20000'
+    __value: '1000'
     __widget: text_input

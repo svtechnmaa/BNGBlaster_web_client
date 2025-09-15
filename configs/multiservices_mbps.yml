@@ -336,6 +336,12 @@ interfaces:
       - N:1
       __value: N:1
       __widget: selectbox
+  io-slots:
+    __datatype: str
+    __label: interfaces/io-slots
+    __options: []
+    __value: '32768'
+    __widget: text_input
   network:
   - address:
       __datatype: str
@@ -461,6 +467,18 @@ interfaces:
       __options: []
       __value: ens17.2710
       __widget: text_input
+  rx-threads:
+    __datatype: str
+    __label: interfaces/rx-threads
+    __options: []
+    __value: '10'
+    __widget: text_input
+  tx-threads:
+    __datatype: str
+    __label: interfaces/tx-threads
+    __options: []
+    __value: '10'
+    __widget: text_input
 sessions:
   count:
     __datatype: str
@@ -469,7 +487,16 @@ sessions:
     __value: '6'
     __widget: text_input
 streams:
-- direction:
+- Mbps:
+    __datatype: float
+    __label: streams/Mbps
+    __options:
+      __max: 1024.0
+      __min: 0.0
+      __step: 10.0
+    __value: 15.0
+    __widget: number_input
+  direction:
     __datatype: str
     __label: streams/direction
     __options:
@@ -499,12 +526,6 @@ streams:
     __options: []
     __value: ens17.1022
     __widget: text_input
-  pps:
-    __datatype: str
-    __label: streams/pps
-    __options: []
-    __value: '1000'
-    __widget: text_input
   priority:
     __datatype: int
     __label: streams/priority
@@ -529,7 +550,16 @@ streams:
     - ipv6pd
     __value: ipv4
     __widget: selectbox
-- direction:
+- Mbps:
+    __datatype: float
+    __label: streams/Mbps
+    __options:
+      __max: 1024.0
+      __min: 0.0
+      __step: 10.0
+    __value: 35.0
+    __widget: number_input
+  direction:
     __datatype: str
     __label: streams/direction
     __options:
@@ -559,12 +589,6 @@ streams:
     __options: []
     __value: ens17.2652
     __widget: text_input
-  pps:
-    __datatype: str
-    __label: streams/pps
-    __options: []
-    __value: '1000'
-    __widget: text_input
   stream-group-id:
     __datatype: str
     __label: streams/stream-group-id
@@ -580,7 +604,16 @@ streams:
     - ipv6pd
     __value: ipv4
     __widget: selectbox
-- direction:
+- Mbps:
+    __datatype: float
+    __label: streams/Mbps
+    __options:
+      __max: 1024.0
+      __min: 0.0
+      __step: 10.0
+    __value: 6.0
+    __widget: number_input
+  direction:
     __datatype: str
     __label: streams/direction
     __options:
@@ -610,12 +643,6 @@ streams:
     __options: []
     __value: ens17.2636
     __widget: text_input
-  pps:
-    __datatype: str
-    __label: streams/pps
-    __options: []
-    __value: '1000'
-    __widget: text_input
   stream-group-id:
     __datatype: str
     __label: streams/stream-group-id
@@ -631,7 +658,16 @@ streams:
     - ipv6pd
     __value: ipv4
     __widget: selectbox
-- direction:
+- Mbps:
+    __datatype: float
+    __label: streams/Mbps
+    __options:
+      __max: 1024.0
+      __min: 0.0
+      __step: 10.0
+    __value: 2.0
+    __widget: number_input
+  direction:
     __datatype: str
     __label: streams/direction
     __options:
@@ -661,12 +697,6 @@ streams:
     __options: []
     __value: ens17.1046
     __widget: text_input
-  pps:
-    __datatype: str
-    __label: streams/pps
-    __options: []
-    __value: '1000'
-    __widget: text_input
   stream-group-id:
     __datatype: str
     __label: streams/stream-group-id
@@ -682,7 +712,16 @@ streams:
     - ipv6pd
     __value: ipv4
     __widget: selectbox
-- direction:
+- Mbps:
+    __datatype: float
+    __label: streams/Mbps
+    __options:
+      __max: 1024.0
+      __min: 0.0
+      __step: 10.0
+    __value: 3.0
+    __widget: number_input
+  direction:
     __datatype: str
     __label: streams/direction
     __options:
@@ -712,12 +751,6 @@ streams:
     __options: []
     __value: ens17.300
     __widget: text_input
-  pps:
-    __datatype: str
-    __label: streams/pps
-    __options: []
-    __value: '1000'
-    __widget: text_input
   stream-group-id:
     __datatype: str
     __label: streams/stream-group-id
@@ -733,7 +766,16 @@ streams:
     - ipv6pd
     __value: ipv4
     __widget: selectbox
-- direction:
+- Mbps:
+    __datatype: float
+    __label: streams/Mbps
+    __options:
+      __max: 1024.0
+      __min: 0.0
+      __step: 10.0
+    __value: 3.0
+    __widget: number_input
+  direction:
     __datatype: str
     __label: streams/direction
     __options:
@@ -762,12 +804,6 @@ streams:
     __label: streams/network-interface
     __options: []
     __value: ens17.2710
-    __widget: text_input
-  pps:
-    __datatype: str
-    __label: streams/pps
-    __options: []
-    __value: '1000'
     __widget: text_input
   stream-group-id:
     __datatype: str

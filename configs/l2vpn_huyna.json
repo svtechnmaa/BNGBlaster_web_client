@@ -1,0 +1,34 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "112.32.34.2",
+        "gateway": "112.32.34.1",
+        "interface": "ens16.162",
+        "ipv6": false,
+        "stream-group-id": 162,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "network": [
+      {
+        "address": "112.32.34.1/30",
+        "gateway": "112.32.34.2",
+        "gateway-resolve-wait": false,
+        "interface": "ens17.162"
+      }
+    ]
+  },
+  "streams": [
+    {
+      "Gbps": 1.0,
+      "direction": "both",
+      "length": 3936,
+      "name": "l2vpn",
+      "network-interface": "ens17.162",
+      "stream-group-id": 162,
+      "type": "ipv4"
+    }
+  ]
+}

@@ -14,16 +14,16 @@
     "authentication": {
       "password": 123456,
       "retry": 30,
-      "timeout": 2,
-      "username": "user{session-global}"
+      "timeout": 5,
+      "username": "user1{session-global}"
     },
     "mru": 1492
   },
   "pppoe": {
     "reconnect": true,
-    "session-time": 0
+    "session-time": 30
   },
   "sessions": {
-    "count": 20
+    "count": 500
   }
 }

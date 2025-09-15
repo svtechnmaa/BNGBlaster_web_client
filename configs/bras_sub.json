@@ -15,7 +15,7 @@
       "password": 123456,
       "retry": 30,
       "timeout": 2,
-      "username": "user{session-global}"
+      "username": "user{session-global}2"
     },
     "mru": 1492
   },
@@ -24,6 +24,6 @@
     "session-time": 0
   },
   "sessions": {
-    "count": 20000
+    "count": 1000
   }
 }

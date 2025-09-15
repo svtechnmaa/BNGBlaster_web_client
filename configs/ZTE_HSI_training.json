@@ -3,42 +3,45 @@
     "access": [
       {
         "authentication-protocol": "PAP",
-        "interface": "ens16.66",
+        "interface": "ens16.46",
         "stream-group-id": 8,
         "type": "pppoe",
         "vlan-mode": "N:1"
       }
     ],
-    "mac-modifier": 10,
+    "io-slots": 32768,
+    "mac-modifier": 100,
     "network": [
       {
-        "address": "211.211.211.2/24",
-        "gateway": "211.211.211.1",
-        "interface": "ens17.66"
+        "address": "172.47.1.2/24",
+        "gateway": "172.47.1.1",
+        "interface": "ens17.47"
       }
-    ]
+    ],
+    "rx-threads": 3,
+    "tx-threads": 3
   },
   "ppp": {
     "authentication": {
       "password": "juniper@123",
       "retry": 30,
       "timeout": 2,
-      "username": "juniper"
+      "username": "zte"
     },
-    "mru": 2486
+    "mru": 1486
   },
   "pppoe": {
     "reconnect": true,
     "session-time": 0
   },
   "sessions": {
-    "count": 1
+    "count": 100
   },
   "streams": [
     {
-      "Mbps": 35.0,
       "direction": "both",
-      "name": "HSI",
+      "name": "ZTE_HSI",
+      "pps": 100,
       "stream-group-id": 8,
       "type": "ipv4"
     }

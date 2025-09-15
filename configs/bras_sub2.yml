@@ -54,13 +54,13 @@ ppp:
       __datatype: str
       __label: ppp/authentication/timeout
       __options: []
-      __value: '2'
+      __value: '5'
       __widget: text_input
     username:
       __datatype: str
       __label: ppp/authentication/username
       __options: []
-      __value: user{session-global}
+      __value: user1{session-global}
       __widget: text_input
   mru:
     __datatype: int
@@ -84,12 +84,12 @@ pppoe:
     __datatype: str
     __label: pppoe/session-time
     __options: []
-    __value: '0'
+    __value: '30'
     __widget: text_input
 sessions:
   count:
     __datatype: str
     __label: sessions/count
     __options: []
-    __value: '20'
+    __value: '500'
     __widget: text_input

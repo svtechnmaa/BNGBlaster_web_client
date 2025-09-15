@@ -61,6 +61,7 @@
         "vlan-mode": "N:1"
       }
     ],
+    "io-slots": 32768,
     "network": [
       {
         "address": "10.22.22.1/24",
@@ -94,64 +95,65 @@
         "gateway": "10.55.55.1",
         "interface": "ens17.2710"
       }
-    ]
+    ],
+    "rx-threads": 10,
+    "tx-threads": 10
   },
   "sessions": {
     "count": 6
   },
   "streams": [
     {
+      "Mbps": 15.0,
       "direction": "both",
       "length": 2486,
       "name": "2G",
       "network-interface": "ens17.1022",
-      "pps": 1000,
-      "priority": 240,
       "stream-group-id": 1022,
       "type": "ipv4"
     },
     {
+      "Mbps": 35.0,
       "direction": "both",
       "length": 2486,
       "name": "3G",
       "network-interface": "ens17.2652",
-      "pps": 1000,
       "stream-group-id": 2652,
       "type": "ipv4"
     },
     {
+      "Mbps": 6.0,
       "direction": "both",
       "length": 2486,
       "name": "4G",
       "network-interface": "ens17.2636",
-      "pps": 1000,
       "stream-group-id": 2636,
       "type": "ipv4"
     },
     {
+      "Mbps": 2.0,
       "direction": "both",
       "length": 2486,
       "name": "L2VPN",
       "network-interface": "ens17.1046",
-      "pps": 1000,
       "stream-group-id": 1046,
       "type": "ipv4"
     },
     {
+      "Mbps": 3.0,
       "direction": "both",
       "length": 2486,
       "name": "L3VPN",
       "network-interface": "ens17.300",
-      "pps": 1000,
       "stream-group-id": 300,
       "type": "ipv4"
     },
     {
+      "Mbps": 3.0,
       "direction": "both",
       "length": 2486,
       "name": "L3LL",
       "network-interface": "ens17.2710",
-      "pps": 1000,
       "stream-group-id": 2710,
       "type": "ipv4"
     }

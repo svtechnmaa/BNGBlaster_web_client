@@ -1,0 +1,44 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "172.42.1.2",
+        "address-iter": "0.0.0.1",
+        "gateway": "172.42.1.1",
+        "interface": "ens16.42",
+        "ipv6": false,
+        "stream-group-id": 2,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "io-slots": 32767,
+    "io-burst": 5000,
+    "rx-interval": 0.1,
+    "tx-interval": 0.1,
+    "tx-threads": 10,
+    "rx-threads": 10,
+    "network": [
+      {
+        "address": "172.43.1.2/24",
+        "gateway": "172.43.1.1",
+        "interface": "ens17.43"
+      }
+    ]
+  },
+  "sessions": {
+    "count": 1
+  },
+  "streams": [
+    {
+      "pps": 1000,
+      "start-delay": 5,
+      "direction": "both",
+      "length": 3400,
+      "name": "ZTE-L3LL",
+      "network-interface": "ens17.43",
+      "stream-group-id": 2,
+      "type": "ipv4"
+    }
+  ]
+}

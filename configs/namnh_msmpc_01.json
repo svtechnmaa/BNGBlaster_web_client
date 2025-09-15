@@ -1,0 +1,37 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "22.0.0.2",
+        "address-iter": "0.0.0.1",
+        "gateway": "22.0.0.1",
+        "interface": "ens16.1569",
+        "ipv6": false,
+        "stream-group-id": 3801,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "network": [
+      {
+        "address": "70.7.7.7/24",
+        "gateway": "70.7.7.1",
+        "interface": "ens17.1570"
+      }
+    ]
+  },
+  "sessions": {
+    "count": 100000
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "length": 1000,
+      "name": "IPoE-Stream-01",
+      "network-interface": "ens17.1570",
+      "pps": 10,
+      "stream-group-id": 3801,
+      "type": "ipv4"
+    }
+  ]
+}

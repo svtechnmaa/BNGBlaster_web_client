@@ -97,7 +97,7 @@ ppp:
       __max: 65535
       __min: 1
       __step: 1000
-    __value: 1250
+    __value: 2486
     __widget: number_input
 pppoe:
   reconnect:
@@ -122,14 +122,14 @@ sessions:
     __value: '1'
     __widget: text_input
 streams:
-- Gbps:
+- Mbps:
     __datatype: float
-    __label: streams/Gbps
+    __label: streams/Mbps
     __options:
-      __max: 100.0
+      __max: 1024.0
       __min: 0.0
-      __step: 1.0
-    __value: 0.1
+      __step: 10.0
+    __value: 35.0
     __widget: number_input
   direction:
     __datatype: str

@@ -23,11 +23,11 @@
   },
   "streams": [
     {
+      "Mbps": 35.0,
       "direction": "both",
       "length": 2486,
-      "name": "VT VOD",
+      "name": "vod",
       "network-interface": "ens17.36",
-      "pps": 1000,
       "stream-group-id": 36,
       "type": "ipv4"
     }

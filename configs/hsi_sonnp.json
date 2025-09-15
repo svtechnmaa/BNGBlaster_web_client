@@ -9,14 +9,17 @@
         "vlan-mode": "N:1"
       }
     ],
-    "mac-modifier": 10,
+    "io-slots": 32768,
+    "mac-modifier": 100,
     "network": [
       {
         "address": "211.211.211.2/24",
         "gateway": "211.211.211.1",
         "interface": "ens17.66"
       }
-    ]
+    ],
+    "rx-threads": 3,
+    "tx-threads": 3
   },
   "ppp": {
     "authentication": {
@@ -25,20 +28,20 @@
       "timeout": 2,
       "username": "juniper"
     },
-    "mru": 2486
+    "mru": 1486
   },
   "pppoe": {
     "reconnect": true,
     "session-time": 0
   },
   "sessions": {
-    "count": 1
+    "count": 100
   },
   "streams": [
     {
-      "Mbps": 35.0,
       "direction": "both",
       "name": "HSI",
+      "pps": 100,
       "stream-group-id": 8,
       "type": "ipv4"
     }

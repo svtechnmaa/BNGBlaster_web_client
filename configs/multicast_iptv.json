@@ -1,20 +1,21 @@
 {
   "igmp": {
-    "group": "239.70.70.1",
+    "group": "239.1.0.1",
     "group-count": 1,
     "group-iter": "0.0.0.1",
+    "multicast-traffic-length": 1236,
     "multicast-traffic-pps": 1000,
     "send-multicast-traffic": true,
-    "source": "10.70.70.1",
+    "source": "10.63.1.1",
     "start-delay": 2,
-    "version": 2
+    "version": 1
   },
   "interfaces": {
     "access": [
       {
-        "address": "10.71.71.2",
-        "gateway": "10.71.71.1",
-        "interface": "ens16.700",
+        "address": "192.168.168.170",
+        "gateway": "192.168.168.169",
+        "interface": "ens16.3888",
         "ipv6": false,
         "stream-group-id": 1,
         "type": "ipoe",
@@ -23,13 +24,10 @@
     ],
     "network": [
       {
-        "address": "10.70.70.1",
-        "gateway": "10.70.70.2",
-        "interface": "ens17.700"
+        "address": "10.63.1.1/30",
+        "gateway": "10.63.1.2",
+        "interface": "ens17.3888"
       }
     ]
-  },
-  "sessions": {
-    "count": 1
   }
 }
