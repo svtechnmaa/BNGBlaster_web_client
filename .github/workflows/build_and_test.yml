@@ -35,6 +35,10 @@ jobs:
       contents: read
       packages: write
       security-events: write
+    outputs:
+      check_no_ci: ${{ steps.check_commit_message.outputs.no_ci }}
+      check_no_scan: ${{ steps.check_commit_message.outputs.no_scan }}
+      check_no_cache: ${{ steps.check_commit_message.outputs.no_cache }}
     steps:
       
     - name: Checkout code
@@ -50,7 +54,28 @@ jobs:
         echo "COMMIT_SHORT_ID=${{ env.COMMIT_SHORT_ID }}"
         echo "REPO=${{ env.REPO }}"
 
+    ## Check commit message for no-ci, no-scan, no-cache
+    - name: Check commit message
+      id: check_commit_message
+      run: |
+        commit_message=$(git log --pretty=format:"%H %s %b" | grep "${{ env.COMMIT_FULL_ID }}" | sed 's,'${{ env.COMMIT_FULL_ID }}' ,,g')
+
+        if [[ "$commit_message" =~ .*"no-ci".* ]]; then
+            echo "❌ Found 'no-ci' in commit message. Stopping workflow!"
+            echo "no_ci=true" >> $GITHUB_OUTPUT
+
+        elif [[ "$commit_message" =~ .*"no-scan".* ]]; then
+            echo "🛑 Found 'no_scan' in commit message. Skipping image and Dockerfile scan!"
+            echo "no_scan=true" >> $GITHUB_OUTPUT
+            
+        elif [[ "$commit_message" =~ .*"no-cache".* ]]; then
+            echo "⚡ Found 'no_cache' in commit message. Skipping caching during image build!"
+            echo "no_cache=true" >> $GITHUB_OUTPUT
+        fi
+
+    ## Check existing image in GHCR to skip building if image with commit ID tag is existed
     - name: Check existing image in GHCR
+      if: steps.check_commit_message.outputs.no_ci != 'true'
       id: check_existing_image
       run: |
         REPO_NAME=$(echo ${{ env.REPO }} | cut -d'/' -f2)
@@ -76,6 +101,7 @@ jobs:
         fi
 
     - name: Get Job ID
+      if: steps.check_commit_message.outputs.no_ci != 'true'
       id: get_job_id
       run: |
         curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
@@ -84,6 +110,7 @@ jobs:
         echo "job_id=$(cat job_id.txt)" >> $GITHUB_OUTPUT
 
     - name: Determine Commit ID and Comitter Email
+      if: steps.check_commit_message.outputs.no_ci != 'true'
       id: determine_commit_id_and_email_author
       run: |
         if [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
