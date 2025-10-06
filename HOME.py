@@ -739,55 +739,103 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
             with st.container(border=True, height= 400):   
                 select_running_instance={}
                 for i in list_instance_running_from_blaster:
-                    col111, col112, col113= st.columns([3,1,1], border= True)
-                    with col111:
-                        exec(f"""select_running_instance['{i}'] = st.checkbox(f":orange[*{i}*]")""") 
-                    with col112:
-                        if st.button(':orange[:material/restart_alt:]', use_container_width=True, key='restart_%s'%i):
-                            log_authorize(st.session_state.user,blaster_server['ip'], f'Restart test profile {i}')
-                            restart_kill_sc, restart_kill_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_stop, '/_kill')
-                            if restart_kill_sc == 202:
-                                st.toast(":green[You select restart button]", icon="🔥")
-                                log_authorize(st.session_state.user,blaster_server['ip'], f'RUN STOP test profile {i}')
-                                time.sleep(1)
-                            while True:
-                                restart_check_instance_st, restart_check_instance_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'GET', payload_start)
-                                # st.write(restart_check_instance_st,restart_check_instance_ct)
-                                if "stopped" in str(restart_check_instance_ct):
-                                    st.toast(':green[Starting restart traffic, wait please]', icon="🔥")
-                                    with open(f'{path_configs}/{i}.json') as file:
-                                        exist_put_body= json.load(file)
-                                    CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'PUT', json.dumps(exist_put_body, indent=2))
-                                    start_exist_sc, start_exist_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_start, '/_start')
-                                    log_authorize(st.session_state.user,blaster_server['ip'], f'RUN START test profile {i}')
-                                    time.sleep(0.5)
-                                    break
-                            while True:
-                                restart_check_instance_st, restart_check_instance_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'GET', payload_start)
-                                # st.write(restart_check_instance_st,restart_check_instance_ct)
-                                if "started" in str(restart_check_instance_ct):
-                                    st.toast(':green[Restart traffic successfully]', icon="🔥")
-                                    time.sleep(0.5)
-                                    break
-                    with col113:
-                        with st.popover(':orange[:material/access_time:]', use_container_width=True):
-                        # with st.container(border=True):
-                            time_start = find_and_split_line_from_file('auth.log', 'RUN START test profile %s'%i)
-                            st.info(":blue[**:material/sound_sampler: LAST START**]")
-                            try:
-                                st.write(":orange[ :material/sound_sampler: *%s*]"%time_start[0].split('_')[0:3])
-                                st.write(":orange[ :material/dns: *%s*]"%time_start[0].split('_')[3])
-                            except:
-                                st.write(":orange[ :material/sound_sampler: *None*]")
-                                st.write(":orange[ :material/dns: *None*]")
-                            time_stop = find_and_split_line_from_file('auth.log', 'RUN STOP test profile %s'%i)
-                            st.info(":blue[**:material/stop_circle: LAST STOP**]")
-                            try:
-                                st.write(":orange[ :material/stop_circle:*%s*]"%time_stop[0].split('_')[0:3])
-                                st.write(":orange[ :material/dns: *%s*]"%time_stop[0].split('_')[3])
-                            except:
-                                st.write(":orange[ :material/stop_circle: *None*]")
-                                st.write(":orange[ :material/dns: *None*]")
+                    with st.container(border=True):
+                        col111, col112, col113, col114, col115= st.columns([3,0.6,0.6,0.6,0.6])
+                        with col111:
+                                exec(f"""select_running_instance['{i}'] = st.checkbox(f":orange[*{i}*]")""") 
+                        with col112:
+                            if st.button(':orange[:material/stop_circle:]', use_container_width=True, key='stop_%s'%i):
+                                stop_sc, stop_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_stop, '/_stop')
+                                if stop_sc == 202:
+                                    st.toast(":orange[Begin **stop** test profile **%s**]"%i, icon="🔥")
+                                    while True:
+                                        check_instance_st, check_instance_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'GET', payload_start)
+                                        # st.write(check_instance_st,check_instance_ct)
+                                        if "started" in str(check_instance_ct):
+                                            st.toast(':orange[Stopping traffic, wait please]', icon="🔥")
+                                            time.sleep(2)
+                                        elif "stopped" in str(check_instance_ct):
+                                            st.toast(':orange[Profile already stopped]', icon="🔥")
+                                            log_authorize(st.session_state.user,blaster_server['ip'], f'RUN STOP test profile {i}')
+                                            
+                                            list_inf = []
+                                            with open(f"{path_configs}/{i}.json", "r") as json_run:
+                                                val_json=json.load(json_run)
+                                            try:
+                                                for ic in range(len(val_json['interfaces']['access'])):
+                                                    list_inf.append(val_json['interfaces']['access'][ic]['interface'])
+                                            except:
+                                                pass
+                                            try:
+                                                for inw in range(len(val_json['interfaces']['network'])):
+                                                    list_inf.append(val_json['interfaces']['network'][inw]['interface'])
+                                            except:
+                                                pass
+                                            for il in list_inf:
+                                                if '.' in il:
+                                                    # st.toast(i)
+                                                    execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo -S ip link delete link {il.split('.')[0]} name {il} type vlan id {il.split('.')[1]}")
+                                                    time.sleep(0.02)
+                                            st.rerun()
+                                            break
+                                        else:
+                                            st.toast(':red[Test profile have error, please check log]', icon="❌")
+                                            break
+                                else:
+                                    st.toast(':red[Had error when stop test profile]', icon="❌")
+                        with col113:
+                            if st.button(':orange[:material/restart_alt:]', use_container_width=True, key='restart_%s'%i):
+                                log_authorize(st.session_state.user,blaster_server['ip'], f'Restart test profile {i}')
+                                restart_kill_sc, restart_kill_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_stop, '/_kill')
+                                if restart_kill_sc == 202:
+                                    st.toast(":green[You select restart button]", icon="🔥")
+                                    log_authorize(st.session_state.user,blaster_server['ip'], f'RUN STOP test profile {i}')
+                                    time.sleep(1)
+                                while True:
+                                    restart_check_instance_st, restart_check_instance_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'GET', payload_start)
+                                    # st.write(restart_check_instance_st,restart_check_instance_ct)
+                                    if "stopped" in str(restart_check_instance_ct):
+                                        st.toast(':green[Starting restart traffic, wait please]', icon="🔥")
+                                        with open(f'{path_configs}/{i}.json') as file:
+                                            exist_put_body= json.load(file)
+                                        CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'PUT', json.dumps(exist_put_body, indent=2))
+                                        start_exist_sc, start_exist_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_start, '/_start')
+                                        log_authorize(st.session_state.user,blaster_server['ip'], f'RUN START test profile {i}')
+                                        time.sleep(0.5)
+                                        break
+                                while True:
+                                    restart_check_instance_st, restart_check_instance_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'GET', payload_start)
+                                    # st.write(restart_check_instance_st,restart_check_instance_ct)
+                                    if "started" in str(restart_check_instance_ct):
+                                        st.toast(':green[Restart traffic successfully]', icon="🔥")
+                                        time.sleep(0.5)
+                                        break
+                        with col114:
+                            if st.button(':red[:material/bolt:]', use_container_width=True, key='reset_%s'%i):
+                                kill_sc, kill_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_stop, '/_kill')
+                                if kill_sc == 202:
+                                    st.toast("You used KILL button, report after testing which couldn't be generated", icon="🔥")
+                                    time.sleep(1)
+                                    st.rerun()
+                        with col115:
+                            with st.popover(':orange[:material/access_time:]', use_container_width=True):
+                            # with st.container(border=True):
+                                time_start = find_and_split_line_from_file('auth.log', 'RUN START test profile %s'%i)
+                                st.info(":blue[**:material/sound_sampler: LAST START**]")
+                                try:
+                                    st.write(":orange[ :material/sound_sampler: *%s*]"%time_start[0].split('_')[0:3])
+                                    st.write(":orange[ :material/dns: *%s*]"%time_start[0].split('_')[3])
+                                except:
+                                    st.write(":orange[ :material/sound_sampler: *None*]")
+                                    st.write(":orange[ :material/dns: *None*]")
+                                time_stop = find_and_split_line_from_file('auth.log', 'RUN STOP test profile %s'%i)
+                                st.info(":blue[**:material/stop_circle: LAST STOP**]")
+                                try:
+                                    st.write(":orange[ :material/stop_circle:*%s*]"%time_stop[0].split('_')[0:3])
+                                    st.write(":orange[ :material/dns: *%s*]"%time_stop[0].split('_')[3])
+                                except:
+                                    st.write(":orange[ :material/stop_circle: *None*]")
+                                    st.write(":orange[ :material/dns: *None*]")
                 select_running_instance_cb = [] # List select checkbox
                 for i in select_running_instance.keys():
                     if select_running_instance[i]:
@@ -2737,129 +2785,129 @@ if st.session_state.p4:
         with col19:
             st.write('')
             with st.container(border= True):
-                col1111, col1112,col1113= st.columns([1,1,1])
-                with col1111:
-                    if st.button(':material/sound_sampler: **START**', type = 'primary',use_container_width=True, disabled= st.session_state.button_start):
-                        list_inf = []
-                        with open(f"{path_configs}/{instance}.json", "r") as json_run:
-                            val_json=json.load(json_run)
-                        try:
-                            for i in range(len(val_json['interfaces']['access'])):
-                                list_inf.append(val_json['interfaces']['access'][i]['interface'])
-                        except:
-                            pass
-                        try:
-                            for i in range(len(val_json['interfaces']['network'])):
-                                list_inf.append(val_json['interfaces']['network'][i]['interface'])
-                        except:
-                            pass
-                        for i in list_inf:
-                            if '.' in i:
-                                # st.toast(i)
-                                execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), "sudo -S modprobe 8021q")
-                                time.sleep(0.02)
-                                execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo -S ip link add link {i.split('.')[0]} name {i} type vlan id {i.split('.')[1]}")
-                                time.sleep(0.02)
-                                execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo -S ip link set dev {i} up")
-                        try:
-                            exist_sc, exist_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'GET', payload_start)
-                            # st.write(exist_sc, exist_ct)
-                        except Exception as e:
-                            st.info(f'Error {e}')
-                        if exist_sc == 200:
-                            st.write(':orange[:material/done: Start traffic generating ...]')
-                            with open(f'{path_configs}/{instance}.json') as file:
-                                exist_put_body= json.load(file)
-                            CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'PUT', json.dumps(exist_put_body, indent=2))
-                            start_exist_sc, start_exist_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'POST', payload_start, '/_start')
-                            #st.write(start_exist_sc, start_exist_ct)
-                            run_pg1 = st.progress(0)
-                            for percent_complete3 in range(100):
-                                time.sleep(0.01)
-                                run_pg1.progress(percent_complete3 + 1, text= f':violet[{percent_complete3+1}%]')
-                        else:
-                            ######## Push config.json ##############################
-                            with open(f'{path_configs}/{instance}.json') as file:
-                                put_body= json.load(file)
-                            st.write(':orange[:material/upload: Put config.json ...]')
-                            put_sc, put_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'PUT', json.dumps(put_body, indent=2))
-                            put_pg = st.progress(0)
-                            for percent_complete1 in range(100):
-                                time.sleep(0.01)
-                                put_pg.progress(percent_complete1 + 1, text= f':violet[{percent_complete1+1}%]')
-                            ######## Start trafffic ##############################
-                            st.write(':orange[:material/done: Start traffic generating ...]')
-                            start_sc, start_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'POST', payload_start, '/_start')
-                            # st.write(start_sc, start_ct)
-                            run_pg = st.progress(0)
-                            for percent_complete2 in range(100):
-                                time.sleep(0.01)
-                                run_pg.progress(percent_complete2 + 1, text= f':violet[{percent_complete2+1}%]')
-                            if put_sc == 201:
-                                print('Create test profile on blaster sucessfully')
-                            else: 
-                                print('Create test profile on blaster didnt sucessfully')
-                        st.session_state.button_stop= False
-                        log_authorize(st.session_state.user,blaster_server['ip'], f'RUN START test profile {instance}')
-                        time.sleep(1)
-                        st.rerun()
-                with col1112:
-                    if st.button(':material/stop_circle: **STOP**', type= 'primary', use_container_width=True, disabled= st.session_state.button_stop):
-                        stop_sc, stop_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'POST', payload_stop, '/_stop')
-                        # st.write(stop_sc, stop_ct)
-                        log_authorize(st.session_state.user,blaster_server['ip'], f'RUN STOP test profile {instance}')
-                        if stop_sc == 202:
-                            st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, True, False
-                            log_authorize(st.session_state.user,blaster_server['ip'], f'STOP test profile {instance} successfully')
+                # col1111, col1112= st.columns([1,1])
+                # with col1111:
+                if st.button(':material/sound_sampler: **START**', type = 'primary',use_container_width=True, disabled= st.session_state.button_start):
+                    list_inf = []
+                    with open(f"{path_configs}/{instance}.json", "r") as json_run:
+                        val_json=json.load(json_run)
+                    try:
+                        for i in range(len(val_json['interfaces']['access'])):
+                            list_inf.append(val_json['interfaces']['access'][i]['interface'])
+                    except:
+                        pass
+                    try:
+                        for i in range(len(val_json['interfaces']['network'])):
+                            list_inf.append(val_json['interfaces']['network'][i]['interface'])
+                    except:
+                        pass
+                    for i in list_inf:
+                        if '.' in i:
+                            # st.toast(i)
+                            execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), "sudo -S modprobe 8021q")
+                            time.sleep(0.02)
+                            execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo -S ip link add link {i.split('.')[0]} name {i} type vlan id {i.split('.')[1]}")
+                            time.sleep(0.02)
+                            execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo -S ip link set dev {i} up")
+                    try:
+                        exist_sc, exist_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'GET', payload_start)
+                        # st.write(exist_sc, exist_ct)
+                    except Exception as e:
+                        st.info(f'Error {e}')
+                    if exist_sc == 200:
+                        st.write(':orange[:material/done: Start traffic generating ...]')
+                        with open(f'{path_configs}/{instance}.json') as file:
+                            exist_put_body= json.load(file)
+                        CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'PUT', json.dumps(exist_put_body, indent=2))
+                        start_exist_sc, start_exist_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'POST', payload_start, '/_start')
+                        #st.write(start_exist_sc, start_exist_ct)
+                        run_pg1 = st.progress(0)
+                        for percent_complete3 in range(100):
+                            time.sleep(0.01)
+                            run_pg1.progress(percent_complete3 + 1, text= f':violet[{percent_complete3+1}%]')
+                    else:
+                        ######## Push config.json ##############################
+                        with open(f'{path_configs}/{instance}.json') as file:
+                            put_body= json.load(file)
+                        st.write(':orange[:material/upload: Put config.json ...]')
+                        put_sc, put_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'PUT', json.dumps(put_body, indent=2))
+                        put_pg = st.progress(0)
+                        for percent_complete1 in range(100):
+                            time.sleep(0.01)
+                            put_pg.progress(percent_complete1 + 1, text= f':violet[{percent_complete1+1}%]')
+                        ######## Start trafffic ##############################
+                        st.write(':orange[:material/done: Start traffic generating ...]')
+                        start_sc, start_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'POST', payload_start, '/_start')
+                        # st.write(start_sc, start_ct)
+                        run_pg = st.progress(0)
+                        for percent_complete2 in range(100):
+                            time.sleep(0.01)
+                            run_pg.progress(percent_complete2 + 1, text= f':violet[{percent_complete2+1}%]')
+                        if put_sc == 201:
+                            print('Create test profile on blaster sucessfully')
+                        else: 
+                            print('Create test profile on blaster didnt sucessfully')
+                    st.session_state.button_stop= False
+                    log_authorize(st.session_state.user,blaster_server['ip'], f'RUN START test profile {instance}')
+                    time.sleep(1)
+                    st.rerun()
+                # with col1112:
+                #     if st.button(':material/stop_circle: **STOP**', type= 'primary', use_container_width=True, disabled= st.session_state.button_stop):
+                #         stop_sc, stop_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'POST', payload_stop, '/_stop')
+                #         # st.write(stop_sc, stop_ct)
+                #         log_authorize(st.session_state.user,blaster_server['ip'], f'RUN STOP test profile {instance}')
+                #         if stop_sc == 202:
+                #             st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, True, False
+                #             log_authorize(st.session_state.user,blaster_server['ip'], f'STOP test profile {instance} successfully')
                             
-                            stop_pg = st.progress(0)
-                            # for percent_complete3 in range(100):
-                            #     time.sleep(0.004)
-                            #     stop_pg.progress(percent_complete3 + 1, text= f':violet[{percent_complete3+1}%]')
-                            m = False # this var for display warning if for below out of range, user need wait more and refresh page
-                            for i in range(10):
-                                check_instance_st, check_instance_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'GET', payload_start)
-                                # st.write(check_instance_st,check_instance_ct)
-                                if "stopped" in str(check_instance_ct):
-                                    list_inf = []
-                                    with open(f"{path_configs}/{instance}.json", "r") as json_run:
-                                        val_json=json.load(json_run)
-                                    try:
-                                        for i in range(len(val_json['interfaces']['access'])):
-                                            list_inf.append(val_json['interfaces']['access'][i]['interface'])
-                                    except:
-                                        pass
-                                    try:
-                                        for i in range(len(val_json['interfaces']['network'])):
-                                            list_inf.append(val_json['interfaces']['network'][i]['interface'])
-                                    except:
-                                        pass
-                                    for i in list_inf:
-                                        if '.' in i:
-                                            # st.toast(i)
-                                            execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo -S ip link delete link {i.split('.')[0]} name {i} type vlan id {i.split('.')[1]}")
-                                            time.sleep(0.02)
-                                    stop_pg.progress(100, text= f':violet[100%]')
-                                    st.info(":green[Stop successfully]", icon="🔥")
-                                    time.sleep(1)
-                                    break
-                                if i == 9:
-                                    m = True
-                                stop_pg.progress(i*10, text= f':violet[{i*10}%]')
-                                time.sleep(2)
-                            if m:
-                                st.warning("Your profile can still running, wait and refresh again or use kill below", icon="🔥")
-                                st.session_state.button_kill= False
-                            else:
-                                time.sleep(1)
-                                st.rerun()
-                with col1113:
-                    if st.button(':material/offline_bolt: **KILL**', type= 'primary', use_container_width=True, disabled= st.session_state.button_kill):
-                        kill_sc, kill_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'POST', payload_stop, '/_kill')
-                        if kill_sc == 202:
-                            st.warning("You used KILL button, report after testing which couldn't be generated", icon="🔥")
-                            time.sleep(1)
-                            st.rerun()
+                #             stop_pg = st.progress(0)
+                #             # for percent_complete3 in range(100):
+                #             #     time.sleep(0.004)
+                #             #     stop_pg.progress(percent_complete3 + 1, text= f':violet[{percent_complete3+1}%]')
+                #             m = False # this var for display warning if for below out of range, user need wait more and refresh page
+                #             for i in range(10):
+                #                 check_instance_st, check_instance_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'GET', payload_start)
+                #                 # st.write(check_instance_st,check_instance_ct)
+                #                 if "stopped" in str(check_instance_ct):
+                #                     list_inf = []
+                #                     with open(f"{path_configs}/{instance}.json", "r") as json_run:
+                #                         val_json=json.load(json_run)
+                #                     try:
+                #                         for i in range(len(val_json['interfaces']['access'])):
+                #                             list_inf.append(val_json['interfaces']['access'][i]['interface'])
+                #                     except:
+                #                         pass
+                #                     try:
+                #                         for i in range(len(val_json['interfaces']['network'])):
+                #                             list_inf.append(val_json['interfaces']['network'][i]['interface'])
+                #                     except:
+                #                         pass
+                #                     for i in list_inf:
+                #                         if '.' in i:
+                #                             # st.toast(i)
+                #                             execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo -S ip link delete link {i.split('.')[0]} name {i} type vlan id {i.split('.')[1]}")
+                #                             time.sleep(0.02)
+                #                     stop_pg.progress(100, text= f':violet[100%]')
+                #                     st.info(":green[Stop successfully]", icon="🔥")
+                #                     time.sleep(1)
+                #                     break
+                #                 if i == 9:
+                #                     m = True
+                #                 stop_pg.progress(i*10, text= f':violet[{i*10}%]')
+                #                 time.sleep(2)
+                #             if m:
+                #                 st.warning("Your profile can still running, wait and refresh again or use kill below", icon="🔥")
+                #                 st.session_state.button_kill= False
+                #             else:
+                #                 time.sleep(1)
+                #                 st.rerun()
+                # with col1112:
+                #     if st.button(':material/offline_bolt: **KILL**', type= 'primary', use_container_width=True, disabled= st.session_state.button_kill):
+                #         kill_sc, kill_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'POST', payload_stop, '/_kill')
+                #         if kill_sc == 202:
+                #             st.warning("You used KILL button, report after testing which couldn't be generated", icon="🔥")
+                #             time.sleep(1)
+                #             st.rerun()
     # with col5:
         
     with st.container(border= True):
