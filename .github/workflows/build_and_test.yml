@@ -128,10 +128,10 @@ jobs:
         echo "COMMIT_AUTHOR_EMAIL=${COMMIT_AUTHOR_EMAIL}" >> $GITHUB_OUTPUT
         echo "COMMIT_AUTHOR_NAME=${COMMIT_AUTHOR_NAME}" >> $GITHUB_OUTPUT
 
-    - name: Login to Docker Container Registry (no cache)
+    - name: Login to Docker Container Registry
       if: |
         (github.event_name == 'push' || github.event_name == 'pull_request' || steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed == 'false') && 
-        (steps.check_commit_message.outputs.no_cache == 'true' && steps.check_commit_message.outputs.no_ci != 'true')
+        (steps.check_commit_message.outputs.no_ci != 'true')
       uses: docker/login-action@v2
       with:
         registry: docker.io
