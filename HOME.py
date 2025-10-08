@@ -34,6 +34,8 @@ if 'p1' not in st.session_state:
     st.session_state.edit_selection = 0
     st.session_state.p3_edit_select = ''
     st.session_state.p4_running_select = ''
+    st.session_state.p4_running_graph = False
+    st.session_state.p4_running_graph_profile = ''
 def write_dict_to_yaml(data_dict, file_path):
     """
     Write a dictionary to a YAML file.
@@ -799,6 +801,7 @@ def start_profile_bngblaster(instance, path_configs, blaster_server, blaster_ser
     log_authorize(st.session_state.user,blaster_server, f'RUN START test profile {instance}')
 ################## Function for blaster-status ############################################
 def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_avail_from_blaster):
+    # if not st.session_state.p4_running_graph:
     with st.container(border=True):
         bscol1, bscol2 = st.columns([1,1.5], border=True)
         with bscol1:
@@ -830,354 +833,361 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
             # for i in list_int_server:
             #     st.write(':green[ :material/share: *Interface %s existed sub: %s*]'%(i, find_used_vlans(ip, dict_blaster_db_format[ip]['user'], dict_blaster_db_format[ip]['passwd'], i)))
 
-        col_select, col_display= st.columns([1,1.5])
-        with col_select:
-            with st.container(border=True):
-                st.write(":fire: :violet[**TEST PROFILE RUNNING**]")
-            with st.container(border=True, height= 400):   
-                select_running_instance={}
-                if list_instance_running_from_blaster == []:
-                    list_interfaces_sc, list_interfaces_ct = GET_ALL_INTERFACES_BLASTER(ip, port) # GET interfaces from API
-                    if list_interfaces_sc == 200:
-                        list_interfaces = json.loads(list_interfaces_ct)
-                        if list_interfaces != []:
-                            for i in list_interfaces:
-                                if '.' in i['name']: 
-                                    st.write(":orange[*%s*]"%i['name'])
-                                    execute_remote_command_use_passwd(ip, dict_blaster_db_format[ip]['user'], dict_blaster_db_format[ip]['passwd'], f"sudo -S ip link delete link {i['name'].split('.')[0]} name {i['name']} type vlan id {i['name'].split('.')[1]}")
-                    else:
-                        st.write(":red[Do not have any test profile running]")
+        # col_select, col_display= st.columns([1,1.5])
+        # with col_select:
+        with st.container(border=True):
+            st.write(":fire: :violet[**TEST PROFILE RUNNING**]")
+        with st.container(border=True, height= 400):   
+            select_running_instance={}
+            if list_instance_running_from_blaster == []:
+                list_interfaces_sc, list_interfaces_ct = GET_ALL_INTERFACES_BLASTER(ip, port) # GET interfaces from API
+                if list_interfaces_sc == 200:
+                    list_interfaces = json.loads(list_interfaces_ct)
+                    if list_interfaces != []:
+                        for i in list_interfaces:
+                            if '.' in i['name']: 
+                                st.write(":orange[*%s*]"%i['name'])
+                                execute_remote_command_use_passwd(ip, dict_blaster_db_format[ip]['user'], dict_blaster_db_format[ip]['passwd'], f"sudo -S ip link delete link {i['name'].split('.')[0]} name {i['name']} type vlan id {i['name'].split('.')[1]}")
                 else:
-                    for i in list_instance_running_from_blaster:
-                        with st.container(border=True):
-                            col111, col112, col113, col114, col115= st.columns([3,0.6,0.6,0.6,0.6])
-                            with col111:
-                                    exec(f"""select_running_instance['{i}'] = st.checkbox(f":orange[*{i}*]")""") 
-                            with col112:
-                                if st.button(':orange[:material/stop_circle:]', use_container_width=True, key='stop_%s'%i):
-                                    stop_sc, stop_ct= CALL_API_BLASTER(ip, port, i, 'POST', payload_stop, '/_stop')
-                                    if stop_sc == 202:
-                                        st.toast(":orange[Begin **stop** test profile **%s**]"%i, icon="🔥")
-                                        while True:
-                                            check_instance_st, check_instance_ct = CALL_API_BLASTER(ip, port, i, 'GET', payload_start)
-                                            # st.write(check_instance_st,check_instance_ct)
-                                            if "started" in str(check_instance_ct):
-                                                st.toast(':orange[Stopping traffic, wait please]', icon="🔥")
-                                                time.sleep(2)
-                                            elif "stopped" in str(check_instance_ct):
-                                                st.toast(':orange[Profile already stopped]', icon="🔥")
-                                                log_authorize(st.session_state.user, ip, f'RUN STOP test profile {i}')
+                    st.write(":red[Do not have any test profile running]")
+            else:
+                for i in list_instance_running_from_blaster:
+                    with st.container(border=True):
+                        col111, col112, col113, col114, col115, col116= st.columns([3,1,1,1,1,1])
+                        with col111:
+                                exec(f"""select_running_instance['{i}'] = st.checkbox(f":orange[*{i}*]")""") 
+                        with col112:
+                            if st.button(':orange[:material/stop_circle:]', use_container_width=True, key='stop_%s'%i):
+                                stop_sc, stop_ct= CALL_API_BLASTER(ip, port, i, 'POST', payload_stop, '/_stop')
+                                if stop_sc == 202:
+                                    st.toast(":orange[Begin **stop** test profile **%s**]"%i, icon="🔥")
+                                    while True:
+                                        check_instance_st, check_instance_ct = CALL_API_BLASTER(ip, port, i, 'GET', payload_start)
+                                        # st.write(check_instance_st,check_instance_ct)
+                                        if "started" in str(check_instance_ct):
+                                            st.toast(':orange[Stopping traffic, wait please]', icon="🔥")
+                                            time.sleep(2)
+                                        elif "stopped" in str(check_instance_ct):
+                                            st.toast(':orange[Profile already stopped]', icon="🔥")
+                                            log_authorize(st.session_state.user, ip, f'RUN STOP test profile {i}')
 
-                                                delete_sub_interface_from_json(i, ip, dict_blaster_db_format[ip].get('user'), dict_blaster_db_format[ip].get('passwd'))
-                                                st.rerun()
-                                                break
-                                            else:
-                                                st.toast(':red[Test profile have error, please check log]', icon="❌")
-                                                break
-                                    else:
-                                        st.toast(':red[Had error when stop test profile]', icon="❌")
-                            with col113:
-                                if st.button(':orange[:material/restart_alt:]', use_container_width=True, key='restart_%s'%i):
-                                    log_authorize(st.session_state.user, ip, f'Restart test profile {i}')
-                                    restart_kill_sc, restart_kill_ct= CALL_API_BLASTER(ip, port, i, 'POST', payload_stop, '/_kill')
-                                    if restart_kill_sc == 202:
-                                        st.toast(":green[You select restart button]", icon="🔥")
-                                        log_authorize(st.session_state.user, ip, f'RUN STOP test profile {i}')
-                                        time.sleep(1)
-                                    while True:
-                                        restart_check_instance_st, restart_check_instance_ct = CALL_API_BLASTER(ip, port, i, 'GET', payload_start)
-                                        # st.write(restart_check_instance_st,restart_check_instance_ct)
-                                        if "stopped" in str(restart_check_instance_ct):
-                                            st.toast(':green[Starting restart traffic, wait please]', icon="🔥")
-                                            with open(f'{path_configs}/{i}.json') as file:
-                                                exist_put_body= json.load(file)
-                                            CALL_API_BLASTER(ip, port, i, 'PUT', json.dumps(exist_put_body, indent=2))
-                                            start_exist_sc, start_exist_ct= CALL_API_BLASTER(ip, port , i, 'POST', payload_start, '/_start')
-                                            log_authorize(st.session_state.user, ip, f'RUN START test profile {i}')
-                                            time.sleep(0.5)
+                                            delete_sub_interface_from_json(i, ip, dict_blaster_db_format[ip].get('user'), dict_blaster_db_format[ip].get('passwd'))
+                                            st.rerun()
                                             break
-                                    while True:
-                                        restart_check_instance_st, restart_check_instance_ct = CALL_API_BLASTER(ip, port, i, 'GET', payload_start)
-                                        # st.write(restart_check_instance_st,restart_check_instance_ct)
-                                        if "started" in str(restart_check_instance_ct):
-                                            st.toast(':green[Restart traffic successfully]', icon="🔥")
-                                            time.sleep(0.5)
+                                        else:
+                                            st.toast(':red[Test profile have error, please check log]', icon="❌")
                                             break
-                            with col114:
-                                if st.button(':red[:material/bolt:]', use_container_width=True, key='reset_%s'%i):
-                                    kill_sc, kill_ct= CALL_API_BLASTER(ip, port, i, 'POST', payload_stop, '/_kill')
-                                    if kill_sc == 202:
-                                        st.toast(":red[You used KILL button, report after testing which couldn't be generated]", icon="🔥")
-                                        delete_sub_interface_from_json(i, ip, dict_blaster_db_format[ip].get('user'), dict_blaster_db_format[ip].get('passwd'))
-                                        log_authorize(st.session_state.user, ip, f'KILL test profile {i}')
-                                        log_authorize(st.session_state.user, ip, f'RUN STOP test profile {i}')
-                                        time.sleep(1)
-                                        st.rerun()
-                            with col115:
-                                with st.popover(':orange[:material/access_time:]', use_container_width=True):
-                                # with st.container(border=True):
-                                    time_start = find_and_split_line_from_file('auth.log', 'RUN START test profile %s'%i)
-                                    st.info(":blue[**:material/sound_sampler: LAST START**]")
-                                    try:
-                                        st.write(":orange[ :material/sound_sampler: *%s*]"%time_start[0].split('_')[0:3])
-                                        st.write(":orange[ :material/dns: *%s*]"%time_start[0].split('_')[3])
-                                    except:
-                                        st.write(":orange[ :material/sound_sampler: *None*]")
-                                        st.write(":orange[ :material/dns: *None*]")
-                                    time_stop = find_and_split_line_from_file('auth.log', 'RUN STOP test profile %s'%i)
-                                    st.info(":blue[**:material/stop_circle: LAST STOP**]")
-                                    try:
-                                        st.write(":orange[ :material/stop_circle:*%s*]"%time_stop[0].split('_')[0:3])
-                                        st.write(":orange[ :material/dns: *%s*]"%time_stop[0].split('_')[3])
-                                    except:
-                                        st.write(":orange[ :material/stop_circle: *None*]")
-                                        st.write(":orange[ :material/dns: *None*]")
-                select_running_instance_cb = [] # List select checkbox
-                for i in select_running_instance.keys():
-                    if select_running_instance[i]:
-                        select_running_instance_cb.append(i)    
-        with  st.expander(":material/graphic_eq: :violet[**TEST PROFILE EXISTED CONFIG**]"):
-            for i in list_instance_avail_from_blaster:
-                with st.container(border=True):
-                    col1, col2= st.columns([1,1])
-                    with col1:
-                        st.write(f":orange[**Profile :**] *{i}*")
-                    with col2:
-                        with st.popover(f":blue[:material/visibility: **CONFIG**]", use_container_width=True):
-                            view_config_avail_sc,  view_config_avail_ct = CALL_API_BLASTER(ip, port, i, 'GET', payload_start, '/config.json')
-                            if view_config_avail_sc==200:
+                                else:
+                                    st.toast(':red[Had error when stop test profile]', icon="❌")
+                        with col113:
+                            if st.button(':orange[:material/restart_alt:]', use_container_width=True, key='restart_%s'%i):
+                                log_authorize(st.session_state.user, ip, f'Restart test profile {i}')
+                                restart_kill_sc, restart_kill_ct= CALL_API_BLASTER(ip, port, i, 'POST', payload_stop, '/_kill')
+                                if restart_kill_sc == 202:
+                                    st.toast(":green[You select restart button]", icon="🔥")
+                                    log_authorize(st.session_state.user, ip, f'RUN STOP test profile {i}')
+                                    time.sleep(1)
+                                while True:
+                                    restart_check_instance_st, restart_check_instance_ct = CALL_API_BLASTER(ip, port, i, 'GET', payload_start)
+                                    # st.write(restart_check_instance_st,restart_check_instance_ct)
+                                    if "stopped" in str(restart_check_instance_ct):
+                                        st.toast(':green[Starting restart traffic, wait please]', icon="🔥")
+                                        with open(f'{path_configs}/{i}.json') as file:
+                                            exist_put_body= json.load(file)
+                                        CALL_API_BLASTER(ip, port, i, 'PUT', json.dumps(exist_put_body, indent=2))
+                                        start_exist_sc, start_exist_ct= CALL_API_BLASTER(ip, port , i, 'POST', payload_start, '/_start')
+                                        log_authorize(st.session_state.user, ip, f'RUN START test profile {i}')
+                                        time.sleep(0.5)
+                                        break
+                                while True:
+                                    restart_check_instance_st, restart_check_instance_ct = CALL_API_BLASTER(ip, port, i, 'GET', payload_start)
+                                    # st.write(restart_check_instance_st,restart_check_instance_ct)
+                                    if "started" in str(restart_check_instance_ct):
+                                        st.toast(':green[Restart traffic successfully]', icon="🔥")
+                                        time.sleep(0.5)
+                                        break
+                        with col114:
+                            if st.button(':red[:material/bolt:]', use_container_width=True, key='reset_%s'%i):
+                                kill_sc, kill_ct= CALL_API_BLASTER(ip, port, i, 'POST', payload_stop, '/_kill')
+                                if kill_sc == 202:
+                                    st.toast(":red[You used KILL button, report after testing which couldn't be generated]", icon="🔥")
+                                    delete_sub_interface_from_json(i, ip, dict_blaster_db_format[ip].get('user'), dict_blaster_db_format[ip].get('passwd'))
+                                    log_authorize(st.session_state.user, ip, f'KILL test profile {i}')
+                                    log_authorize(st.session_state.user, ip, f'RUN STOP test profile {i}')
+                                    time.sleep(1)
+                                    st.rerun()
+                        with col115:
+                            with st.popover(':orange[:material/access_time:]', use_container_width=True):
+                            # with st.container(border=True):
+                                time_start = find_and_split_line_from_file('auth.log', 'RUN START test profile %s'%i)
+                                st.info(":blue[**:material/sound_sampler: LAST START**]")
                                 try:
-                                    config_avail = json.loads(view_config_avail_ct)
-                                    st.code(json.dumps(config_avail, indent=2), language='json')
-                                except Exception as e:
-                                    st.error(':blue[Test profile %s have json syntax error %s]'%(i,e), icon="🔥")
-                                    continue
-                # st.dataframe(list_instance_avail_from_blaster, use_container_width= True)
-                # st.dataframe(list_instance_avail_from_blaster, use_container_width= True, column_config={"value": "instance-name"})
-        with col_display:
+                                    st.write(":orange[ :material/sound_sampler: *%s*]"%time_start[0].split('_')[0:3])
+                                    st.write(":orange[ :material/dns: *%s*]"%time_start[0].split('_')[3])
+                                except:
+                                    st.write(":orange[ :material/sound_sampler: *None*]")
+                                    st.write(":orange[ :material/dns: *None*]")
+                                time_stop = find_and_split_line_from_file('auth.log', 'RUN STOP test profile %s'%i)
+                                st.info(":blue[**:material/stop_circle: LAST STOP**]")
+                                try:
+                                    st.write(":orange[ :material/stop_circle:*%s*]"%time_stop[0].split('_')[0:3])
+                                    st.write(":orange[ :material/dns: *%s*]"%time_stop[0].split('_')[3])
+                                except:
+                                    st.write(":orange[ :material/stop_circle: *None*]")
+                                    st.write(":orange[ :material/dns: *None*]")
+                        with col116:
+                            if st.button(':orange[:material/timeline:]', use_container_width=True, key='timeline_%s'%i):
+                                st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, False, False
+                                st.session_state.p4_running_graph= True
+                                st.session_state.p4_running_graph_profile= i
+                                st.rerun()
+            select_running_instance_cb = [] # List select checkbox
+            for i in select_running_instance.keys():
+                if select_running_instance[i]:
+                    select_running_instance_cb.append(i)    
+    with  st.expander(":material/graphic_eq: :violet[**TEST PROFILE EXISTED CONFIG**]"):
+        for i in list_instance_avail_from_blaster:
             with st.container(border=True):
-                st.write(":fire: :violet[**GRAPH**]")
-            with st.container(border=True, height= 400):
-                for i in select_running_instance_cb:
-                    st.markdown("""
-                        <style>
-                        /* This targets the actual popover container */
-                        div[data-testid="stPopoverBody"] {
-                            width: 1680px;  /* Change as needed */
-                            max-width: 10000px;
-                        }
-                        </style>
-                    """, unsafe_allow_html=True)
-                    with st.popover(f":orange[:material/timeline: *{i}*]", use_container_width=True):
-                        col_realtime, col_graph= st.columns([1,1])
-                        with col_realtime:
-                            with st.container(border= True, height=600):
-                                with st.container(border= True):
-                                    st.write("##### :green[**:material/bolt: INTERFACES STATISTICS**]")
-                                with st.container(border= True):
-                                    st.write(':violet[**:material/share: NETWORK INTERFACES**]')
-                                    exec("display_nw_interface_%s = st.empty()"%i)
-                                with st.container(border= True):
-                                    st.write(':violet[**:material/share: ACCESS INTERFACES**]')
-                                    exec("display_acc_interface_%s = st.empty()"%i)
+                col1, col2= st.columns([1,1])
+                with col1:
+                    st.write(f":orange[**Profile :**] *{i}*")
+                with col2:
+                    with st.popover(f":blue[:material/visibility: **CONFIG**]", use_container_width=True):
+                        view_config_avail_sc,  view_config_avail_ct = CALL_API_BLASTER(ip, port, i, 'GET', payload_start, '/config.json')
+                        if view_config_avail_sc==200:
+                            try:
+                                config_avail = json.loads(view_config_avail_ct)
+                                st.code(json.dumps(config_avail, indent=2), language='json')
+                            except Exception as e:
+                                st.error(':blue[Test profile %s have json syntax error %s]'%(i,e), icon="🔥")
+                                continue
+def blaster_status_graph(ip, port, p4_running_graph_profile):
+    # with col_display:
+    # with st.container(border=True):
+    #     st.write(":fire: :violet[**GRAPH**]")
+    on=st.toggle(':orange[**ON**]', value=False)
+    if on:
+        with st.container(border=True):
+            st.header(":material/timeline: :green[**%s**]"%p4_running_graph_profile)
+            # for i in select_running_instance_cb:
+            i= p4_running_graph_profile
+            # st.markdown("""
+            #     <style>
+            #     /* This targets the actual popover container */
+            #     div[data-testid="stPopoverBody"] {
+            #         width: 1680px;  /* Change as needed */
+            #         max-width: 10000px;
+            #     }
+            #     </style>
+            # """, unsafe_allow_html=True)
+            # with st.popover(f":orange[:material/timeline: *{i}*]", use_container_width=True):
+            col_realtime, col_graph= st.columns([1,1])
+            with col_realtime:
+                with st.container(border= True):
+                    with st.container(border= True):
+                        st.write("##### :green[**:material/bolt: INTERFACES STATISTICS**]")
+                    with st.container(border= True):
+                        st.write(':violet[**:material/share: NETWORK INTERFACES**]')
+                        exec("display_nw_interface_%s = st.empty()"%i)
+                    with st.container(border= True):
+                        st.write(':violet[**:material/share: ACCESS INTERFACES**]')
+                        exec("display_acc_interface_%s = st.empty()"%i)
+            with st.container(border= True):
+                with st.container(border= True):
+                    col_stream1, col_stream2,col_stream3,col_stream4,col_stream5= st.columns([1,0.2,3,0.2,1])
+                    with col_stream1:
                         with st.container(border= True):
+                            st.write('##### :green[:material/bolt: **STREAMS STATISTICS**]')
+                    with col_stream3:
+                        payload_command_stream_stats="""
+                        {
+                            "command": "stream-stats"
+                        }
+                        """
+                        run_command_streams_stats_sc, run_command_streams_stats_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_stream_stats, '/_command')
+                        if run_command_streams_stats_sc == 200:
+                            data_streams_stats = json.loads(run_command_streams_stats_ct)
+                            total_flows = data_streams_stats['stream-stats']['total-flows']
+                        if total_flows > 0:
                             with st.container(border= True):
-                                col_stream1, col_stream2,col_stream3,col_stream4,col_stream5= st.columns([1,0.2,3,0.2,1])
-                                with col_stream1:
-                                    with st.container(border= True):
-                                        st.write('##### :green[:material/bolt: **STREAMS STATISTICS**]')
-                                with col_stream3:
-                                    payload_command_stream_stats="""
-                                    {
-                                        "command": "stream-stats"
-                                    }
-                                    """
-                                    run_command_streams_stats_sc, run_command_streams_stats_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_stream_stats, '/_command')
-                                    if run_command_streams_stats_sc == 200:
-                                        data_streams_stats = json.loads(run_command_streams_stats_ct)
-                                        total_flows = data_streams_stats['stream-stats']['total-flows']
-                                    if total_flows > 0:
-                                        with st.container(border= True):
-                                            exec("flow_selection_%s = st.multiselect(':green[:material/add: Select flow-id]', options=range(1,%s), default=[1])"%(i,total_flows+1))
-                                with col_stream5:
-                                    if st.button(':orange[:material/bolt: **RESET**]', use_container_width=True, key='%s'%i):
-                                        payload_command_stream_reset="""
-                                        {
-                                            "command": "stream-reset"
-                                        }
-                                        """
-                                        run_command_streams_reset_sc, run_command_streams_reset_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_stream_reset, '/_command')
-                                        if run_command_streams_reset_sc == 200:
-                                            st.toast(':blue[Reset stream statistic test profile %s successfully]'%i, icon="🔥")
-                            with st.container(border= True):
-                                exec("display_streams_%s = st.empty()"%i)
-                        # df_nw_tx_rx = pd.DataFrame([[0, 0]], columns=(["network_tx_packets", "network_rx_packets"]))
-                        # df_acc_tx_rx = pd.DataFrame([[0, 0]], columns=(["access_tx_packets", "access_rx_packets"]))
-                        with col_graph:
-                            with st.container(border= True, height=600):
+                                exec("flow_selection_%s = st.multiselect(':green[:material/add: Select flow-id]', options=range(1,%s), default=[1])"%(i,total_flows+1))
+                    with col_stream5:
+                        if st.button(':orange[:material/bolt: **RESET**]', use_container_width=True, key='%s'%i):
+                            payload_command_stream_reset="""
+                            {
+                                "command": "stream-reset"
+                            }
+                            """
+                            run_command_streams_reset_sc, run_command_streams_reset_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_stream_reset, '/_command')
+                            if run_command_streams_reset_sc == 200:
+                                st.toast(':blue[Reset stream statistic test profile %s successfully]'%i, icon="🔥")
+                with st.container(border= True):
+                    exec("display_streams_%s = st.empty()"%i)
+            with col_graph:
+                with st.container(border= True):
+                    with st.container(border= True):
+                        st.write("##### :green[**:material/diagonal_line: GRAPH**]")
+                    with st.expander(":violet[:material/arrow_drop_down_circle: **NETWORK-INTERFACES**]"):
+                        df_nw_tx_rx_pps = pd.DataFrame([[0, 0]], columns=(["network_tx_pps", "network_rx_pps"]))
+                        run_command_nw_int_sc, run_command_nw_int_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_network_interface, '/_command')
+                        if run_command_nw_int_sc == 200:
+                            data_nw_int = json.loads(run_command_nw_int_ct)
+                            num_nw_int =len(data_nw_int['network-interfaces']) # Number network interfaces in json
+                            for j in range(num_nw_int):
+                                st.write(':orange[**Network Interface  [%s]**]'%filter_dict(data_nw_int, 'network-interfaces.%s.name'%j))
+                                # with st.container(border= True):
+                                #     exec(f'nw_int_chart_{i} = st.line_chart(df_nw_tx_rx, color = ["#FF0000", "#0000FF"], use_container_width= True)')
                                 with st.container(border= True):
-                                    st.write("##### :green[**:material/diagonal_line: GRAPH**]")
-                                with st.expander(":violet[:material/arrow_drop_down_circle: **NETWORK-INTERFACES**]"):
-                                    df_nw_tx_rx_pps = pd.DataFrame([[0, 0]], columns=(["network_tx_pps", "network_rx_pps"]))
-                                    run_command_nw_int_sc, run_command_nw_int_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_network_interface, '/_command')
-                                    if run_command_nw_int_sc == 200:
-                                        data_nw_int = json.loads(run_command_nw_int_ct)
-                                        num_nw_int =len(data_nw_int['network-interfaces']) # Number network interfaces in json
-                                        for j in range(num_nw_int):
-                                            st.write(':orange[**Network Interface  [%s]**]'%filter_dict(data_nw_int, 'network-interfaces.%s.name'%j))
-                                            # with st.container(border= True):
-                                            #     exec(f'nw_int_chart_{i} = st.line_chart(df_nw_tx_rx, color = ["#FF0000", "#0000FF"], use_container_width= True)')
-                                            with st.container(border= True):
-                                                exec(f'nw_int_chart_{i}_{j}_pps = st.line_chart(df_nw_tx_rx_pps, color = ["#FF0000", "#0000FF"], use_container_width= True)')
-                                        # with st.container(border= True):
-                                        #     st.write(':orange[**PACKET LOSS %s **]'%filter_dict(data_nw_int, 'network-interfaces.%s.name'%j))
-                                        #     exec(f'nw_pktloss_chart_{i}_{j} = st.line_chart(df_nw_rx_pktloss, color = ["#FF0000"],use_container_width= True)')
-                                with st.expander(":violet[:material/arrow_drop_down_circle: **ACCESS-INTERFACES**]"):
-                                    df_acc_tx_rx_pps = pd.DataFrame([[0, 0]], columns=(["access_tx_pps", "access_rx_pps"]))
-                                    run_command_acc_int_sc, run_command_acc_int_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_access_interface, '/_command')
-                                    if run_command_acc_int_sc == 200:
-                                        data_acc_int = json.loads(run_command_acc_int_ct)
-                                        num_acc_int =len(data_acc_int['access-interfaces']) # Number access interfaces in json
-                                        for j in range(num_acc_int):
-                                            st.write(':orange[**Access Interface [%s]**]'%filter_dict(data_acc_int, 'access-interfaces.%s.name'%j))
-                                            # with st.container(border= True):
-                                            #     exec(f'acc_int_chart_{i} = st.line_chart(df_acc_tx_rx, color = ["#FF0000", "#0000FF"], use_container_width= True)')
-                                            with st.container(border= True):
-                                                exec(f'acc_int_chart_{i}_{j}_pps = st.line_chart(df_acc_tx_rx_pps, color = ["#FF0000", "#0000FF"], use_container_width= True)')
-                if len(select_running_instance_cb) !=0:
-                    while True:
-                        for i in select_running_instance_cb:
-                            with st.container(border= True):
-                                # Call API for network interface value====================
-                                run_command_nw_int_sc, run_command_nw_int_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_network_interface, '/_command')
-                                if run_command_nw_int_sc == 200:
-                                    data_nw_int = json.loads(run_command_nw_int_ct)
-                                    num_nw_int =len(data_nw_int['network-interfaces']) # Number network interfaces in json
-                                    # list_nw_name,list_nw_tx_pps, list_nw_rx_pps, list_nw_pkt_loss, list_nw_pkt_loss_graph=[],[],[],[],[]
-                                    list_nw_name,list_nw_tx_pps, list_nw_rx_pps, list_nw_pkt_loss=[],[],[],[]
-                                    # Loop for multiple network interfaces
-                                    for j in range(num_nw_int):
-                                        list_nw_name.append(filter_dict(data_nw_int, 'network-interfaces.%s.name'%j))
-                                        list_nw_tx_pps.append(filter_dict(data_nw_int, 'network-interfaces.%s.tx-pps'%j))
-                                        list_nw_rx_pps.append(filter_dict(data_nw_int, 'network-interfaces.%s.rx-pps'%j))
-                                        list_nw_pkt_loss.append(filter_dict(data_nw_int, 'network-interfaces.%s.rx-loss-packets-streams'%j))
-                                        # temp_list=[]
-                                        # for o in range(10): # this loop  for linechart column
-                                        #     temp_nw_int_sc, temp_nw_int_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_network_interface, '/_command')
-                                        #     temp_data_nw_int = json.loads(temp_nw_int_ct)
-                                        #     temp_list.append(filter_dict(temp_data_nw_int, 'network-interfaces.%s.rx-loss-packets-streams'%j))
-                                        #     time.sleep(0.001)
-                                        # list_nw_pkt_loss_graph.append(temp_list)
-                                    # Create table for network interfaces and access interfaces
-                                    table_nw_int = {
-                                        "NAME": list_nw_name,
-                                        "NW-TX(pps)": list_nw_tx_pps,
-                                        "NW-RX(pps)": list_nw_rx_pps,
-                                        "NW-LOSS(pkts-stream)": list_nw_pkt_loss,
-                                        # "NW-LOSS-STREAMS-GRAPH": list_nw_pkt_loss_graph,
-                                    }
-                                    # Display table for network interfaces
-                                    # exec("display_nw_interface_%s.dataframe(table_nw_int, column_config={\"NW-LOSS-STREAMS-GRAPH\": st.column_config.AreaChartColumn(\"PKT-LOSS-STREAMS-GRAPH\")},use_container_width=True)"%i) # Edit configure by st.column_config.AreaChartColumn
-                                    exec("display_nw_interface_%s.dataframe(table_nw_int,use_container_width=True)"%i) # Edit configure by st.column_config.AreaChartColumn
-                                    
-                                # Call API for access interface value =================
-                                run_command_acc_int_sc, run_command_acc_int_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_access_interface, '/_command')
-                                if run_command_acc_int_sc == 200:
-                                    data_acc_int = json.loads(run_command_acc_int_ct)
-                                    num_acc_int =len(data_acc_int['access-interfaces']) # Number network interfaces in json
-                                    # list_acc_name,list_acc_tx_pps, list_acc_rx_pps, list_acc_pkt_loss, list_acc_pkt_loss_multicast , list_acc_pkt_loss_graph, list_acc_pkt_loss_mul_graph=[],[],[],[],[],[],[]
-                                    list_acc_name,list_acc_tx_pps, list_acc_rx_pps, list_acc_pkt_loss, list_acc_pkt_loss_multicast =[],[],[],[],[]
+                                    exec(f'nw_int_chart_{i}_{j}_pps = st.line_chart(df_nw_tx_rx_pps, color = ["#FF0000", "#0000FF"], use_container_width= True)')
+                            # with st.container(border= True):
+                            #     st.write(':orange[**PACKET LOSS %s **]'%filter_dict(data_nw_int, 'network-interfaces.%s.name'%j))
+                            #     exec(f'nw_pktloss_chart_{i}_{j} = st.line_chart(df_nw_rx_pktloss, color = ["#FF0000"],use_container_width= True)')
+                    with st.expander(":violet[:material/arrow_drop_down_circle: **ACCESS-INTERFACES**]"):
+                        df_acc_tx_rx_pps = pd.DataFrame([[0, 0]], columns=(["access_tx_pps", "access_rx_pps"]))
+                        run_command_acc_int_sc, run_command_acc_int_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_access_interface, '/_command')
+                        if run_command_acc_int_sc == 200:
+                            data_acc_int = json.loads(run_command_acc_int_ct)
+                            num_acc_int =len(data_acc_int['access-interfaces']) # Number access interfaces in json
+                            for j in range(num_acc_int):
+                                st.write(':orange[**Access Interface [%s]**]'%filter_dict(data_acc_int, 'access-interfaces.%s.name'%j))
+                                # with st.container(border= True):
+                                #     exec(f'acc_int_chart_{i} = st.line_chart(df_acc_tx_rx, color = ["#FF0000", "#0000FF"], use_container_width= True)')
+                                with st.container(border= True):
+                                    exec(f'acc_int_chart_{i}_{j}_pps = st.line_chart(df_acc_tx_rx_pps, color = ["#FF0000", "#0000FF"], use_container_width= True)')
+        # if len(select_running_instance_cb) !=0:
+            while True:
+            #         for i in select_running_instance_cb:
+                with st.container(border= True):
+                    # Call API for network interface value====================
+                    run_command_nw_int_sc, run_command_nw_int_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_network_interface, '/_command')
+                    if run_command_nw_int_sc == 200:
+                        data_nw_int = json.loads(run_command_nw_int_ct)
+                        num_nw_int =len(data_nw_int['network-interfaces']) # Number network interfaces in json
+                        # list_nw_name,list_nw_tx_pps, list_nw_rx_pps, list_nw_pkt_loss, list_nw_pkt_loss_graph=[],[],[],[],[]
+                        list_nw_name,list_nw_tx_pps, list_nw_rx_pps, list_nw_pkt_loss=[],[],[],[]
+                        # Loop for multiple network interfaces
+                        for j in range(num_nw_int):
+                            list_nw_name.append(filter_dict(data_nw_int, 'network-interfaces.%s.name'%j))
+                            list_nw_tx_pps.append(filter_dict(data_nw_int, 'network-interfaces.%s.tx-pps'%j))
+                            list_nw_rx_pps.append(filter_dict(data_nw_int, 'network-interfaces.%s.rx-pps'%j))
+                            list_nw_pkt_loss.append(filter_dict(data_nw_int, 'network-interfaces.%s.rx-loss-packets-streams'%j))
+                            # temp_list=[]
+                            # for o in range(10): # this loop  for linechart column
+                            #     temp_nw_int_sc, temp_nw_int_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_network_interface, '/_command')
+                            #     temp_data_nw_int = json.loads(temp_nw_int_ct)
+                            #     temp_list.append(filter_dict(temp_data_nw_int, 'network-interfaces.%s.rx-loss-packets-streams'%j))
+                            #     time.sleep(0.001)
+                            # list_nw_pkt_loss_graph.append(temp_list)
+                        # Create table for network interfaces and access interfaces
+                        table_nw_int = {
+                            "NAME": list_nw_name,
+                            "NW-TX(pps)": list_nw_tx_pps,
+                            "NW-RX(pps)": list_nw_rx_pps,
+                            "NW-LOSS(pkts-stream)": list_nw_pkt_loss,
+                            # "NW-LOSS-STREAMS-GRAPH": list_nw_pkt_loss_graph,
+                        }
+                        # Display table for network interfaces
+                        # exec("display_nw_interface_%s.dataframe(table_nw_int, column_config={\"NW-LOSS-STREAMS-GRAPH\": st.column_config.AreaChartColumn(\"PKT-LOSS-STREAMS-GRAPH\")},use_container_width=True)"%i) # Edit configure by st.column_config.AreaChartColumn
+                        exec("display_nw_interface_%s.dataframe(table_nw_int,use_container_width=True)"%i) # Edit configure by st.column_config.AreaChartColumn
+                        
+                    # Call API for access interface value =================
+                    run_command_acc_int_sc, run_command_acc_int_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_access_interface, '/_command')
+                    if run_command_acc_int_sc == 200:
+                        data_acc_int = json.loads(run_command_acc_int_ct)
+                        num_acc_int =len(data_acc_int['access-interfaces']) # Number network interfaces in json
+                        # list_acc_name,list_acc_tx_pps, list_acc_rx_pps, list_acc_pkt_loss, list_acc_pkt_loss_multicast , list_acc_pkt_loss_graph, list_acc_pkt_loss_mul_graph=[],[],[],[],[],[],[]
+                        list_acc_name,list_acc_tx_pps, list_acc_rx_pps, list_acc_pkt_loss, list_acc_pkt_loss_multicast =[],[],[],[],[]
 
-                                    # Loop for multiple access interfaces
-                                    for k in range(num_acc_int):
-                                        list_acc_name.append(filter_dict(data_acc_int, 'access-interfaces.%s.name'%k))
-                                        list_acc_tx_pps.append(filter_dict(data_acc_int, 'access-interfaces.%s.tx-pps'%k))
-                                        list_acc_rx_pps.append(filter_dict(data_acc_int, 'access-interfaces.%s.rx-pps'%k))
-                                        list_acc_pkt_loss.append(filter_dict(data_acc_int, 'access-interfaces.%s.rx-loss-packets-streams'%k))
-                                        list_acc_pkt_loss_multicast.append(filter_dict(data_acc_int, 'access-interfaces.%s.rx-loss-packets-multicast'%k))
-                                        # temp_list=[]
-                                        # temp_list_mul=[]
-                                        # for o in range(10): # this loop  for linechart column
-                                        #     temp_acc_int_sc, temp_acc_int_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_access_interface, '/_command')
-                                        #     temp_data_acc_int = json.loads(temp_acc_int_ct)
-                                        #     temp_list.append(filter_dict(temp_data_acc_int, 'access-interfaces.%s.rx-loss-packets-streams'%k))
-                                        #     temp_list_mul.append(filter_dict(temp_data_acc_int, 'access-interfaces.%s.rx-loss-packets-multicast'%k))
-                                        #     time.sleep(0.001)
-                                        # list_acc_pkt_loss_graph.append(temp_list)
-                                        # list_acc_pkt_loss_mul_graph.append(temp_list_mul)
-                                    
-                                    # df_nw_int= pd.DataFrame.from_dict(table_nw_int)
-                                    table_acc_int = {
-                                        "NAME": list_acc_name,
-                                        "AC-TX(pps)": list_acc_tx_pps,
-                                        "AC-RX(pps)": list_acc_rx_pps,
-                                        "AC-LOSS(pkts-stream)": list_acc_pkt_loss,
-                                        # "AC-LOSS-STREAMS-GRAPH": list_acc_pkt_loss_graph,
-                                        "AC-LOSS(pkts-multicast)": list_acc_pkt_loss_multicast,
-                                        # "AC-LOSS-MULTICAST-GRAPH": list_acc_pkt_loss_mul_graph,
-                                    }
-                                    # Display table for access interfaces
-                                    # exec("display_acc_interface_%s.dataframe(table_acc_int, column_config={\"AC-LOSS-STREAMS-GRAPH\": st.column_config.AreaChartColumn(\"PKTS-LOSS-STREAMS-GRAPH\")},use_container_width=True)"%i) # Edit configure by st.column_config.AreaChartColumn
-                                    # exec("display_acc_interface_%s.dataframe(table_acc_int, column_config={\"AC-LOSS-MULTICAST-GRAPH\": st.column_config.AreaChartColumn(\"PKTS-LOSS-MULTICAST-GRAPH\")},use_container_width=True)"%i) # Edit configure by st.column_config.AreaChartColumn
-                                    exec("display_acc_interface_%s.dataframe(table_acc_int,use_container_width=True)"%i) # Edit configure by st.column_config.AreaChartColumn
-                                    
-                                # ====================== Call API for stream summary ======================
-                                payload_command_stream_stats="""
-                                {
-                                    "command": "stream-stats"
-                                }
-                                """
-                                run_command_streams_stats_sc, run_command_streams_stats_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_stream_stats, '/_command')
-                                if run_command_streams_stats_sc == 200:
-                                    data_streams_stats = json.loads(run_command_streams_stats_ct)
-                                    total_flows = data_streams_stats['stream-stats']['total-flows']
-                                if total_flows > 0:
-                                    list_streams_name, list_streams_flowid, list_streams_direction, list_streams_sessionid, list_streams_tx_pps, list_streams_tx_bps, list_streams_rx_pps, list_streams_rx_bps, list_streams_loss=[],[],[],[],[],[],[],[],[]
-                                    for n in eval("flow_selection_%s"%i): # Loop for make table of flow-ids
-                                        payload_command_stream_info="""
-                                        {
-                                            "command": "stream-info",
-                                            "arguments": {"flow-id": %s}
-                                        }
-                                        """%n
-                                        run_command_streams_info_sc, run_command_streams_info_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_stream_info, '/_command')
-                                        if run_command_streams_info_sc == 200:
-                                            data_streams_info = json.loads(run_command_streams_info_ct)
+                        # Loop for multiple access interfaces
+                        for k in range(num_acc_int):
+                            list_acc_name.append(filter_dict(data_acc_int, 'access-interfaces.%s.name'%k))
+                            list_acc_tx_pps.append(filter_dict(data_acc_int, 'access-interfaces.%s.tx-pps'%k))
+                            list_acc_rx_pps.append(filter_dict(data_acc_int, 'access-interfaces.%s.rx-pps'%k))
+                            list_acc_pkt_loss.append(filter_dict(data_acc_int, 'access-interfaces.%s.rx-loss-packets-streams'%k))
+                            list_acc_pkt_loss_multicast.append(filter_dict(data_acc_int, 'access-interfaces.%s.rx-loss-packets-multicast'%k))
+                            # temp_list=[]
+                            # temp_list_mul=[]
+                            # for o in range(10): # this loop  for linechart column
+                            #     temp_acc_int_sc, temp_acc_int_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_access_interface, '/_command')
+                            #     temp_data_acc_int = json.loads(temp_acc_int_ct)
+                            #     temp_list.append(filter_dict(temp_data_acc_int, 'access-interfaces.%s.rx-loss-packets-streams'%k))
+                            #     temp_list_mul.append(filter_dict(temp_data_acc_int, 'access-interfaces.%s.rx-loss-packets-multicast'%k))
+                            #     time.sleep(0.001)
+                            # list_acc_pkt_loss_graph.append(temp_list)
+                            # list_acc_pkt_loss_mul_graph.append(temp_list_mul)
+                        
+                        # df_nw_int= pd.DataFrame.from_dict(table_nw_int)
+                        table_acc_int = {
+                            "NAME": list_acc_name,
+                            "AC-TX(pps)": list_acc_tx_pps,
+                            "AC-RX(pps)": list_acc_rx_pps,
+                            "AC-LOSS(pkts-stream)": list_acc_pkt_loss,
+                            # "AC-LOSS-STREAMS-GRAPH": list_acc_pkt_loss_graph,
+                            "AC-LOSS(pkts-multicast)": list_acc_pkt_loss_multicast,
+                            # "AC-LOSS-MULTICAST-GRAPH": list_acc_pkt_loss_mul_graph,
+                        }
+                        # Display table for access interfaces
+                        # exec("display_acc_interface_%s.dataframe(table_acc_int, column_config={\"AC-LOSS-STREAMS-GRAPH\": st.column_config.AreaChartColumn(\"PKTS-LOSS-STREAMS-GRAPH\")},use_container_width=True)"%i) # Edit configure by st.column_config.AreaChartColumn
+                        # exec("display_acc_interface_%s.dataframe(table_acc_int, column_config={\"AC-LOSS-MULTICAST-GRAPH\": st.column_config.AreaChartColumn(\"PKTS-LOSS-MULTICAST-GRAPH\")},use_container_width=True)"%i) # Edit configure by st.column_config.AreaChartColumn
+                        exec("display_acc_interface_%s.dataframe(table_acc_int,use_container_width=True)"%i) # Edit configure by st.column_config.AreaChartColumn
+                        
+                    # ====================== Call API for stream summary ======================
+                    payload_command_stream_stats="""
+                    {
+                        "command": "stream-stats"
+                    }
+                    """
+                    run_command_streams_stats_sc, run_command_streams_stats_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_stream_stats, '/_command')
+                    if run_command_streams_stats_sc == 200:
+                        data_streams_stats = json.loads(run_command_streams_stats_ct)
+                        total_flows = data_streams_stats['stream-stats']['total-flows']
+                    if total_flows > 0:
+                        list_streams_name, list_streams_flowid, list_streams_direction, list_streams_sessionid, list_streams_tx_pps, list_streams_tx_bps, list_streams_rx_pps, list_streams_rx_bps, list_streams_loss=[],[],[],[],[],[],[],[],[]
+                        for n in eval("flow_selection_%s"%i): # Loop for make table of flow-ids
+                            payload_command_stream_info="""
+                            {
+                                "command": "stream-info",
+                                "arguments": {"flow-id": %s}
+                            }
+                            """%n
+                            run_command_streams_info_sc, run_command_streams_info_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_stream_info, '/_command')
+                            if run_command_streams_info_sc == 200:
+                                data_streams_info = json.loads(run_command_streams_info_ct)
 
-                                            list_streams_name.append(filter_dict(data_streams_info, 'stream-info.name'))
-                                            list_streams_flowid.append(filter_dict(data_streams_info, 'stream-info.flow-id'))
-                                            list_streams_tx_pps.append(filter_dict(data_streams_info, 'stream-info.tx-pps'))
-                                            list_streams_tx_bps.append(filter_dict(data_streams_info, 'stream-info.tx-bps-l2'))
-                                            list_streams_rx_pps.append(filter_dict(data_streams_info, 'stream-info.rx-pps'))
-                                            list_streams_rx_bps.append(filter_dict(data_streams_info, 'stream-info.rx-bps-l2'))
-                                            list_streams_loss.append(filter_dict(data_streams_info, 'stream-info.rx-loss'))
-                                            list_streams_direction.append(filter_dict(data_streams_info, 'stream-info.direction'))
-                                            list_streams_sessionid.append(filter_dict(data_streams_info, 'stream-info.session-id'))
-                                    # Create table for streams dataframe    
-                                    table_streams = {
-                                        "NAME": list_streams_name,
-                                        "FLOW-ID": list_streams_flowid,
-                                        "DIRECTION": list_streams_direction,
-                                        "SESSION-ID": list_streams_sessionid, 
-                                        "TX(pps)": list_streams_tx_pps,
-                                        "TX(bps)": list_streams_tx_bps,
-                                        "RX(pps)": list_streams_rx_pps,
-                                        "RX(bps)": list_streams_rx_bps,
-                                        "PKT-LOSS(pkts)": list_streams_loss,
-                                    }
-                                    exec("display_streams_%s.dataframe(table_streams, column_config={ },use_container_width=True)"%i)
-                            if run_command_nw_int_sc == 200:
-                                # add_nw_df = pd.DataFrame([[filter_dict(data_nw_int, 'network-interfaces.0.tx-packets'), filter_dict(data_nw_int, 'network-interfaces.0.rx-packets')]], columns=(["network_tx_packets", "network_rx_packets"]))
-                                # eval(f'nw_int_chart_{i}.add_rows(add_nw_df)')
-                                # num_nw_int=len(data_nw_int['network-interfaces'])
-                                for j in range(num_nw_int):
-                                    add_nw_pps_df = pd.DataFrame([[filter_dict(data_nw_int, 'network-interfaces.%s.tx-pps'%j), filter_dict(data_nw_int, 'network-interfaces.%s.rx-pps'%j)]], columns=(["network_tx_pps", "network_rx_pps"]))
-                                    eval(f'nw_int_chart_{i}_{j}_pps.add_rows(add_nw_pps_df)')
-                            if run_command_acc_int_sc == 200:
-                                for j in range(num_acc_int):
-                                    add_acc_pps_df = pd.DataFrame([[filter_dict(data_acc_int, 'access-interfaces.%s.tx-pps'%j), filter_dict(data_acc_int, 'access-interfaces.%s.rx-pps'%j)]], columns=(["access_tx_pps", "access_rx_pps"]))
-                                    eval(f'acc_int_chart_{i}_{j}_pps.add_rows(add_acc_pps_df)')
-                        # time.sleep(0.5)
+                                list_streams_name.append(filter_dict(data_streams_info, 'stream-info.name'))
+                                list_streams_flowid.append(filter_dict(data_streams_info, 'stream-info.flow-id'))
+                                list_streams_tx_pps.append(filter_dict(data_streams_info, 'stream-info.tx-pps'))
+                                list_streams_tx_bps.append(filter_dict(data_streams_info, 'stream-info.tx-bps-l2'))
+                                list_streams_rx_pps.append(filter_dict(data_streams_info, 'stream-info.rx-pps'))
+                                list_streams_rx_bps.append(filter_dict(data_streams_info, 'stream-info.rx-bps-l2'))
+                                list_streams_loss.append(filter_dict(data_streams_info, 'stream-info.rx-loss'))
+                                list_streams_direction.append(filter_dict(data_streams_info, 'stream-info.direction'))
+                                list_streams_sessionid.append(filter_dict(data_streams_info, 'stream-info.session-id'))
+                        # Create table for streams dataframe    
+                        table_streams = {
+                            "NAME": list_streams_name,
+                            "FLOW-ID": list_streams_flowid,
+                            "DIRECTION": list_streams_direction,
+                            "SESSION-ID": list_streams_sessionid, 
+                            "TX(pps)": list_streams_tx_pps,
+                            "TX(bps)": list_streams_tx_bps,
+                            "RX(pps)": list_streams_rx_pps,
+                            "RX(bps)": list_streams_rx_bps,
+                            "PKT-LOSS(pkts)": list_streams_loss,
+                        }
+                        exec("display_streams_%s.dataframe(table_streams, column_config={ },use_container_width=True, height=1000)"%i)
+                if run_command_nw_int_sc == 200:
+                    # add_nw_df = pd.DataFrame([[filter_dict(data_nw_int, 'network-interfaces.0.tx-packets'), filter_dict(data_nw_int, 'network-interfaces.0.rx-packets')]], columns=(["network_tx_packets", "network_rx_packets"]))
+                    # eval(f'nw_int_chart_{i}.add_rows(add_nw_df)')
+                    # num_nw_int=len(data_nw_int['network-interfaces'])
+                    for j in range(num_nw_int):
+                        add_nw_pps_df = pd.DataFrame([[filter_dict(data_nw_int, 'network-interfaces.%s.tx-pps'%j), filter_dict(data_nw_int, 'network-interfaces.%s.rx-pps'%j)]], columns=(["network_tx_pps", "network_rx_pps"]))
+                        eval(f'nw_int_chart_{i}_{j}_pps.add_rows(add_nw_pps_df)')
+                if run_command_acc_int_sc == 200:
+                    for j in range(num_acc_int):
+                        add_acc_pps_df = pd.DataFrame([[filter_dict(data_acc_int, 'access-interfaces.%s.tx-pps'%j), filter_dict(data_acc_int, 'access-interfaces.%s.rx-pps'%j)]], columns=(["access_tx_pps", "access_rx_pps"]))
+                        eval(f'acc_int_chart_{i}_{j}_pps.add_rows(add_acc_pps_df)')
+                time.sleep(0.5)
 #################### Function for copy dict by path ####################################
 def get_value_by_path(root, path):
     current = root
@@ -3049,6 +3059,15 @@ if st.session_state.p4:
                     for i in str(run_err).split('\\n')[-30:-1]:
                         # time.sleep(0.01)
                         st.text('%s'%i)
+if st.session_state.p4_running_graph:
+    st.title(':material/timeline: :rainbow[GRAPH]')
+    col41, col42 ,col43 =st.columns([19,0.9,0.9])
+    with col43:
+        if st.button(':material/arrow_back_ios:', use_container_width=True):
+            st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, True, False
+            st.session_state.p4_running_graph=False
+            st.rerun()
+    blaster_status_graph(blaster_server['ip'],blaster_server['port'], st.session_state.p4_running_graph_profile) # call function display status of blaster server
 if st.session_state.p5:
     st.title(':material/insights: :rainbow[DASHBOARD]')
     col61, col62 ,col63 =st.columns([19,0.9,0.9])
