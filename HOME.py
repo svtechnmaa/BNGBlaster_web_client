@@ -803,14 +803,14 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
         bscol1, bscol2 = st.columns([1,1.5], border=True)
         with bscol1:
             st.subheader(f':sunny: :green[BNG-BLASTER [{ip}] STATUS]')
-            version_sc, version_ct = VERSION_BLASTER(blaster_server['ip'], blaster_server['port'])
+            version_sc, version_ct = VERSION_BLASTER(ip, port)
             if version_sc==200:
                 version = json.loads(version_ct)
                 st.write(":green[*:material/sunny_snowing: [BNGBlaster: V%s] [BNGBlasterCtrl: V%s] [%s]*]"%(version['bngblaster-version'], version['bngblasterctrl-version'], version['bngblaster-compiler']))
         with bscol2:
             # Note: dict_blaster_db_format is var global
             # list_int_server = find_interface(ip, dict_blaster_db_format[ip]['user'], dict_blaster_db_format[ip]['passwd'])
-            list_int_server_sc, list_int_server_ct = GET_ALL_INTERFACES_BLASTER(blaster_server['ip'], blaster_server['port']) # GET interfaces from API
+            list_int_server_sc, list_int_server_ct = GET_ALL_INTERFACES_BLASTER(ip, port) # GET interfaces from API
             if list_int_server_sc == 200:
                 list_int_server_json = json.loads(list_int_server_ct) # Convert to json
                 list_int_server = []
@@ -837,14 +837,14 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
             with st.container(border=True, height= 400):   
                 select_running_instance={}
                 if list_instance_running_from_blaster == []:
-                    list_interfaces_sc, list_interfaces_ct = GET_ALL_INTERFACES_BLASTER(blaster_server['ip'], blaster_server['port'])
+                    list_interfaces_sc, list_interfaces_ct = GET_ALL_INTERFACES_BLASTER(ip, port) # GET interfaces from API
                     if list_interfaces_sc == 200:
                         list_interfaces = json.loads(list_interfaces_ct)
                         if list_interfaces != []:
                             for i in list_interfaces:
                                 if '.' in i['name']: 
                                     st.write(":orange[*%s*]"%i['name'])
-                                    execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd'], f"sudo -S ip link delete link {i['name'].split('.')[0]} name {i['name']} type vlan id {i['name'].split('.')[1]}")
+                                    execute_remote_command_use_passwd(ip, dict_blaster_db_format[ip]['user'], dict_blaster_db_format[ip]['passwd'], f"sudo -S ip link delete link {i['name'].split('.')[0]} name {i['name']} type vlan id {i['name'].split('.')[1]}")
                     else:
                         st.write(":red[Do not have any test profile running]")
                 else:
@@ -855,20 +855,20 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                     exec(f"""select_running_instance['{i}'] = st.checkbox(f":orange[*{i}*]")""") 
                             with col112:
                                 if st.button(':orange[:material/stop_circle:]', use_container_width=True, key='stop_%s'%i):
-                                    stop_sc, stop_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_stop, '/_stop')
+                                    stop_sc, stop_ct= CALL_API_BLASTER(ip, port, i, 'POST', payload_stop, '/_stop')
                                     if stop_sc == 202:
                                         st.toast(":orange[Begin **stop** test profile **%s**]"%i, icon="🔥")
                                         while True:
-                                            check_instance_st, check_instance_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'GET', payload_start)
+                                            check_instance_st, check_instance_ct = CALL_API_BLASTER(ip, port, i, 'GET', payload_start)
                                             # st.write(check_instance_st,check_instance_ct)
                                             if "started" in str(check_instance_ct):
                                                 st.toast(':orange[Stopping traffic, wait please]', icon="🔥")
                                                 time.sleep(2)
                                             elif "stopped" in str(check_instance_ct):
                                                 st.toast(':orange[Profile already stopped]', icon="🔥")
-                                                log_authorize(st.session_state.user,blaster_server['ip'], f'RUN STOP test profile {i}')
-                                                
-                                                delete_sub_interface_from_json(i, blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'))
+                                                log_authorize(st.session_state.user, ip, f'RUN STOP test profile {i}')
+
+                                                delete_sub_interface_from_json(i, ip, dict_blaster_db_format[ip].get('user'), dict_blaster_db_format[ip].get('passwd'))
                                                 st.rerun()
                                                 break
                                             else:
@@ -878,26 +878,26 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                         st.toast(':red[Had error when stop test profile]', icon="❌")
                             with col113:
                                 if st.button(':orange[:material/restart_alt:]', use_container_width=True, key='restart_%s'%i):
-                                    log_authorize(st.session_state.user,blaster_server['ip'], f'Restart test profile {i}')
-                                    restart_kill_sc, restart_kill_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_stop, '/_kill')
+                                    log_authorize(st.session_state.user, ip, f'Restart test profile {i}')
+                                    restart_kill_sc, restart_kill_ct= CALL_API_BLASTER(ip, port, i, 'POST', payload_stop, '/_kill')
                                     if restart_kill_sc == 202:
                                         st.toast(":green[You select restart button]", icon="🔥")
-                                        log_authorize(st.session_state.user,blaster_server['ip'], f'RUN STOP test profile {i}')
+                                        log_authorize(st.session_state.user, ip, f'RUN STOP test profile {i}')
                                         time.sleep(1)
                                     while True:
-                                        restart_check_instance_st, restart_check_instance_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'GET', payload_start)
+                                        restart_check_instance_st, restart_check_instance_ct = CALL_API_BLASTER(ip, port, i, 'GET', payload_start)
                                         # st.write(restart_check_instance_st,restart_check_instance_ct)
                                         if "stopped" in str(restart_check_instance_ct):
                                             st.toast(':green[Starting restart traffic, wait please]', icon="🔥")
                                             with open(f'{path_configs}/{i}.json') as file:
                                                 exist_put_body= json.load(file)
-                                            CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'PUT', json.dumps(exist_put_body, indent=2))
-                                            start_exist_sc, start_exist_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_start, '/_start')
-                                            log_authorize(st.session_state.user,blaster_server['ip'], f'RUN START test profile {i}')
+                                            CALL_API_BLASTER(ip, port, i, 'PUT', json.dumps(exist_put_body, indent=2))
+                                            start_exist_sc, start_exist_ct= CALL_API_BLASTER(ip, port , i, 'POST', payload_start, '/_start')
+                                            log_authorize(st.session_state.user, ip, f'RUN START test profile {i}')
                                             time.sleep(0.5)
                                             break
                                     while True:
-                                        restart_check_instance_st, restart_check_instance_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'GET', payload_start)
+                                        restart_check_instance_st, restart_check_instance_ct = CALL_API_BLASTER(ip, port, i, 'GET', payload_start)
                                         # st.write(restart_check_instance_st,restart_check_instance_ct)
                                         if "started" in str(restart_check_instance_ct):
                                             st.toast(':green[Restart traffic successfully]', icon="🔥")
@@ -905,12 +905,12 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                             break
                             with col114:
                                 if st.button(':red[:material/bolt:]', use_container_width=True, key='reset_%s'%i):
-                                    kill_sc, kill_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_stop, '/_kill')
+                                    kill_sc, kill_ct= CALL_API_BLASTER(ip, port, i, 'POST', payload_stop, '/_kill')
                                     if kill_sc == 202:
                                         st.toast(":red[You used KILL button, report after testing which couldn't be generated]", icon="🔥")
-                                        delete_sub_interface_from_json(i, blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'))
-                                        log_authorize(st.session_state.user,blaster_server['ip'], f'KILL test profile {i}')
-                                        log_authorize(st.session_state.user,blaster_server['ip'], f'RUN STOP test profile {i}')
+                                        delete_sub_interface_from_json(i, ip, dict_blaster_db_format[ip].get('user'), dict_blaster_db_format[ip].get('passwd'))
+                                        log_authorize(st.session_state.user, ip, f'KILL test profile {i}')
+                                        log_authorize(st.session_state.user, ip, f'RUN STOP test profile {i}')
                                         time.sleep(1)
                                         st.rerun()
                             with col115:
@@ -992,7 +992,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                         "command": "stream-stats"
                                     }
                                     """
-                                    run_command_streams_stats_sc, run_command_streams_stats_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_stream_stats, '/_command')
+                                    run_command_streams_stats_sc, run_command_streams_stats_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_stream_stats, '/_command')
                                     if run_command_streams_stats_sc == 200:
                                         data_streams_stats = json.loads(run_command_streams_stats_ct)
                                         total_flows = data_streams_stats['stream-stats']['total-flows']
@@ -1006,7 +1006,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                             "command": "stream-reset"
                                         }
                                         """
-                                        run_command_streams_reset_sc, run_command_streams_reset_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_stream_reset, '/_command')
+                                        run_command_streams_reset_sc, run_command_streams_reset_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_stream_reset, '/_command')
                                         if run_command_streams_reset_sc == 200:
                                             st.toast(':blue[Reset stream statistic test profile %s successfully]'%i, icon="🔥")
                             with st.container(border= True):
@@ -1019,7 +1019,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                     st.write("##### :green[**:material/diagonal_line: GRAPH**]")
                                 with st.expander(":violet[:material/arrow_drop_down_circle: **NETWORK-INTERFACES**]"):
                                     df_nw_tx_rx_pps = pd.DataFrame([[0, 0]], columns=(["network_tx_pps", "network_rx_pps"]))
-                                    run_command_nw_int_sc, run_command_nw_int_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_network_interface, '/_command')
+                                    run_command_nw_int_sc, run_command_nw_int_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_network_interface, '/_command')
                                     if run_command_nw_int_sc == 200:
                                         data_nw_int = json.loads(run_command_nw_int_ct)
                                         num_nw_int =len(data_nw_int['network-interfaces']) # Number network interfaces in json
@@ -1034,7 +1034,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                         #     exec(f'nw_pktloss_chart_{i}_{j} = st.line_chart(df_nw_rx_pktloss, color = ["#FF0000"],use_container_width= True)')
                                 with st.expander(":violet[:material/arrow_drop_down_circle: **ACCESS-INTERFACES**]"):
                                     df_acc_tx_rx_pps = pd.DataFrame([[0, 0]], columns=(["access_tx_pps", "access_rx_pps"]))
-                                    run_command_acc_int_sc, run_command_acc_int_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_access_interface, '/_command')
+                                    run_command_acc_int_sc, run_command_acc_int_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_access_interface, '/_command')
                                     if run_command_acc_int_sc == 200:
                                         data_acc_int = json.loads(run_command_acc_int_ct)
                                         num_acc_int =len(data_acc_int['access-interfaces']) # Number access interfaces in json
@@ -1049,7 +1049,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                         for i in select_running_instance_cb:
                             with st.container(border= True):
                                 # Call API for network interface value====================
-                                run_command_nw_int_sc, run_command_nw_int_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_network_interface, '/_command')
+                                run_command_nw_int_sc, run_command_nw_int_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_network_interface, '/_command')
                                 if run_command_nw_int_sc == 200:
                                     data_nw_int = json.loads(run_command_nw_int_ct)
                                     num_nw_int =len(data_nw_int['network-interfaces']) # Number network interfaces in json
@@ -1081,7 +1081,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                     exec("display_nw_interface_%s.dataframe(table_nw_int,use_container_width=True)"%i) # Edit configure by st.column_config.AreaChartColumn
                                     
                                 # Call API for access interface value =================
-                                run_command_acc_int_sc, run_command_acc_int_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_access_interface, '/_command')
+                                run_command_acc_int_sc, run_command_acc_int_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_access_interface, '/_command')
                                 if run_command_acc_int_sc == 200:
                                     data_acc_int = json.loads(run_command_acc_int_ct)
                                     num_acc_int =len(data_acc_int['access-interfaces']) # Number network interfaces in json
@@ -1127,7 +1127,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                     "command": "stream-stats"
                                 }
                                 """
-                                run_command_streams_stats_sc, run_command_streams_stats_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_stream_stats, '/_command')
+                                run_command_streams_stats_sc, run_command_streams_stats_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_stream_stats, '/_command')
                                 if run_command_streams_stats_sc == 200:
                                     data_streams_stats = json.loads(run_command_streams_stats_ct)
                                     total_flows = data_streams_stats['stream-stats']['total-flows']
@@ -1140,7 +1140,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                             "arguments": {"flow-id": %s}
                                         }
                                         """%n
-                                        run_command_streams_info_sc, run_command_streams_info_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_command_stream_info, '/_command')
+                                        run_command_streams_info_sc, run_command_streams_info_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_stream_info, '/_command')
                                         if run_command_streams_info_sc == 200:
                                             data_streams_info = json.loads(run_command_streams_info_ct)
 
