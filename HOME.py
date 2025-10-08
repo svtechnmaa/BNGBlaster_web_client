@@ -31,6 +31,9 @@ if 'p1' not in st.session_state:
     st.session_state.p4= False
     st.session_state.p5= False
     st.session_state.user = ''
+    st.session_state.edit_selection = 0
+    st.session_state.p3_edit_select = ''
+    st.session_state.p4_running_select = ''
 def write_dict_to_yaml(data_dict, file_path):
     """
     Write a dictionary to a YAML file.
@@ -749,6 +752,54 @@ def delete_sub_interface_from_json(profile, blaster_server, username, password):
             # st.toast(i)
             execute_remote_command_use_passwd(blaster_server, username, password, f"sudo -S ip link delete link {il.split('.')[0]} name {il} type vlan id {il.split('.')[1]}")
             time.sleep(0.02)
+def start_profile_bngblaster(instance, path_configs, blaster_server, blaster_server_port, username, password):
+    list_inf = []
+    with open(f"{path_configs}/{instance}.json", "r") as json_run:
+        val_json=json.load(json_run)
+    try:
+        for i in range(len(val_json['interfaces']['access'])):
+            list_inf.append(val_json['interfaces']['access'][i]['interface'])
+    except:
+        pass
+    try:
+        for i in range(len(val_json['interfaces']['network'])):
+            list_inf.append(val_json['interfaces']['network'][i]['interface'])
+    except:
+        pass
+    for i in list_inf:
+        if '.' in i:
+            # st.toast(i)
+            execute_remote_command_use_passwd(blaster_server, username, password, "sudo -S modprobe 8021q")
+            time.sleep(0.02)
+            execute_remote_command_use_passwd(blaster_server, username, password, f"sudo -S ip link add link {i.split('.')[0]} name {i} type vlan id {i.split('.')[1]}")
+            time.sleep(0.02)
+            execute_remote_command_use_passwd(blaster_server, username, password, f"sudo -S ip link set dev {i} up")
+    try:
+        exist_sc, exist_ct= CALL_API_BLASTER(blaster_server, blaster_server_port, instance, 'GET', payload_start)
+        # st.write(exist_sc, exist_ct)
+    except Exception as e:
+        st.toast(f'Error {e}')
+    if exist_sc == 200:
+        st.toast(':orange[:material/done: Start traffic generating ...]')
+        with open(f'{path_configs}/{instance}.json') as file:
+            exist_put_body= json.load(file)
+        CALL_API_BLASTER(blaster_server, blaster_server_port, instance, 'PUT', json.dumps(exist_put_body, indent=2))
+        start_exist_sc, start_exist_ct= CALL_API_BLASTER(blaster_server, blaster_server_port, instance, 'POST', payload_start, '/_start')
+        #st.write(start_exist_sc, start_exist_ct)
+    else:
+        ######## Push config.json ##############################
+        with open(f'{path_configs}/{instance}.json') as file:
+            put_body= json.load(file)
+        st.toast(':orange[:material/upload: Put config.json ...]')
+        put_sc, put_ct= CALL_API_BLASTER(blaster_server, blaster_server_port, instance, 'PUT', json.dumps(put_body, indent=2))
+        ######## Start trafffic ##############################
+        st.toast(':orange[:material/done: Start traffic generating ...]')
+        start_sc, start_ct= CALL_API_BLASTER(blaster_server, blaster_server_port, instance, 'POST', payload_start, '/_start')
+        # st.write(start_sc, start_ct)
+    log_authorize(st.session_state.user,blaster_server, f'RUN START test profile {instance}')
+    st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, True, False
+    time.sleep(1)
+    st.rerun()
 ################## Function for blaster-status ############################################
 def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_avail_from_blaster):
     with st.container(border=True):
@@ -2102,7 +2153,7 @@ if st.session_state.p3:
                                                 keybinding='vscode', 
                                                 auto_update= True, 
                                                 placeholder= '*Edit your config*')
-                                            if st.button("SAVE CONFIG", type= 'primary', use_container_width= True):
+                                            if st.button(":material/save: SAVE CONFIG", type= 'primary', use_container_width= True):
                                                 # This code for convert json to template yaml
                                                 import_paths=list_all_paths(json.loads(convert_json))
                                                 with open('all_conf.yml', 'r') as file_template:
@@ -2243,7 +2294,7 @@ if st.session_state.p3:
                 choice = st.radio(
                     ":violet[:material/call_split: **SELECT FOR CREATE OR EDIT**]",
                     [":green[:material/note_add: **CREATE**]", ":green[:material/edit_note: **EDIT**]"],
-                    index=None,
+                    index=st.session_state.edit_selection,
                     horizontal=True
                 )
         if choice== ":green[:material/note_add: **CREATE**]": 
@@ -2387,7 +2438,10 @@ if st.session_state.p3:
                 st.session_state.edit_instance= False
                 edit_list_var=[]
                 with st.container(border=True):
-                    edit_instance= st.selectbox(':orange[Select your test profile for modifing]?', list_instance, placeholder = 'Select one test profile')
+                    if st.session_state.p3_edit_select == '':
+                        edit_instance= st.selectbox(':orange[Select your test profile for modifing]?', options=list_instance, placeholder = 'Select one test profile')
+                    else:
+                        edit_instance= st.selectbox(':orange[Select your test profile for modifing]?',index=list_instance.index(st.session_state.p3_edit_select), options=list_instance, placeholder = 'Select one test profile')
                     log_authorize(st.session_state.user,blaster_server['ip'], f'Edit config {edit_instance}')
                 if os.path.exists('%s/%s.yml'%(path_configs,edit_instance)):
                     with open('%s/%s.yml'%(path_configs,edit_instance), 'r') as file_template:
@@ -2456,7 +2510,7 @@ if st.session_state.p3:
                         convert_str_to_bool(load_data)
                         st.code(json.dumps(load_data, indent=2))
                     st.divider()
-                    col14, col15, col16,col17 = st.columns([1,1,2,1])
+                    col14, col15, mid, col16,col17 = st.columns([1,1,1,1,1])
                     with col14:
                         if st.button(':material/save: **SAVE**', type= 'primary', disabled = st.session_state.edit_instance, use_container_width=True):
                             st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False,False, True, False, False
@@ -2489,6 +2543,11 @@ if st.session_state.p3:
                                     st.error('Your test profile was duplicate, choose other name', icon="🚨")
                             else:
                                 st.error('Test profile name is null or wrong syntax', icon="🔥")
+                    with col16:
+                        if st.button(':material/sound_sampler: **START**', use_container_width=True):
+                            start_profile_bngblaster(edit_instance, path_configs, blaster_server['ip'], blaster_server['port'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'))
+                            st.session_state.p4_running_select= edit_instance
+                            st.session_state.p3_edit_select= ''
                     with col17:
                         if st.button(':material/delete: **DELETE**', use_container_width=True):
                             st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, True, False, False
@@ -2613,6 +2672,8 @@ if st.session_state.p4:
                 if st.button(':material/edit: **EDIT**', use_container_width=True):
                     st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, True, False, False
                     log_authorize(st.session_state.user,blaster_server['ip'], 'Change RUN to PRE-RUN for EDIT')
+                    st.session_state.edit_selection= 1
+                    st.session_state.p3_edit_select= '%s'%instance
                     st.rerun()
             with st.container(border= True):
                 # try:
