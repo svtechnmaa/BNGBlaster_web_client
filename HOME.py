@@ -270,6 +270,11 @@ payload_command_network_interface="""
     "command": "network-interfaces"
 }
 """
+payload_command_interfaces="""
+{
+    "command": "interfaces"
+}
+"""
 payload_command_access_interface="""
 {
     "command": "access-interfaces"
@@ -717,6 +722,33 @@ def GET_ALL_INTANCES_BLASTER(server,port):
         return response.status_code, response.content
     except Exception as e:
         print(f'Can not request API blaster server. Error {e}')
+def GET_ALL_INTERFACES_BLASTER(server,port):
+    try:
+        # print(f'http://{server}:{port}/api/v1/instances/{instance}{action}')
+        response = requests.request("GET", f'http://{server}:{port}/api/v1/interfaces', headers={'Content-Type': 'application/json'},data="")
+        # print(response.headers["Date"])
+        return response.status_code, response.content
+    except Exception as e:
+        print(f'Can not request API blaster server. Error {e}')
+def delete_sub_interface_from_json(profile, blaster_server, username, password):
+    list_inf = []
+    with open(f"{path_configs}/{profile}.json", "r") as json_run:
+        val_json=json.load(json_run)
+    try:
+        for ic in range(len(val_json['interfaces']['access'])):
+            list_inf.append(val_json['interfaces']['access'][ic]['interface'])
+    except:
+        pass
+    try:
+        for inw in range(len(val_json['interfaces']['network'])):
+            list_inf.append(val_json['interfaces']['network'][inw]['interface'])
+    except:
+        pass
+    for il in list_inf:
+        if '.' in il:
+            # st.toast(i)
+            execute_remote_command_use_passwd(blaster_server, username, password, f"sudo -S ip link delete link {il.split('.')[0]} name {il} type vlan id {il.split('.')[1]}")
+            time.sleep(0.02)
 ################## Function for blaster-status ############################################
 def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_avail_from_blaster):
     with st.container(border=True):
@@ -729,113 +761,129 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                 st.write(":green[*:material/sunny_snowing: [BNGBlaster: V%s] [BNGBlasterCtrl: V%s] [%s]*]"%(version['bngblaster-version'], version['bngblasterctrl-version'], version['bngblaster-compiler']))
         with bscol2:
             # Note: dict_blaster_db_format is var global
-            list_int_server = find_interface(ip, dict_blaster_db_format[ip]['user'], dict_blaster_db_format[ip]['passwd'])
-            for i in list_int_server:
-                st.write(':green[ :material/share: *Interface %s existed sub: %s*]'%(i, find_used_vlans(ip, dict_blaster_db_format[ip]['user'], dict_blaster_db_format[ip]['passwd'], i)))
+            # list_int_server = find_interface(ip, dict_blaster_db_format[ip]['user'], dict_blaster_db_format[ip]['passwd'])
+            list_int_server_sc, list_int_server_ct = GET_ALL_INTERFACES_BLASTER(blaster_server['ip'], blaster_server['port']) # GET interfaces from API
+            if list_int_server_sc == 200:
+                list_int_server_json = json.loads(list_int_server_ct) # Convert to json
+                list_int_server = []
+                for i in list_int_server_json: # Find sub-interface
+                    if '.' in i['name']:
+                        temp_dict={}
+                        temp_dict[i['name'].split('.')[0]]= i['name'].split('.')[1] # {'interface': vlan}
+                        list_int_server.append(temp_dict)
+                dict_sub_interfaces = {} # {'interface': [vlan1, vlan2, vlan3]}
+                for d in list_int_server:
+                    for k, v in d.items():
+                        dict_sub_interfaces.setdefault(k, []).append(v)
+                final = [dict_sub_interfaces]
+                for i in final:
+                    for k, v in i.items():
+                        st.write(':green[ :material/share: *Interface %s existed sub: %s*]'%(k, v)) # Display interface existed sub-interface
+            # for i in list_int_server:
+            #     st.write(':green[ :material/share: *Interface %s existed sub: %s*]'%(i, find_used_vlans(ip, dict_blaster_db_format[ip]['user'], dict_blaster_db_format[ip]['passwd'], i)))
+
         col_select, col_display= st.columns([1,1.5])
         with col_select:
             with st.container(border=True):
                 st.write(":fire: :violet[**TEST PROFILE RUNNING**]")
             with st.container(border=True, height= 400):   
                 select_running_instance={}
-                for i in list_instance_running_from_blaster:
-                    with st.container(border=True):
-                        col111, col112, col113, col114, col115= st.columns([3,0.6,0.6,0.6,0.6])
-                        with col111:
-                                exec(f"""select_running_instance['{i}'] = st.checkbox(f":orange[*{i}*]")""") 
-                        with col112:
-                            if st.button(':orange[:material/stop_circle:]', use_container_width=True, key='stop_%s'%i):
-                                stop_sc, stop_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_stop, '/_stop')
-                                if stop_sc == 202:
-                                    st.toast(":orange[Begin **stop** test profile **%s**]"%i, icon="🔥")
+                if list_instance_running_from_blaster == []:
+                    list_interfaces_sc, list_interfaces_ct = GET_ALL_INTERFACES_BLASTER(blaster_server['ip'], blaster_server['port'])
+                    if list_interfaces_sc == 200:
+                        list_interfaces = json.loads(list_interfaces_ct)
+                        if list_interfaces != []:
+                            for i in list_interfaces:
+                                if '.' in i['name']: 
+                                    st.write(":orange[*%s*]"%i['name'])
+                                    execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']]['user'], dict_blaster_db_format[blaster_server['ip']]['passwd'], f"sudo -S ip link delete link {i['name'].split('.')[0]} name {i['name']} type vlan id {i['name'].split('.')[1]}")
+                    else:
+                        st.write(":red[Do not have any test profile running]")
+                else:
+                    for i in list_instance_running_from_blaster:
+                        with st.container(border=True):
+                            col111, col112, col113, col114, col115= st.columns([3,0.6,0.6,0.6,0.6])
+                            with col111:
+                                    exec(f"""select_running_instance['{i}'] = st.checkbox(f":orange[*{i}*]")""") 
+                            with col112:
+                                if st.button(':orange[:material/stop_circle:]', use_container_width=True, key='stop_%s'%i):
+                                    stop_sc, stop_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_stop, '/_stop')
+                                    if stop_sc == 202:
+                                        st.toast(":orange[Begin **stop** test profile **%s**]"%i, icon="🔥")
+                                        while True:
+                                            check_instance_st, check_instance_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'GET', payload_start)
+                                            # st.write(check_instance_st,check_instance_ct)
+                                            if "started" in str(check_instance_ct):
+                                                st.toast(':orange[Stopping traffic, wait please]', icon="🔥")
+                                                time.sleep(2)
+                                            elif "stopped" in str(check_instance_ct):
+                                                st.toast(':orange[Profile already stopped]', icon="🔥")
+                                                log_authorize(st.session_state.user,blaster_server['ip'], f'RUN STOP test profile {i}')
+                                                
+                                                delete_sub_interface_from_json(i, blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'))
+                                                st.rerun()
+                                                break
+                                            else:
+                                                st.toast(':red[Test profile have error, please check log]', icon="❌")
+                                                break
+                                    else:
+                                        st.toast(':red[Had error when stop test profile]', icon="❌")
+                            with col113:
+                                if st.button(':orange[:material/restart_alt:]', use_container_width=True, key='restart_%s'%i):
+                                    log_authorize(st.session_state.user,blaster_server['ip'], f'Restart test profile {i}')
+                                    restart_kill_sc, restart_kill_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_stop, '/_kill')
+                                    if restart_kill_sc == 202:
+                                        st.toast(":green[You select restart button]", icon="🔥")
+                                        log_authorize(st.session_state.user,blaster_server['ip'], f'RUN STOP test profile {i}')
+                                        time.sleep(1)
                                     while True:
-                                        check_instance_st, check_instance_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'GET', payload_start)
-                                        # st.write(check_instance_st,check_instance_ct)
-                                        if "started" in str(check_instance_ct):
-                                            st.toast(':orange[Stopping traffic, wait please]', icon="🔥")
-                                            time.sleep(2)
-                                        elif "stopped" in str(check_instance_ct):
-                                            st.toast(':orange[Profile already stopped]', icon="🔥")
-                                            log_authorize(st.session_state.user,blaster_server['ip'], f'RUN STOP test profile {i}')
-                                            
-                                            list_inf = []
-                                            with open(f"{path_configs}/{i}.json", "r") as json_run:
-                                                val_json=json.load(json_run)
-                                            try:
-                                                for ic in range(len(val_json['interfaces']['access'])):
-                                                    list_inf.append(val_json['interfaces']['access'][ic]['interface'])
-                                            except:
-                                                pass
-                                            try:
-                                                for inw in range(len(val_json['interfaces']['network'])):
-                                                    list_inf.append(val_json['interfaces']['network'][inw]['interface'])
-                                            except:
-                                                pass
-                                            for il in list_inf:
-                                                if '.' in il:
-                                                    # st.toast(i)
-                                                    execute_remote_command_use_passwd(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"sudo -S ip link delete link {il.split('.')[0]} name {il} type vlan id {il.split('.')[1]}")
-                                                    time.sleep(0.02)
-                                            st.rerun()
+                                        restart_check_instance_st, restart_check_instance_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'GET', payload_start)
+                                        # st.write(restart_check_instance_st,restart_check_instance_ct)
+                                        if "stopped" in str(restart_check_instance_ct):
+                                            st.toast(':green[Starting restart traffic, wait please]', icon="🔥")
+                                            with open(f'{path_configs}/{i}.json') as file:
+                                                exist_put_body= json.load(file)
+                                            CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'PUT', json.dumps(exist_put_body, indent=2))
+                                            start_exist_sc, start_exist_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_start, '/_start')
+                                            log_authorize(st.session_state.user,blaster_server['ip'], f'RUN START test profile {i}')
+                                            time.sleep(0.5)
                                             break
-                                        else:
-                                            st.toast(':red[Test profile have error, please check log]', icon="❌")
+                                    while True:
+                                        restart_check_instance_st, restart_check_instance_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'GET', payload_start)
+                                        # st.write(restart_check_instance_st,restart_check_instance_ct)
+                                        if "started" in str(restart_check_instance_ct):
+                                            st.toast(':green[Restart traffic successfully]', icon="🔥")
+                                            time.sleep(0.5)
                                             break
-                                else:
-                                    st.toast(':red[Had error when stop test profile]', icon="❌")
-                        with col113:
-                            if st.button(':orange[:material/restart_alt:]', use_container_width=True, key='restart_%s'%i):
-                                log_authorize(st.session_state.user,blaster_server['ip'], f'Restart test profile {i}')
-                                restart_kill_sc, restart_kill_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_stop, '/_kill')
-                                if restart_kill_sc == 202:
-                                    st.toast(":green[You select restart button]", icon="🔥")
-                                    log_authorize(st.session_state.user,blaster_server['ip'], f'RUN STOP test profile {i}')
-                                    time.sleep(1)
-                                while True:
-                                    restart_check_instance_st, restart_check_instance_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'GET', payload_start)
-                                    # st.write(restart_check_instance_st,restart_check_instance_ct)
-                                    if "stopped" in str(restart_check_instance_ct):
-                                        st.toast(':green[Starting restart traffic, wait please]', icon="🔥")
-                                        with open(f'{path_configs}/{i}.json') as file:
-                                            exist_put_body= json.load(file)
-                                        CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'PUT', json.dumps(exist_put_body, indent=2))
-                                        start_exist_sc, start_exist_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_start, '/_start')
-                                        log_authorize(st.session_state.user,blaster_server['ip'], f'RUN START test profile {i}')
-                                        time.sleep(0.5)
-                                        break
-                                while True:
-                                    restart_check_instance_st, restart_check_instance_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'GET', payload_start)
-                                    # st.write(restart_check_instance_st,restart_check_instance_ct)
-                                    if "started" in str(restart_check_instance_ct):
-                                        st.toast(':green[Restart traffic successfully]', icon="🔥")
-                                        time.sleep(0.5)
-                                        break
-                        with col114:
-                            if st.button(':red[:material/bolt:]', use_container_width=True, key='reset_%s'%i):
-                                kill_sc, kill_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_stop, '/_kill')
-                                if kill_sc == 202:
-                                    st.toast("You used KILL button, report after testing which couldn't be generated", icon="🔥")
-                                    time.sleep(1)
-                                    st.rerun()
-                        with col115:
-                            with st.popover(':orange[:material/access_time:]', use_container_width=True):
-                            # with st.container(border=True):
-                                time_start = find_and_split_line_from_file('auth.log', 'RUN START test profile %s'%i)
-                                st.info(":blue[**:material/sound_sampler: LAST START**]")
-                                try:
-                                    st.write(":orange[ :material/sound_sampler: *%s*]"%time_start[0].split('_')[0:3])
-                                    st.write(":orange[ :material/dns: *%s*]"%time_start[0].split('_')[3])
-                                except:
-                                    st.write(":orange[ :material/sound_sampler: *None*]")
-                                    st.write(":orange[ :material/dns: *None*]")
-                                time_stop = find_and_split_line_from_file('auth.log', 'RUN STOP test profile %s'%i)
-                                st.info(":blue[**:material/stop_circle: LAST STOP**]")
-                                try:
-                                    st.write(":orange[ :material/stop_circle:*%s*]"%time_stop[0].split('_')[0:3])
-                                    st.write(":orange[ :material/dns: *%s*]"%time_stop[0].split('_')[3])
-                                except:
-                                    st.write(":orange[ :material/stop_circle: *None*]")
-                                    st.write(":orange[ :material/dns: *None*]")
+                            with col114:
+                                if st.button(':red[:material/bolt:]', use_container_width=True, key='reset_%s'%i):
+                                    kill_sc, kill_ct= CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], i, 'POST', payload_stop, '/_kill')
+                                    if kill_sc == 202:
+                                        st.toast(":red[You used KILL button, report after testing which couldn't be generated]", icon="🔥")
+                                        delete_sub_interface_from_json(i, blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'))
+                                        log_authorize(st.session_state.user,blaster_server['ip'], f'KILL test profile {i}')
+                                        log_authorize(st.session_state.user,blaster_server['ip'], f'RUN STOP test profile {i}')
+                                        time.sleep(1)
+                                        st.rerun()
+                            with col115:
+                                with st.popover(':orange[:material/access_time:]', use_container_width=True):
+                                # with st.container(border=True):
+                                    time_start = find_and_split_line_from_file('auth.log', 'RUN START test profile %s'%i)
+                                    st.info(":blue[**:material/sound_sampler: LAST START**]")
+                                    try:
+                                        st.write(":orange[ :material/sound_sampler: *%s*]"%time_start[0].split('_')[0:3])
+                                        st.write(":orange[ :material/dns: *%s*]"%time_start[0].split('_')[3])
+                                    except:
+                                        st.write(":orange[ :material/sound_sampler: *None*]")
+                                        st.write(":orange[ :material/dns: *None*]")
+                                    time_stop = find_and_split_line_from_file('auth.log', 'RUN STOP test profile %s'%i)
+                                    st.info(":blue[**:material/stop_circle: LAST STOP**]")
+                                    try:
+                                        st.write(":orange[ :material/stop_circle:*%s*]"%time_stop[0].split('_')[0:3])
+                                        st.write(":orange[ :material/dns: *%s*]"%time_stop[0].split('_')[3])
+                                    except:
+                                        st.write(":orange[ :material/stop_circle: *None*]")
+                                        st.write(":orange[ :material/dns: *None*]")
                 select_running_instance_cb = [] # List select checkbox
                 for i in select_running_instance.keys():
                     if select_running_instance[i]:
