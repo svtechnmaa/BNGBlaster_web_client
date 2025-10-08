@@ -797,9 +797,6 @@ def start_profile_bngblaster(instance, path_configs, blaster_server, blaster_ser
         start_sc, start_ct= CALL_API_BLASTER(blaster_server, blaster_server_port, instance, 'POST', payload_start, '/_start')
         # st.write(start_sc, start_ct)
     log_authorize(st.session_state.user,blaster_server, f'RUN START test profile {instance}')
-    st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, True, False
-    time.sleep(1)
-    st.rerun()
 ################## Function for blaster-status ############################################
 def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_avail_from_blaster):
     with st.container(border=True):
@@ -2544,10 +2541,15 @@ if st.session_state.p3:
                             else:
                                 st.error('Test profile name is null or wrong syntax', icon="🔥")
                     with col16:
-                        if st.button(':material/sound_sampler: **START**', use_container_width=True):
-                            start_profile_bngblaster(edit_instance, path_configs, blaster_server['ip'], blaster_server['port'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'))
-                            st.session_state.p4_running_select= edit_instance
-                            st.session_state.p3_edit_select= ''
+                        if edit_instance not in list_instance_running_from_blaster:
+                            if st.button(':material/sound_sampler: **START**', use_container_width=True):
+                                start_profile_bngblaster(edit_instance, path_configs, blaster_server['ip'], blaster_server['port'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'))
+                                st.session_state.p4_running_select= '%s'%edit_instance
+                                st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, True, False
+                                time.sleep(1)
+                                st.rerun()
+                        else:
+                            st.toast(':orange[Your test profile is running, can not start]', icon="🚨")
                     with col17:
                         if st.button(':material/delete: **DELETE**', use_container_width=True):
                             st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, True, False, False
@@ -2645,7 +2647,10 @@ if st.session_state.p4:
         with col19:
             st.subheader(':sunny: :green[CONFIG MANAGEMENT [%s JSONs]]'%len(list_json))
             with st.container(border= True):
-                instance= st.selectbox(':orange[:material/done: Select your test profile]?', list_instance, placeholder = 'Select one test profile')
+                if st.session_state.p4_running_select == '':
+                    instance= st.selectbox(':orange[:material/done: Select your test profile]?', list_instance, placeholder = 'Select one test profile')
+                else:
+                    instance= st.selectbox(':orange[:material/done: Select your test profile]?', index =list_instance.index(st.session_state.p4_running_select), options=list_instance, placeholder = 'Select one test profile')
                 instance_exist_st, instance_exist_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'GET', payload_start)
         with col20:
             st.subheader(':sunny: :green[DIAGRAM]')
