@@ -1,4 +1,6 @@
 import streamlit as st
+import smtplib
+from email.mime.text import MIMEText
 # import string
 import copy
 import os, re
@@ -92,9 +94,11 @@ authenticator = stauth.Authenticate(
     config_authen['preauthorized']
 )
 colx, coly, colz = st.columns([1,1.8,1])
+st.logo('./images/svtech-logo.png', size= 'large', link = 'https://www.svtech.com.vn/')
+if not st.session_state.p2:
+    with coly:
+        st.image('./images/home.png', output_format= 'JPEG')
 with coly:
-    st.image('./images/home.png', output_format= 'JPEG')
-    st.logo('./images/svtech-logo.png', size= 'large', link = 'https://www.svtech.com/')
     name, authentication_status, username = authenticator.login('main', fields = {'Form name': ':pushpin: :orange[LOGIN]'})
 if authentication_status:
     st.session_state.user= username
@@ -2099,6 +2103,78 @@ if st.session_state.p1:
                 st.rerun()
 #########################################################################################
 if st.session_state.p2:
+    # Custom CSS styling
+    st.markdown("""
+    <style>
+    /* Hide Streamlit elements */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+
+    /* Custom styles */
+    .main-header {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        padding: 3rem 2rem;
+        border-radius: 15px;
+        text-align: center;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 123, 255, 0.3);
+    }
+
+    .navbar {
+        background-color: #343a40;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+        #border-radius: 10px;
+    }
+
+    .section-title {
+        text-align: center;
+        color: #333;
+        margin-bottom: 2rem;
+        font-weight: bold;
+    }
+
+    .gallery-section {
+        background-color: #f8f9fa;
+        padding: 3rem 2rem;
+        border-radius: 15px;
+        margin: 2rem 0;
+    }
+
+    .contact-section {
+        background-color: #f8f9fa;
+        padding: 3rem 2rem;
+        border-radius: 15px;
+        margin: 2rem 0;
+    }
+
+    .footer {
+        background-color: #343a40;
+        color: white;
+        text-align: center;
+        padding: 2rem;
+        border-radius: 10px;
+        margin-top: 3rem;
+    }
+
+    .workflow-button {
+        font-size: 3rem;
+        margin: 1rem 0;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    # Hero Section
+    st.markdown("""
+    <div class="main-header">
+        <h1 style="font-size: 3rem; margin-bottom: 1rem;">Welcome to BNGBlaster Web UI</h1>
+        <p style="font-size: 1.2rem; margin-bottom: 0;">Easy implement All Testing-Profiles with Network devices</p>
+    </div>
+    """, unsafe_allow_html=True)
+    # Features Section
+    st.markdown('<h2 class="section-title">Outstanding Features</h2>', unsafe_allow_html=True)
+    st.markdown('<h2 class="section-title"></h2>', unsafe_allow_html=True)
     gif1, gif2, gif3, gif4, gif5, gif6, gif7 = st.columns([0.1,2.1,0.1,1.5,0.1,2.1,0.1])
     with gif2:
         with st.container(border= True):
@@ -2121,7 +2197,130 @@ if st.session_state.p2:
             if st.button(':material/insights:  **REPORT**', use_container_width=True):
                 st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, False, True
                 log_authorize(st.session_state.user,blaster_server['ip'], 'Select REPORT page')
-                st.rerun()
+                st.rerun()   
+    # Navbar HTML
+    st.markdown("""
+        <div class="navbar">
+            <h>''</h>
+        </div>
+        <style>
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: #333;
+            padding: 10px;
+            display: flex;
+            gap: 10px;
+            justify-content: right;
+            z-index: 9999;
+        }
+        .navbar a {
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 6px 12px;
+        }
+        .navbar a:hover {
+            background-color: #575757;
+            border-radius: 6px;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Create three columns for features
+    col1, col2, col3, col4, col5 = st.columns([3,1,3,1,3])
+
+    # CSS custom cho st.button
+    st.markdown("""
+        <style>
+        .stButton>button {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            color: #333;
+            padding: 2rem;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+            height: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            flex: 1;
+            #max-width: 300px;
+        }
+        .stButton>button p {
+            color: #333;
+            font-size: 1.1rem;
+            font-weight: bold;
+            transition: color 0.3s ease;
+        }
+        .stButton>button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 123, 255, 0.2);
+            background: linear-gradient(135deg, white 0%, white 100%);
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    # Contact Section
+    st.markdown('<h2 class="section-title">Liên hệ với chúng tôi</h2>', unsafe_allow_html=True)
+    
+    # Center the contact form
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        with st.form("contact_form"):
+            st.markdown("#### Gửi tin nhắn cho chúng tôi")
+            
+            email_sender = 'streamlit.notify@gmail.com'
+            name = st.text_input("Tên của bạn", placeholder="Nhập tên...")
+            email = st.text_input("Email", placeholder="Nhập email...")
+            email_receiver = 'linh.nguyentuan@svtech.com.vn'
+            app_password="baor pwtl molh izvn"
+            message = st.text_area("Tin nhắn", placeholder="Nhập tin nhắn...", height=120)
+
+            subject = "[STREAMLIT] BNGBlaster Web Email from %s email <%s>"%(name, email)
+
+            submitted = st.form_submit_button("Gửi ngay", use_container_width=True)
+            
+            if submitted:
+                if name and email_receiver and message:
+                    # st.success("📧 Form liên hệ đã được gửi thành công!")
+                    
+                    # Display submitted data
+                    # with st.expander("Chi tiết liên hệ"):
+                    #     st.write(f"**Tên:** {name}")
+                    #     st.write(f"**Email:** {email_receiver}")
+                    #     st.write(f"**Tin nhắn:** {message} from {email}")
+                    try:
+                        msg = MIMEText(message)
+                        msg['From'] = email_sender
+                        msg['To'] = email_receiver
+                        msg['Subject'] = subject
+
+                        server = smtplib.SMTP('smtp.gmail.com', 587)
+                        server.starttls()
+                        # server.login(st.secrets["email"]["gmail"], st.secrets["email"]["password"])
+                        server.login(email_sender, app_password)
+                        server.sendmail(email_sender, email_receiver, msg.as_string())
+                        server.quit()
+
+                        st.success('Email sent successfully!')
+                    except Exception as e:
+                        st.error(f"Failed to send email: {e}")
+                else:
+                    st.error("Vui lòng điền đầy đủ thông tin!")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Footer
+    st.markdown("""
+    <div class="footer">
+        <p style="margin: 0;">© 2025 SVTECH BNGBlaster Web UI - Powered by Devops Team</p>
+    </div>
+    """, unsafe_allow_html=True) 
 if st.session_state.p3:
     st.session_state.create_instance = True
     st.title(':material/first_page: :rainbow[ DEFINE FILE CONFIG.JSON]')
@@ -3183,7 +3382,7 @@ with col27:
             st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= True, False, False, False, False
             st.rerun()
 ################################# For ADMIN ##########################################
-if dict_user_db[st.session_state.user] == 'admin' and st.session_state.p2:
+if dict_user_db[st.session_state.user] == 'admin' and st.session_state.p1:
     st.divider()
     with col25:
         with st.expander(':green[RESET PASSWORD]'):
@@ -3309,7 +3508,7 @@ if dict_user_db[st.session_state.user] == 'admin' and st.session_state.p2:
                     # conn.close()
                     db.close_connection()
 ################################# For user ##########################################
-if st.session_state.p2:
+if st.session_state.p1:
     with col25:
         with st.expander(':green[CHANGE YOUR PASSWORD]'):
             try:
