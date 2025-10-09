@@ -850,13 +850,14 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                 st.write(":orange[*%s*]"%i['name'])
                                 execute_remote_command_use_passwd(ip, dict_blaster_db_format[ip]['user'], dict_blaster_db_format[ip]['passwd'], f"sudo -S ip link delete link {i['name'].split('.')[0]} name {i['name']} type vlan id {i['name'].split('.')[1]}")
                 else:
-                    st.write(":red[Do not have any test profile running]")
+                    st.toast(":red[Do not have any test profile running]")
             else:
                 for i in list_instance_running_from_blaster:
                     with st.container(border=True):
                         col111, col112, col113, col114, col115, col116= st.columns([3,1,1,1,1,1])
                         with col111:
-                                exec(f"""select_running_instance['{i}'] = st.checkbox(f":orange[*{i}*]")""") 
+                                # exec(f"""select_running_instance['{i}'] = st.checkbox(f":orange[*{i}*]")""") 
+                                st.write(f":orange[:material/workspaces: *{i}*]")
                         with col112:
                             if st.button(':orange[:material/stop_circle:]', use_container_width=True, key='stop_%s'%i):
                                 stop_sc, stop_ct= CALL_API_BLASTER(ip, port, i, 'POST', payload_stop, '/_stop')
@@ -946,10 +947,10 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                 st.session_state.running_graph= True
                                 st.session_state.running_graph_profile= i
                                 st.rerun()
-            select_running_instance_cb = [] # List select checkbox
-            for i in select_running_instance.keys():
-                if select_running_instance[i]:
-                    select_running_instance_cb.append(i)    
+            # select_running_instance_cb = [] # List select checkbox
+            # for i in select_running_instance.keys():
+            #     if select_running_instance[i]:
+            #         select_running_instance_cb.append(i)    
     with  st.expander(":material/graphic_eq: :violet[**TEST PROFILE EXISTED CONFIG**]"):
         for i in list_instance_avail_from_blaster:
             with st.container(border=True):
