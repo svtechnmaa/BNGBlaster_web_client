@@ -2176,6 +2176,7 @@ if st.session_state.p3:
                                                 keybinding='vscode', 
                                                 auto_update= True, 
                                                 placeholder= '*Edit your config*')
+                                            mark_run = st.checkbox(':orange[*Check to start after save*]', value= False)
                                             if st.button(":material/save: SAVE CONFIG", type= 'primary', use_container_width= True):
                                                 # This code for convert json to template yaml
                                                 import_paths=list_all_paths(json.loads(convert_json))
@@ -2216,6 +2217,12 @@ if st.session_state.p3:
                                                     json.dump(json.loads(convert_json), json_config, indent=2)
                                                 st.success("Config save successfully", icon="🔥")
                                                 log_authorize(st.session_state.user,blaster_server['ip'], f'Create new json {name_json_config}')
+                                                if mark_run:
+                                                    start_profile_bngblaster(name_json_config, path_configs, blaster_server['ip'], blaster_server['port'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'))
+                                                    st.session_state.p4_running_select= '%s'%name_json_config
+                                                    st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, True, False
+                                                    time.sleep(3)
+                                                    st.rerun()
                                     # except Exception as e:
                                     #     with col2:
                                     #         st.error(f"Can not yaml dump content, check error {e}", icon="🚨")
@@ -2257,6 +2264,8 @@ if st.session_state.p3:
                                                 keybinding='vscode', 
                                                 auto_update= True, 
                                                 placeholder= '*Edit your config*')
+                                            mark_run = st.checkbox(':orange[*Check to start after save*]', value= False)
+                                            st.write('')
                                             if st.button("SAVE CONFIG", type= 'primary', use_container_width= True):
                                                 # This code for convert json to template yaml
                                                 import_paths=list_all_paths(json.loads(convert_json))
@@ -2297,6 +2306,12 @@ if st.session_state.p3:
                                                     json.dump(json.loads(convert_json), json_config, indent=2)
                                                 st.success("Config save successfully", icon="🔥")
                                                 log_authorize(st.session_state.user,blaster_server['ip'], f'Create new json {import_clone_new}')
+                                                if mark_run:
+                                                    start_profile_bngblaster(import_clone_new, path_configs, blaster_server['ip'], blaster_server['port'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'))
+                                                    st.session_state.p4_running_select= '%s'%import_clone_new
+                                                    st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, True, False
+                                                    time.sleep(3)
+                                                    st.rerun()
                                     # except Exception as e:
                                     #     with col2:
                                     #         st.error(f"Can not yaml dump content, check error {e}", icon="🚨")
@@ -2427,6 +2442,9 @@ if st.session_state.p3:
                         convert_str_to_float(load_data)
                         convert_str_to_bool(load_data)
                         st.code(json.dumps(load_data, indent=2))
+                    st.write('')
+                    mark_run = st.checkbox(':orange[*Check to start after create*]', value= False)
+                    st.write('')
                     if st.button(':material/add: **CREATE PROFILE**', type= 'primary', disabled = st.session_state.create_instance, key= 'btn_create_by_selection'):
                         st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4,st.session_state.p5= False,False, True, False, False
                         # if "" not in dict_input.values():
@@ -2451,6 +2469,10 @@ if st.session_state.p3:
                         write_dict_to_yaml(yaml.safe_load(temp_dict_save_for_edit),'%s/%s.yml'%(path_configs,select_instance_name))
                         st.info(':blue[Create successfully]', icon="🔥")
                         log_authorize(st.session_state.user,blaster_server['ip'], f'CREATE test profile {select_instance_name}')
+                        if mark_run:
+                            start_profile_bngblaster(select_instance_name, path_configs, blaster_server['ip'], blaster_server['port'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'))
+                            st.session_state.p4_running_select= '%s'%select_instance_name
+                            st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, True, False
                         time.sleep(3)
                         st.rerun()
         elif choice== ":green[:material/edit_note: **EDIT**]":
