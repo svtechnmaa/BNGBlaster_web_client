@@ -2266,25 +2266,25 @@ if st.session_state.p2:
         </style>
     """, unsafe_allow_html=True)
     # Contact Section
-    st.markdown('<h2 class="section-title">Liên hệ với chúng tôi</h2>', unsafe_allow_html=True)
+    st.markdown('<h2 class="section-title">Contact Us</h2>', unsafe_allow_html=True)
     
     # Center the contact form
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         with st.form("contact_form"):
-            st.markdown("#### Gửi tin nhắn cho chúng tôi")
+            st.markdown("#### Send us a message")
             
             email_sender = 'streamlit.notify@gmail.com'
-            name = st.text_input("Tên của bạn", placeholder="Nhập tên...")
-            email = st.text_input("Email", placeholder="Nhập email...")
+            name = st.text_input(":material/badge: Your Name", placeholder="Enter your name...")
+            email = st.text_input(":material/email: Email", placeholder="Enter your email...")
             email_receiver = 'linh.nguyentuan@svtech.com.vn'
             app_password="baor pwtl molh izvn"
-            message = st.text_area("Tin nhắn", placeholder="Nhập tin nhắn...", height=120)
+            message = st.text_area(":material/message: Message", placeholder="Enter your message...", height=120)
 
             subject = "[STREAMLIT] BNGBlaster Web Email from %s email <%s>"%(name, email)
 
-            submitted = st.form_submit_button("Gửi ngay", use_container_width=True)
-            
+            submitted = st.form_submit_button(":material/send: Send", use_container_width=True)
+
             if submitted:
                 if name and email_receiver and message:
                     # st.success("📧 Form liên hệ đã được gửi thành công!")
