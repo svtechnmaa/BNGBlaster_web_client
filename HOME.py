@@ -854,12 +854,12 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
             else:
                 for i in list_instance_running_from_blaster:
                     with st.container(border=True):
-                        col111, col112, col113, col114, col115, col116= st.columns([3,1,1,1,1,1])
+                        col111, col112, col113, col114, col115, col116, col117= st.columns([3,0.8,0.8,0.8,0.8,0.8,0.8])
                         with col111:
                                 # exec(f"""select_running_instance['{i}'] = st.checkbox(f":orange[*{i}*]")""") 
                                 st.write(f":orange[:material/workspaces: *{i}*]")
                         with col112:
-                            if st.button(':orange[:material/stop_circle:]', use_container_width=True, key='stop_%s'%i):
+                            if st.button(':red[:material/stop_circle:]', use_container_width=True, key='stop_%s'%i):
                                 stop_sc, stop_ct= CALL_API_BLASTER(ip, port, i, 'POST', payload_stop, '/_stop')
                                 if stop_sc == 202:
                                     st.toast(":orange[Begin **stop** test profile **%s**]"%i, icon="🔥")
@@ -882,7 +882,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                 else:
                                     st.toast(':red[Had error when stop test profile]', icon="❌")
                         with col113:
-                            if st.button(':orange[:material/restart_alt:]', use_container_width=True, key='restart_%s'%i):
+                            if st.button(':red[:material/restart_alt:]', use_container_width=True, key='restart_%s'%i):
                                 log_authorize(st.session_state.user, ip, f'Restart test profile {i}')
                                 restart_kill_sc, restart_kill_ct= CALL_API_BLASTER(ip, port, i, 'POST', payload_stop, '/_kill')
                                 if restart_kill_sc == 202:
@@ -919,7 +919,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                     time.sleep(1)
                                     st.rerun()
                         with col115:
-                            with st.popover(':orange[:material/access_time:]', use_container_width=True):
+                            with st.popover(':green[:material/access_time:]', use_container_width=True):
                             # with st.container(border=True):
                                 time_start = find_and_split_line_from_file('auth.log', 'RUN START test profile %s'%i)
                                 st.info(":blue[**:material/sound_sampler: LAST START**]")
@@ -938,7 +938,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                     st.write(":orange[ :material/stop_circle: *None*]")
                                     st.write(":orange[ :material/dns: *None*]")
                         with col116:
-                            if st.button(':orange[:material/timeline:]', use_container_width=True, key='timeline_%s'%i):
+                            if st.button(':rainbow[:material/timeline:]', use_container_width=True, key='timeline_%s'%i):
                                 if st.session_state.p4:
                                     st.session_state.running_graph_previous= True
                                 else:
@@ -947,6 +947,16 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                 st.session_state.running_graph= True
                                 st.session_state.running_graph_profile= i
                                 st.rerun()
+                        with col117:
+                            with st.popover(':green[:material/build:]', use_container_width=True):
+                                view_config_avail_sc, view_config_avail_ct = CALL_API_BLASTER(ip, port, i, 'GET', payload_start, '/config.json')
+                                if view_config_avail_sc==200:
+                                    try:
+                                        config_avail = json.loads(view_config_avail_ct)
+                                        st.code(json.dumps(config_avail, indent=2), language='json')
+                                    except Exception as e:
+                                        st.error(':blue[Test profile %s have json syntax error %s]'%(i,e), icon="🔥")
+                                        continue
             # select_running_instance_cb = [] # List select checkbox
             # for i in select_running_instance.keys():
             #     if select_running_instance[i]:
