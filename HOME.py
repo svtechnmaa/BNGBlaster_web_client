@@ -34,8 +34,9 @@ if 'p1' not in st.session_state:
     st.session_state.edit_selection = 0
     st.session_state.p3_edit_select = ''
     st.session_state.p4_running_select = ''
-    st.session_state.p4_running_graph = False
-    st.session_state.p4_running_graph_profile = ''
+    st.session_state.running_graph = False # Sign for running graph code
+    st.session_state.running_graph_previous = False # Sign for back to p4 por p5 (False back to p4, True back to p5)
+    st.session_state.running_graph_profile = ''
 def write_dict_to_yaml(data_dict, file_path):
     """
     Write a dictionary to a YAML file.
@@ -801,7 +802,7 @@ def start_profile_bngblaster(instance, path_configs, blaster_server, blaster_ser
     log_authorize(st.session_state.user,blaster_server, f'RUN START test profile {instance}')
 ################## Function for blaster-status ############################################
 def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_avail_from_blaster):
-    # if not st.session_state.p4_running_graph:
+    # if not st.session_state.running_graph:
     with st.container(border=True):
         bscol1, bscol2 = st.columns([1,1.5], border=True)
         with bscol1:
@@ -937,9 +938,13 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                                     st.write(":orange[ :material/dns: *None*]")
                         with col116:
                             if st.button(':orange[:material/timeline:]', use_container_width=True, key='timeline_%s'%i):
+                                if st.session_state.p4:
+                                    st.session_state.running_graph_previous= True
+                                else:
+                                    st.session_state.running_graph_previous= False
                                 st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, False, False
-                                st.session_state.p4_running_graph= True
-                                st.session_state.p4_running_graph_profile= i
+                                st.session_state.running_graph= True
+                                st.session_state.running_graph_profile= i
                                 st.rerun()
             select_running_instance_cb = [] # List select checkbox
             for i in select_running_instance.keys():
@@ -961,16 +966,16 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                             except Exception as e:
                                 st.error(':blue[Test profile %s have json syntax error %s]'%(i,e), icon="🔥")
                                 continue
-def blaster_status_graph(ip, port, p4_running_graph_profile):
+def blaster_status_graph(ip, port, running_graph_profile):
     # with col_display:
     # with st.container(border=True):
     #     st.write(":fire: :violet[**GRAPH**]")
     on=st.toggle(':orange[**ON**]', value=False)
     if on:
         with st.container(border=True):
-            st.header(":material/timeline: :green[**%s**]"%p4_running_graph_profile)
+            st.header(":material/timeline: :green[**%s**]"%running_graph_profile)
             # for i in select_running_instance_cb:
-            i= p4_running_graph_profile
+            i= running_graph_profile
             # st.markdown("""
             #     <style>
             #     /* This targets the actual popover container */
@@ -3059,15 +3064,18 @@ if st.session_state.p4:
                     for i in str(run_err).split('\\n')[-30:-1]:
                         # time.sleep(0.01)
                         st.text('%s'%i)
-if st.session_state.p4_running_graph:
+if st.session_state.running_graph:
     st.title(':material/timeline: :rainbow[GRAPH]')
     col41, col42 ,col43 =st.columns([19,0.9,0.9])
     with col43:
         if st.button(':material/arrow_back_ios:', use_container_width=True):
-            st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, True, False
-            st.session_state.p4_running_graph=False
+            if st.session_state.running_graph_previous:
+                st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, True, False
+            else:
+                st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, False, True
+            st.session_state.running_graph=False
             st.rerun()
-    blaster_status_graph(blaster_server['ip'],blaster_server['port'], st.session_state.p4_running_graph_profile) # call function display status of blaster server
+    blaster_status_graph(blaster_server['ip'],blaster_server['port'], st.session_state.running_graph_profile) # call function display status of blaster server
 if st.session_state.p5:
     st.title(':material/insights: :rainbow[DASHBOARD]')
     col61, col62 ,col63 =st.columns([19,0.9,0.9])
