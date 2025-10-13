@@ -988,7 +988,69 @@ def blaster_status_graph(ip, port, running_graph_profile):
     on=st.toggle(':orange[**ON**]', value=False)
     if on:
         with st.container(border=True):
-            st.header(":material/timeline: :green[**%s**]"%running_graph_profile)
+            col1, col2= st.columns([1,1])
+            with col1:
+                with st.container(border=True):
+                    st.write("### :orange[ :material/workspaces: **%s**]"%running_graph_profile)
+            with col2:
+                with st.container(border=True):
+                    i=running_graph_profile
+                    col113, col115, col117= st.columns([1,1,1])
+                    with col113:
+                        if st.button(':red[:material/restart_alt:]', use_container_width=True, key='restart_%s'%i):
+                            log_authorize(st.session_state.user, ip, f'Restart test profile {i}')
+                            restart_kill_sc, restart_kill_ct= CALL_API_BLASTER(ip, port, i, 'POST', payload_stop, '/_kill')
+                            if restart_kill_sc == 202:
+                                st.toast(":green[You select restart button]", icon="🔥")
+                                log_authorize(st.session_state.user, ip, f'RUN STOP test profile {i}')
+                                time.sleep(1)
+                            while True:
+                                restart_check_instance_st, restart_check_instance_ct = CALL_API_BLASTER(ip, port, i, 'GET', payload_start)
+                                # st.write(restart_check_instance_st,restart_check_instance_ct)
+                                if "stopped" in str(restart_check_instance_ct):
+                                    st.toast(':green[Starting restart traffic, wait please]', icon="🔥")
+                                    with open(f'{path_configs}/{i}.json') as file:
+                                        exist_put_body= json.load(file)
+                                    CALL_API_BLASTER(ip, port, i, 'PUT', json.dumps(exist_put_body, indent=2))
+                                    start_exist_sc, start_exist_ct= CALL_API_BLASTER(ip, port , i, 'POST', payload_start, '/_start')
+                                    log_authorize(st.session_state.user, ip, f'RUN START test profile {i}')
+                                    time.sleep(0.5)
+                                    break
+                            while True:
+                                restart_check_instance_st, restart_check_instance_ct = CALL_API_BLASTER(ip, port, i, 'GET', payload_start)
+                                # st.write(restart_check_instance_st,restart_check_instance_ct)
+                                if "started" in str(restart_check_instance_ct):
+                                    st.toast(':green[Restart traffic successfully]', icon="🔥")
+                                    time.sleep(0.5)
+                                    break
+                    with col115:
+                        with st.popover(':green[:material/access_time:]', use_container_width=True):
+                        # with st.container(border=True):
+                            time_start = find_and_split_line_from_file('auth.log', 'RUN START test profile %s'%i)
+                            st.info(":blue[**:material/sound_sampler: LAST START**]")
+                            try:
+                                st.write(":orange[ :material/sound_sampler: *%s*]"%time_start[0].split('_')[0:3])
+                                st.write(":orange[ :material/dns: *%s*]"%time_start[0].split('_')[3])
+                            except:
+                                st.write(":orange[ :material/sound_sampler: *None*]")
+                                st.write(":orange[ :material/dns: *None*]")
+                            time_stop = find_and_split_line_from_file('auth.log', 'RUN STOP test profile %s'%i)
+                            st.info(":blue[**:material/stop_circle: LAST STOP**]")
+                            try:
+                                st.write(":orange[ :material/stop_circle:*%s*]"%time_stop[0].split('_')[0:3])
+                                st.write(":orange[ :material/dns: *%s*]"%time_stop[0].split('_')[3])
+                            except:
+                                st.write(":orange[ :material/stop_circle: *None*]")
+                                st.write(":orange[ :material/dns: *None*]")
+                    with col117:
+                        with st.popover(':green[:material/build:]', use_container_width=True):
+                            view_config_avail_sc, view_config_avail_ct = CALL_API_BLASTER(ip, port, i, 'GET', payload_start, '/config.json')
+                            if view_config_avail_sc==200:
+                                try:
+                                    config_avail = json.loads(view_config_avail_ct)
+                                    st.code(json.dumps(config_avail, indent=2), language='json')
+                                except Exception as e:
+                                    st.error(':blue[Test profile %s have json syntax error %s]'%(i,e), icon="🔥")
             # for i in select_running_instance_cb:
             i= running_graph_profile
             # st.markdown("""
