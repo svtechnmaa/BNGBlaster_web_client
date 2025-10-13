@@ -279,13 +279,13 @@ jobs:
   #         ./log.html
   #         ./report.html
    
-  release: 
-    if: (github.event_name == 'push' || github.event_name == 'pull_request') && needs.build.outputs.check_no_ci != 'true'
-    needs: test
-    runs-on: ubuntu-dind
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+  # release: 
+  #   if: (github.event_name == 'push' || github.event_name == 'pull_request') && needs.build.outputs.check_no_ci != 'true'
+  #   needs: test
+  #   runs-on: ubuntu-dind
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
       
   #   - name: Semantic Release
   #     uses: cycjimmy/semantic-release-action@v4
