@@ -121,7 +121,7 @@ jobs:
         echo "COMMIT_AUTHOR_NAME=${COMMIT_AUTHOR_NAME}" >> $GITHUB_OUTPUT   
     - name: Scan Dockerfile using Trivy and send mail if vulnerabilities detected
       if: steps.check_commit_message.outputs.no_ci != 'true' && steps.check_commit_message.outputs.no_scan != 'true'
-      uses: svtechnmaa/.github/actions/run_trivy_scan_dockerfile@main
+      uses: svtechnmaa/.github/actions/run_trivy_scan_dockerfile@fix/workflow
       with:
         dockerfile_path: './Dockerfile'
         commit_id: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_ID }}
@@ -166,7 +166,7 @@ jobs:
 
     - name: Scan Docker image using Trivy and send mail if vulnerabilities detected
       if: steps.check_commit_message.outputs.no_ci != 'true' && steps.check_commit_message.outputs.no_scan != 'true'
-      uses: svtechnmaa/.github/actions/run_trivy_scan_image@main
+      uses: svtechnmaa/.github/actions/run_trivy_scan_image@fix/workflow
       with:
         trivy_server: ${{ secrets.TRIVY_SERVER }}
         image_name: ${{env.IMAGE_NAME}}
