@@ -2199,7 +2199,7 @@ except Exception as e:
         error = True
 if st.session_state.p1:
     with col31:
-        if st.button(":material/login: **SELECT**", type= 'primary'):
+        if st.button(":material/login: **SELECT**", type= 'primary', use_container_width=True):
             if error:
                 st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= True, False, False, False, False
                 st.rerun()
@@ -2392,13 +2392,6 @@ if st.session_state.p2:
 
             if submitted:
                 if name and email_receiver and message:
-                    # st.success("📧 Form liên hệ đã được gửi thành công!")
-                    
-                    # Display submitted data
-                    # with st.expander("Chi tiết liên hệ"):
-                    #     st.write(f"**Tên:** {name}")
-                    #     st.write(f"**Email:** {email_receiver}")
-                    #     st.write(f"**Tin nhắn:** {message} from {email}")
                     try:
                         msg = MIMEText(message)
                         msg['From'] = email_sender
