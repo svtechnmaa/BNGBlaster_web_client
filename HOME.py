@@ -1,4 +1,5 @@
 import streamlit as st
+from datetime import datetime, timezone, timedelta
 import smtplib
 from email.mime.text import MIMEText
 # import string
@@ -39,6 +40,7 @@ if 'p1' not in st.session_state:
     st.session_state.running_graph = False # Sign for running graph code
     st.session_state.running_graph_previous = False # Sign for back to p4 por p5 (False back to p4, True back to p5)
     st.session_state.running_graph_profile = ''
+    st.session_state.count_sessions = 0
 def write_dict_to_yaml(data_dict, file_path):
     """
     Write a dictionary to a YAML file.
@@ -174,6 +176,35 @@ dict_blaster_db_format ={}
 for i in range(len(dict_blaster_db.keys())):
     element = {'port': dict_blaster_db[i][1], 'user': dict_blaster_db[i][2], 'passwd': dict_blaster_db[i][3]}
     dict_blaster_db_format[dict_blaster_db[i][0]] = element
+
+##################################### This block for sessions count statistics ##############################
+if st.session_state.count_sessions == 0:
+    if 'sessions' in db.get_all_tables():
+        db.insert('sessions', {'user_id': st.session_state.user, 'visit_time': datetime.now(timezone(timedelta(hours=+7), 'ICT'))})
+    else:
+        if db.db_type == 'mariadb':
+            db.execute_query(
+            """
+            CREATE TABLE IF NOT EXISTS sessions (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id VARCHAR(64),
+                visit_time DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+            )
+            db.insert('sessions', {'user_id': st.session_state.user, 'visit_time': datetime.now(timezone(timedelta(hours=+7), 'ICT'))})
+        else:
+            db.execute_query(
+            """
+            CREATE TABLE IF NOT EXISTS sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT,
+                visit_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+            )
+            db.insert('sessions', {'user_id': st.session_state.user, 'visit_time': datetime.now(timezone(timedelta(hours=+7), 'ICT'))})
+#######################################################################################################
 conn_db.close()
 
 # sqlite_create_table_user(conn)
@@ -185,7 +216,19 @@ conn_db.close()
 # users = sqlite_fetch_users(conn)
 # st.write(users)
 # conn.close()
-
+def get_stats_sessions(interval_query):
+    db= DatabaseConnection()
+    conn = db.connection
+    query = """
+        SELECT DATE(visit_time) AS date, COUNT(*) AS count
+        FROM sessions
+        GROUP BY DATE(visit_time)
+        ORDER BY DATE(visit_time)
+        LIMIT %s
+    """%interval_query
+    df = db.execute_query(query)
+    conn.close()
+    return df
 #############################################################################
 import ipaddress
 def is_valid_ip(ip):
@@ -2337,11 +2380,11 @@ if st.session_state.p2:
             st.markdown("#### Send us a message")
             
             email_sender = 'streamlit.notify@gmail.com'
-            name = st.text_input(":material/badge: Your Name", placeholder="Enter your name...")
-            email = st.text_input(":material/email: Email", placeholder="Enter your email...")
+            name = st.text_input("Your Name :", placeholder="Enter your name...")
+            email = st.text_input("Email :", placeholder="Enter your email...")
             email_receiver = 'linh.nguyentuan@svtech.com.vn'
             app_password="baor pwtl molh izvn"
-            message = st.text_area(":material/message: Message", placeholder="Enter your message...", height=120)
+            message = st.text_area("Message :", placeholder="Enter your message...", height=120)
 
             subject = "[STREAMLIT] BNGBlaster Web Email from %s email <%s>"%(name, email)
 
@@ -3447,6 +3490,21 @@ with col27:
 if dict_user_db[st.session_state.user] == 'admin' and st.session_state.p1:
     st.divider()
     with col25:
+        with st.expander(':green[SESSIONS STATISTICS]'):
+            st.session_state.count_sessions +=1
+            interval_query= st.selectbox(':orange[Select your interval for statistics]', ['1','3','7','14','30','60','90','180','270','365'], index=0)
+            try:
+                df_stats_sessions = pd.DataFrame(get_stats_sessions(interval_query), columns=('date','counts'))
+                if st.button(':material/expand_more:', use_container_width=True):
+                    st.dataframe(df_stats_sessions, use_container_width=True)
+                col1, col2, col3= st.columns([1,1,1])
+                col1.metric(label='Avg sessions per day', value=(round(float(df_stats_sessions['counts'].sum())/int(interval_query),2)), delta="sessions")
+                col2.metric(label='Avg sessions per week', value=(round(float(df_stats_sessions['counts'].sum())/int(interval_query)*7,2)), delta="sessions")
+                col3.metric(label='Avg sessions per year', value=(round(float(df_stats_sessions['counts'].sum())/int(interval_query)*365,2)), delta="sessions")
+                df_stats_sessions.set_index('date', inplace=True)
+                st.line_chart(df_stats_sessions, use_container_width=True , x_label='Day', y_label='Counts', color='#ffaa00')
+            except Exception as e:
+                st.error(e)
         with st.expander(':green[RESET PASSWORD]'):
             try:
                 username_of_forgotten_password, email_of_forgotten_password, new_random_password = authenticator.forgot_password()
