@@ -85,24 +85,111 @@ def log_authorize(user, server , action):
 
 # hashed_passwords = Hasher(['xxx']).generate()
 # print(hashed_passwords)
+import sys
+sys.path.append('../')
+from lib import *
+
 import yaml
 from yaml.loader import SafeLoader
-with open('authen/config.yaml') as file:
-    config_authen = yaml.load(file, Loader=SafeLoader)
-authenticator = stauth.Authenticate(
-    config_authen['credentials'],
-    config_authen['cookie']['name'],
-    config_authen['cookie']['key'],
-    config_authen['cookie']['expiry_days'],
-    config_authen['preauthorized']
-)
+# with open('authen/config.yaml') as file:
+#     config_authen = yaml.load(file, Loader=SafeLoader)
+# authenticator = stauth.Authenticate(
+#     config_authen['credentials'],
+#     config_authen['cookie']['name'],
+#     config_authen['cookie']['key'],
+#     config_authen['cookie']['expiry_days'],
+#     config_authen['preauthorized']
+# )
 colx, coly, colz = st.columns([1,1.8,1])
 if not st.session_state.p2:
     st.logo('./images/svtech-logo.png', size= 'large', link = 'https://www.svtech.com.vn/')
     with coly:
         st.image('./images/home.png', output_format= 'JPEG')
-with coly:
-    name, authentication_status, username = authenticator.login('main', fields = {'Form name': ':pushpin: :orange[LOGIN]'})
+# st.write(st.experimental_user)
+if not st.experimental_user.is_logged_in:
+    # with coly:
+    #     name, authentication_status, username = authenticator.login('main', fields = {'Form name': ':pushpin: :orange[LOGIN]'})
+    # if st.button(":material/login: :blue[G]:red[o]:orange[o]:blue[g]:green[l]:red[e]", type='primary'):
+    google_logo_html = """
+    <style>
+    .google-logo {
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: #fff;
+    border: 1px solid rgba(60,64,67,0.3);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.12);
+    transition: box-shadow 150ms ease, transform 80ms ease;
+    cursor: pointer;
+    }
+    .google-logo:hover {
+    box-shadow: 0 4px 10px rgba(60,64,67,0.15);
+    transform: translateY(-1px);
+    }
+    .google-logo svg {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    }
+    </style>
+
+    <div class="google-logo">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 533.5 544.3">
+        <path fill="#4285F4" d="M533.5 278.4c0-18.6-1.5-37.6-4.6-55.6H272v105.3h146.9c-6.3 34-25.1 62.9-53.6 82v67.9h86.6c50.8-46.8 81.6-115.9 81.6-199.6z"/>
+        <path fill="#34A853" d="M272 544.3c72.6 0 133.6-24.1 178.1-65.2l-86.6-67.9c-24 16.2-54.6 25.8-91.6 25.8-70.4 0-130-47.6-151.3-111.4H33.4v69.8C77.7 484.3 169 544.3 272 544.3z"/>
+        <path fill="#FBBC05" d="M120.7 325.7c-8-23.6-8-48.9 0-72.5V183.4H33.4c-37.5 74.8-37.5 163.6 0 238.4l87.3-69.8z"/>
+        <path fill="#EA4335" d="M272 107.7c39.4 0 74.9 13.6 102.8 40.4l77.1-77.1C405.8 24.4 344.8 0 272 0 169 0 77.7 60 33.4 151.2l87.3 69.8C142 155.3 201.6 107.7 272 107.7z"/>
+    </svg>
+    </div>
+    """
+    st.markdown("""
+        <style>
+        .stButton>button {
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            width: 200px;
+            justify-content: center;
+            align-items: center;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    st.write('')
+    col1,col2,col3,= st.columns([9,5.5,10], vertical_alignment = 'top')
+    with col2:
+        st.warning('Your session has expired, please login again.')
+    col1,col2,col3,col4 = st.columns([9,1,3.5,10], vertical_alignment = 'top')
+    with col2:
+        st.markdown(google_logo_html, unsafe_allow_html=True)
+    with col3:
+        if st.button("Login with Google", use_container_width=True, type='primary'):
+            st.login()
+        st.stop()
+else:
+    name=st.experimental_user.name
+    authentication_status= st.experimental_user.is_logged_in
+    username= st.experimental_user.email
+    # st.logout()
+    db = DatabaseConnection()
+    conn= db.connection
+    # sqlite_insert_user(conn, username_of_registered_user, 'operator')
+    if username == 'linh.nguyentuan@svtech.com.vn':
+        temp_user_insert = {'name': username, 'class': 'admin'}
+    else:
+        temp_user_insert = {'name': username, 'class': 'operator'}
+    list_user_db = [i[0] for i in db.execute_query("SELECT name FROM users GROUP BY name")]
+    if username in list_user_db:
+        pass
+    else:
+        db.insert('users', temp_user_insert)
+    conn.close()
+
 if authentication_status:
     st.session_state.user= username
     # authenticator.logout('Logout', 'main')
@@ -138,31 +225,6 @@ elif authentication_status == None:
 #     st.write('Your email is '+ st.session_state['user_info'].get('email'))
 #     if st.button('Log out'):
 #         authenticator.logout()
-########################### Functions SQLite ########################
-import sys
-sys.path.append('../')
-from lib import *
-
-# def create_table(conn, table_name, columns):
-#     cursor = conn.cursor()
-#     # Construct the CREATE TABLE SQL statement
-#     columns_with_types = ', '.join(f"{col_name} {data_type}" for col_name, data_type in columns.items())
-#     create_table_sql = f"CREATE TABLE IF NOT EXISTS {table_name} ({columns_with_types})"
-#     cursor.execute(create_table_sql)
-#     conn.commit()
-#     print(f"Table '{table_name}' created successfully.")
-# table_name = 'blasters'
-# columns = {
-#     'ip': 'TEXT PRIMARY KEY NOT NULL',
-#     'port': 'INTEGER NOT NULL',
-#     'user': 'TEXT NOT NULL',
-#     'passwd': 'TEXT NOT NULL'
-# }
-# db_name = 'blaster.db'
-# conn = sqlite_connect_to_db(db_name)
-# # Create table
-# create_table(conn, table_name, columns)
-
 ############# Collect to DB and save to varriable ###################################
 user_privilege = ['admin', 'admin1', 'operator']
 db = DatabaseConnection()
@@ -3478,7 +3540,7 @@ if st.session_state.p5:
                 st.warning('Report not existed', icon="🚨")
         print('[404] File report.json does not exist')
 st.divider()
-col25,col27,col26,col28 = st.columns([10,1,1,0.4])
+col25,col27,col26,col28 = st.columns([10,1,1,1])
 if dict_user_db[st.session_state.user] == 'admin':
     if st.session_state.p2 :
         with col27:
@@ -3488,7 +3550,9 @@ if dict_user_db[st.session_state.user] == 'admin':
 if authentication_status:
     if st.session_state.p1 or st.session_state.p2 :
         with col28:
-            authenticator.logout(':x:', 'main')
+            # authenticator.logout(':x:', 'main')
+            if st.button('**:material/logout:**', use_container_width= True):
+                st.logout()
 with col26:
     if st.session_state.p2:
         if st.button(":material/storage:", use_container_width= True):
@@ -3513,35 +3577,35 @@ if dict_user_db[st.session_state.user] == 'admin' and st.session_state.admin:
             st.line_chart(df_stats_sessions, use_container_width=True , x_label='Day', y_label='Counts', color='#ffaa00')
         except Exception as e:
             st.error(e)
-    with st.expander(':green[RESET PASSWORD]'):
-        try:
-            username_of_forgotten_password, email_of_forgotten_password, new_random_password = authenticator.forgot_password()
-            st.write(username_of_forgotten_password, '\n', email_of_forgotten_password, '\n' ,new_random_password)
-            if username_of_forgotten_password:
-                with open('authen/config.yaml', 'w') as file:
-                    yaml.dump(config_authen, file, default_flow_style=False)
-                st.success('New password to be sent securely', icon="🔥")
-                # The developer should securely transfer the new password to the user.
-            elif username_of_forgotten_password == False:
-                st.error('Username not found')
-        except Exception as e:
-            st.error(e)
-    with st.expander(':green[CREATE USER LOGIN]'):
-        try:
-            email_of_registered_user, username_of_registered_user, name_of_registered_user = authenticator.register_user(pre_authorization=False)
-            if email_of_registered_user:
-                with open('authen/config.yaml', 'w') as file:
-                    yaml.dump(config_authen, file, default_flow_style=False)
-                # conn = sqlite_connect_to_db(db_name)
-                db = DatabaseConnection()
-                conn= db.connection
-                # sqlite_insert_user(conn, username_of_registered_user, 'operator')
-                temp_user_insert = {'name': username_of_registered_user, 'class': 'operator'}
-                db.insert('users', temp_user_insert)
-                conn.close()
-                st.success('User registered successfully', icon="🔥")
-        except Exception as e:
-            st.error(e)
+    # with st.expander(':green[RESET PASSWORD]'):
+    #     try:
+    #         username_of_forgotten_password, email_of_forgotten_password, new_random_password = authenticator.forgot_password()
+    #         st.write(username_of_forgotten_password, '\n', email_of_forgotten_password, '\n' ,new_random_password)
+    #         if username_of_forgotten_password:
+    #             with open('authen/config.yaml', 'w') as file:
+    #                 yaml.dump(config_authen, file, default_flow_style=False)
+    #             st.success('New password to be sent securely', icon="🔥")
+    #             # The developer should securely transfer the new password to the user.
+    #         elif username_of_forgotten_password == False:
+    #             st.error('Username not found')
+    #     except Exception as e:
+    #         st.error(e)
+    # with st.expander(':green[CREATE USER LOGIN]'):
+    #     try:
+    #         email_of_registered_user, username_of_registered_user, name_of_registered_user = authenticator.register_user(pre_authorization=False)
+    #         if email_of_registered_user:
+    #             with open('authen/config.yaml', 'w') as file:
+    #                 yaml.dump(config_authen, file, default_flow_style=False)
+    #             # conn = sqlite_connect_to_db(db_name)
+    #             db = DatabaseConnection()
+    #             conn= db.connection
+    #             # sqlite_insert_user(conn, username_of_registered_user, 'operator')
+    #             temp_user_insert = {'name': username_of_registered_user, 'class': 'operator'}
+    #             db.insert('users', temp_user_insert)
+    #             conn.close()
+    #             st.success('User registered successfully', icon="🔥")
+    #     except Exception as e:
+    #         st.error(e)
     with st.expander(':green[EDIT USER PRIVILEGES]'):
         col1, col2= st.columns([1,1])
         with col1:
@@ -3636,13 +3700,13 @@ if dict_user_db[st.session_state.user] == 'admin' and st.session_state.admin:
                 # conn.close()
                 db.close_connection()
 ################################# For user ##########################################
-if st.session_state.p1:
-    with col25:
-        with st.expander(':green[CHANGE YOUR PASSWORD]'):
-            try:
-                if authenticator.reset_password(st.session_state["username"], fields= {'Form name': ':herb: :orange[CHANGE YOUR PASSWORD]', 'Reset':':herb: :blue[**CHANGE**]'}):
-                    with open('authen/config.yaml', 'w') as file:
-                        yaml.dump(config_authen, file, default_flow_style=False)
-                    st.success('Password modified successfully')
-            except Exception as e:
-                st.error(f'Your password incorrect. Error: {e}', icon="🚨")
+# if st.session_state.p1:
+#     with col25:
+#         with st.expander(':green[CHANGE YOUR PASSWORD]'):
+#             try:
+#                 if authenticator.reset_password(st.session_state["username"], fields= {'Form name': ':herb: :orange[CHANGE YOUR PASSWORD]', 'Reset':':herb: :blue[**CHANGE**]'}):
+#                     with open('authen/config.yaml', 'w') as file:
+#                         yaml.dump(config_authen, file, default_flow_style=False)
+#                     st.success('Password modified successfully')
+#             except Exception as e:
+#                 st.error(f'Your password incorrect. Error: {e}', icon="🚨")
