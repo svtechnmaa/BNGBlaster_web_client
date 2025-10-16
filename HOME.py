@@ -38,6 +38,7 @@ if 'p1' not in st.session_state:
     st.session_state.p3_edit_select = ''
     st.session_state.p4_running_select = ''
     st.session_state.running_graph = False # Sign for running graph code
+    st.session_state.admin = False # Admin page
     st.session_state.running_graph_previous = False # Sign for back to p4 por p5 (False back to p4, True back to p5)
     st.session_state.running_graph_profile = ''
     st.session_state.count_sessions = 0
@@ -96,8 +97,8 @@ authenticator = stauth.Authenticate(
     config_authen['preauthorized']
 )
 colx, coly, colz = st.columns([1,1.8,1])
-st.logo('./images/svtech-logo.png', size= 'large', link = 'https://www.svtech.com.vn/')
 if not st.session_state.p2:
+    st.logo('./images/svtech-logo.png', size= 'large', link = 'https://www.svtech.com.vn/')
     with coly:
         st.image('./images/home.png', output_format= 'JPEG')
 with coly:
@@ -3406,6 +3407,14 @@ if st.session_state.running_graph:
             st.session_state.running_graph=False
             st.rerun()
     blaster_status_graph(blaster_server['ip'],blaster_server['port'], st.session_state.running_graph_profile) # call function display status of blaster server
+if st.session_state.admin:
+    st.title(':material/fingerprint: :rainbow[ADMIN]')
+    col41, col42 ,col43 =st.columns([19,0.9,0.9])
+    with col43:
+        if st.button(':material/arrow_back_ios:', use_container_width=True):
+            st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, True, False, False, False
+            st.session_state.admin= False
+            st.rerun()
 if st.session_state.p5:
     st.title(':material/insights: :rainbow[DASHBOARD]')
     col61, col62 ,col63 =st.columns([19,0.9,0.9])
@@ -3469,157 +3478,163 @@ if st.session_state.p5:
                 st.warning('Report not existed', icon="🚨")
         print('[404] File report.json does not exist')
 st.divider()
-col25,col27,col26 = st.columns([10,1,1])
+col25,col27,col26,col28 = st.columns([10,1,1,0.4])
+if dict_user_db[st.session_state.user] == 'admin':
+    if st.session_state.p2 :
+        with col27:
+            if st.button(':material/fingerprint:', use_container_width= True):
+                st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5,  st.session_state.admin= False, False, False, False, False, True
+                st.rerun()
 if authentication_status:
     if st.session_state.p1 or st.session_state.p2 :
-        with col26:
+        with col28:
             authenticator.logout(':x:', 'main')
-with col27:
+with col26:
     if st.session_state.p2:
         if st.button(":material/storage:", use_container_width= True):
             st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= True, False, False, False, False
             st.rerun()
 ################################# For ADMIN ##########################################
-if dict_user_db[st.session_state.user] == 'admin' and st.session_state.p1:
-    st.divider()
-    with col25:
-        with st.expander(':green[SESSIONS STATISTICS]'):
-            st.session_state.count_sessions +=1
-            interval_query= st.selectbox(':orange[Select your interval for statistics]', ['1','3','7','14','30','60','90','180','270','365'], index=0)
-            try:
-                df_stats_sessions = pd.DataFrame(get_stats_sessions(interval_query), columns=('date','counts'))
-                if st.button(':material/expand_more:', use_container_width=True):
-                    st.dataframe(df_stats_sessions, use_container_width=True)
-                col1, col2, col3= st.columns([1,1,1])
-                col1.metric(label='Avg sessions per day', value=(round(float(df_stats_sessions['counts'].sum())/int(interval_query),2)), delta="sessions")
-                col2.metric(label='Avg sessions per week', value=(round(float(df_stats_sessions['counts'].sum())/int(interval_query)*7,2)), delta="sessions")
-                col3.metric(label='Avg sessions per year', value=(round(float(df_stats_sessions['counts'].sum())/int(interval_query)*365,2)), delta="sessions")
-                df_stats_sessions.set_index('date', inplace=True)
-                st.line_chart(df_stats_sessions, use_container_width=True , x_label='Day', y_label='Counts', color='#ffaa00')
-            except Exception as e:
-                st.error(e)
-        with st.expander(':green[RESET PASSWORD]'):
-            try:
-                username_of_forgotten_password, email_of_forgotten_password, new_random_password = authenticator.forgot_password()
-                st.write(username_of_forgotten_password, '\n', email_of_forgotten_password, '\n' ,new_random_password)
-                if username_of_forgotten_password:
-                    with open('authen/config.yaml', 'w') as file:
-                        yaml.dump(config_authen, file, default_flow_style=False)
-                    st.success('New password to be sent securely', icon="🔥")
-                    # The developer should securely transfer the new password to the user.
-                elif username_of_forgotten_password == False:
-                    st.error('Username not found')
-            except Exception as e:
-                st.error(e)
-        with st.expander(':green[CREATE USER LOGIN]'):
-            try:
-                email_of_registered_user, username_of_registered_user, name_of_registered_user = authenticator.register_user(pre_authorization=False)
-                if email_of_registered_user:
-                    with open('authen/config.yaml', 'w') as file:
-                        yaml.dump(config_authen, file, default_flow_style=False)
+if dict_user_db[st.session_state.user] == 'admin' and st.session_state.admin:
+    # st.divider()
+    # with col25:
+    with st.expander(':green[SESSIONS STATISTICS]', expanded=True):
+        st.session_state.count_sessions +=1
+        interval_query= st.selectbox(':orange[Select your interval for statistics]', ['1','3','7','14','30','60','90','180','270','365'], index=4)
+        try:
+            df_stats_sessions = pd.DataFrame(get_stats_sessions(interval_query), columns=('date','counts'))
+            if st.button(':material/expand_more:', use_container_width=True):
+                st.dataframe(df_stats_sessions, use_container_width=True)
+            col1, col2, col3= st.columns([1,1,1], border=True)
+            col1.metric(label='Avg sessions per day', value=(round(float(df_stats_sessions['counts'].sum())/int(interval_query),2)), delta="sessions")
+            col2.metric(label='Avg sessions per week', value=(round(float(df_stats_sessions['counts'].sum())/int(interval_query)*7,2)), delta="sessions")
+            col3.metric(label='Avg sessions per year', value=(round(float(df_stats_sessions['counts'].sum())/int(interval_query)*365,2)), delta="sessions")
+            df_stats_sessions.set_index('date', inplace=True)
+            st.line_chart(df_stats_sessions, use_container_width=True , x_label='Day', y_label='Counts', color='#ffaa00')
+        except Exception as e:
+            st.error(e)
+    with st.expander(':green[RESET PASSWORD]'):
+        try:
+            username_of_forgotten_password, email_of_forgotten_password, new_random_password = authenticator.forgot_password()
+            st.write(username_of_forgotten_password, '\n', email_of_forgotten_password, '\n' ,new_random_password)
+            if username_of_forgotten_password:
+                with open('authen/config.yaml', 'w') as file:
+                    yaml.dump(config_authen, file, default_flow_style=False)
+                st.success('New password to be sent securely', icon="🔥")
+                # The developer should securely transfer the new password to the user.
+            elif username_of_forgotten_password == False:
+                st.error('Username not found')
+        except Exception as e:
+            st.error(e)
+    with st.expander(':green[CREATE USER LOGIN]'):
+        try:
+            email_of_registered_user, username_of_registered_user, name_of_registered_user = authenticator.register_user(pre_authorization=False)
+            if email_of_registered_user:
+                with open('authen/config.yaml', 'w') as file:
+                    yaml.dump(config_authen, file, default_flow_style=False)
+                # conn = sqlite_connect_to_db(db_name)
+                db = DatabaseConnection()
+                conn= db.connection
+                # sqlite_insert_user(conn, username_of_registered_user, 'operator')
+                temp_user_insert = {'name': username_of_registered_user, 'class': 'operator'}
+                db.insert('users', temp_user_insert)
+                conn.close()
+                st.success('User registered successfully', icon="🔥")
+        except Exception as e:
+            st.error(e)
+    with st.expander(':green[EDIT USER PRIVILEGES]'):
+        col1, col2= st.columns([1,1])
+        with col1:
+            with st.container(border=True):
+                st.write(":orange[:material/delete: **DELETE**]")
+                # conn = sqlite_connect_to_db(db_name)
+                db = DatabaseConnection()
+                conn= db.connection
+                # users= sqlite_fetch_users(conn)
+                users=db.execute_query('SELECT * from users')
+                st.write(":orange[List users]")
+                st.table(users)
+                list_user=[]
+                for i in users:
+                    list_user.append(i[0])
+                user_select= st.selectbox(":orange[User]", list_user)
+                if st.button(":blue[**DELETE_USER**]"):
+                    # sqlite_delete_user(conn, user_select)
+                    db.delete('users',"name='%s'"%user_select)
+                    st.info(":green[Delete successfully]")
+                conn.close()
+        with col2:
+            with st.container(border=True):
+                st.write(":orange[**UPDATE**]")
+                # conn = sqlite_connect_to_db(db_name)
+                db = DatabaseConnection()
+                conn= db.connection
+                # users= sqlite_fetch_users(conn)
+                users=db.execute_query('SELECT * from users')
+                list_user=[]
+                for i in users:
+                    list_user.append(i[0])
+                user_update= st.selectbox(":orange[User update]", list_user)
+                user_class_update= st.selectbox(":orange[User]", user_privilege)
+                if st.button(":blue[**UPDATE**]"):
+                    # sqlite_update_user_class(conn, user_update, user_class_update)
+                    db.update('users', {'class': '%s'%user_class_update}, "name='%s'"%user_update)
+                    st.info(":green[Update successfully]")
+                conn.close() 
+    with st.expander(':green[EDIT BLASTERs]'):
+        col1, col2= st.columns([1,1])
+        with col1:
+            with st.container(border=True):
+                st.write(":orange[**INSERT NEW BLASTER**]")
+                ip = st.text_input(":orange[Blaster IP]")
+                port= st.text_input(":orange[Blaster PORT]", '8001')
+                user_ssh= st.text_input(":orange[User SSH]")
+                passwd_ssh= st.text_input(":orange[Password SSH]", type= 'password')
+                if st.button(":blue[**INSERT_BLASTER**]"):
                     # conn = sqlite_connect_to_db(db_name)
+                    # sqlite_insert_user(conn, user, user_class)
                     db = DatabaseConnection()
                     conn= db.connection
-                    # sqlite_insert_user(conn, username_of_registered_user, 'operator')
-                    temp_user_insert = {'name': username_of_registered_user, 'class': 'operator'}
-                    db.insert('users', temp_user_insert)
+                    # sqlite_insert_blaster(conn, ip, port, user_ssh, passwd_ssh)
+                    db.insert('blasters', {'ip': ip,'port':port,'user':user_ssh,'passwd':passwd_ssh})
                     conn.close()
-                    st.success('User registered successfully', icon="🔥")
-            except Exception as e:
-                st.error(e)
-        with st.expander(':green[EDIT USER PRIVILEGES]'):
-            col1, col2= st.columns([1,1])
-            with col1:
-                with st.container(border=True):
-                    st.write(":orange[:material/delete: **DELETE**]")
+                    st.info(":green[Insert successfully]")
+        with col2:
+            with st.container(border=True):
+                st.write(":orange[**DELETE BLASTER**]")
+                delete_blaster = st.selectbox(":orange[Select Delete Blaster IP]", dict_blaster_db_format.keys())
+                if st.button(":blue[**DELETE BLASTER**]"):
                     # conn = sqlite_connect_to_db(db_name)
                     db = DatabaseConnection()
                     conn= db.connection
-                    # users= sqlite_fetch_users(conn)
-                    users=db.execute_query('SELECT * from users')
-                    st.write(":orange[List users]")
-                    st.table(users)
-                    list_user=[]
-                    for i in users:
-                        list_user.append(i[0])
-                    user_select= st.selectbox(":orange[User]", list_user)
-                    if st.button(":blue[**DELETE_USER**]"):
-                        # sqlite_delete_user(conn, user_select)
-                        db.delete('users',"name='%s'"%user_select)
-                        st.info(":green[Delete successfully]")
+                    # sqlite_delete_blaster(conn, delete_blaster)
+                    db.delete('blasters',"ip='%s'"%delete_blaster)
                     conn.close()
-            with col2:
-                with st.container(border=True):
-                    st.write(":orange[**UPDATE**]")
-                    # conn = sqlite_connect_to_db(db_name)
-                    db = DatabaseConnection()
-                    conn= db.connection
-                    # users= sqlite_fetch_users(conn)
-                    users=db.execute_query('SELECT * from users')
-                    list_user=[]
-                    for i in users:
-                        list_user.append(i[0])
-                    user_update= st.selectbox(":orange[User update]", list_user)
-                    user_class_update= st.selectbox(":orange[User]", user_privilege)
-                    if st.button(":blue[**UPDATE**]"):
-                        # sqlite_update_user_class(conn, user_update, user_class_update)
-                        db.update('users', {'class': '%s'%user_class_update}, "name='%s'"%user_update)
-                        st.info(":green[Update successfully]")
-                    conn.close() 
-        with st.expander(':green[EDIT BLASTERs]'):
-            col1, col2= st.columns([1,1])
-            with col1:
-                with st.container(border=True):
-                    st.write(":orange[**INSERT NEW BLASTER**]")
-                    ip = st.text_input(":orange[Blaster IP]")
-                    port= st.text_input(":orange[Blaster PORT]", '8001')
-                    user_ssh= st.text_input(":orange[User SSH]")
-                    passwd_ssh= st.text_input(":orange[Password SSH]", type= 'password')
-                    if st.button(":blue[**INSERT_BLASTER**]"):
-                        # conn = sqlite_connect_to_db(db_name)
-                        # sqlite_insert_user(conn, user, user_class)
-                        db = DatabaseConnection()
-                        conn= db.connection
-                        # sqlite_insert_blaster(conn, ip, port, user_ssh, passwd_ssh)
-                        db.insert('blasters', {'ip': ip,'port':port,'user':user_ssh,'passwd':passwd_ssh})
-                        conn.close()
-                        st.info(":green[Insert successfully]")
-            with col2:
-                with st.container(border=True):
-                    st.write(":orange[**DELETE BLASTER**]")
-                    delete_blaster = st.selectbox(":orange[Select Delete Blaster IP]", dict_blaster_db_format.keys())
-                    if st.button(":blue[**DELETE BLASTER**]"):
-                        # conn = sqlite_connect_to_db(db_name)
-                        db = DatabaseConnection()
-                        conn= db.connection
-                        # sqlite_delete_blaster(conn, delete_blaster)
-                        db.delete('blasters',"ip='%s'"%delete_blaster)
-                        conn.close()
-                        st.info(":green[Delete blaster successfully]")
-        with st.expander(':green[LOG USERS ACTIONS]'):
-            with open('auth.log', 'r') as log:
-                logging= log.read()
-                st.text_area(':orange[Logging]',logging, height = 400)
-        with st.expander(':green[DATABASES]'):
-            col1, col2= st.columns([1,1])
-            with col1:
-                with st.container(border=True):
-                    st.write(":orange[**ALL TABLEs**]")
-                    # conn = sqlite_connect_to_db(db_name)
-                    db = DatabaseConnection()
-                    conn= db.connection
-                    # list_table= sqlite_get_all_tables(conn)
-                    list_table= db.get_all_tables()
-                    select_table= st.selectbox(":orange[Get Table]", list_table)
-                    # table_detail= sqlite_fetch_table(conn, select_table)
-                    exec("table_detail= db.execute_query(\"SELECT * FROM %s\")"%select_table)
-                    st.table(table_detail)
-                    if st.button(":blue[**DELETE_TABLE**]"):
-                        # sqlite_delete_table(conn, select_table)
-                        db.delete_table(select_table)
-                        st.info(":green[Delete successfully]")
-                    # conn.close()
-                    db.close_connection()
+                    st.info(":green[Delete blaster successfully]")
+    with st.expander(':green[LOG USERS ACTIONS]'):
+        with open('auth.log', 'r') as log:
+            logging= log.read()
+            st.text_area(':orange[Logging]',logging, height = 400)
+    with st.expander(':green[DATABASES]'):
+        col1, col2= st.columns([1,1])
+        with col1:
+            with st.container(border=True):
+                st.write(":orange[**ALL TABLEs**]")
+                # conn = sqlite_connect_to_db(db_name)
+                db = DatabaseConnection()
+                conn= db.connection
+                # list_table= sqlite_get_all_tables(conn)
+                list_table= db.get_all_tables()
+                select_table= st.selectbox(":orange[Get Table]", list_table)
+                # table_detail= sqlite_fetch_table(conn, select_table)
+                exec("table_detail= db.execute_query(\"SELECT * FROM %s\")"%select_table)
+                st.table(table_detail)
+                if st.button(":blue[**DELETE_TABLE**]"):
+                    # sqlite_delete_table(conn, select_table)
+                    db.delete_table(select_table)
+                    st.info(":green[Delete successfully]")
+                # conn.close()
+                db.close_connection()
 ################################# For user ##########################################
 if st.session_state.p1:
     with col25:
