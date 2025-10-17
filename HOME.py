@@ -3492,35 +3492,35 @@ if st.session_state.admin_page:
             st.line_chart(df_stats_sessions, use_container_width=True , x_label='Day', y_label='Counts', color='#ffaa00')
         except Exception as e:
             st.error(e)
-    with st.expander(':green[RESET PASSWORD]'):
-        try:
-            username_of_forgotten_password, email_of_forgotten_password, new_random_password = authenticator.forgot_password()
-            st.write(username_of_forgotten_password, '\n', email_of_forgotten_password, '\n' ,new_random_password)
-            if username_of_forgotten_password:
-                with open('authen/config.yaml', 'w') as file:
-                    yaml.dump(config_authen, file, default_flow_style=False)
-                st.success('New password to be sent securely', icon="🔥")
-                # The developer should securely transfer the new password to the user.
-            elif username_of_forgotten_password == False:
-                st.error('Username not found')
-        except Exception as e:
-            st.error(e)
-    with st.expander(':green[CREATE USER LOGIN]'):
-        try:
-            email_of_registered_user, username_of_registered_user, name_of_registered_user = authenticator.register_user(pre_authorization=False)
-            if email_of_registered_user:
-                with open('authen/config.yaml', 'w') as file:
-                    yaml.dump(config_authen, file, default_flow_style=False)
-                # conn = sqlite_connect_to_db(db_name)
-                db = DatabaseConnection()
-                conn= db.connection
-                # sqlite_insert_user(conn, username_of_registered_user, 'operator')
-                temp_user_insert = {'name': username_of_registered_user, 'class': 'operator'}
-                db.insert('users', temp_user_insert)
-                conn.close()
-                st.success('User registered successfully', icon="🔥")
-        except Exception as e:
-            st.error(e)
+    # with st.expander(':green[RESET PASSWORD]'):
+    #     try:
+    #         username_of_forgotten_password, email_of_forgotten_password, new_random_password = authenticator.forgot_password()
+    #         st.write(username_of_forgotten_password, '\n', email_of_forgotten_password, '\n' ,new_random_password)
+    #         if username_of_forgotten_password:
+    #             with open('authen/config.yaml', 'w') as file:
+    #                 yaml.dump(config_authen, file, default_flow_style=False)
+    #             st.success('New password to be sent securely', icon="🔥")
+    #             # The developer should securely transfer the new password to the user.
+    #         elif username_of_forgotten_password == False:
+    #             st.error('Username not found')
+    #     except Exception as e:
+    #         st.error(e)
+    # with st.expander(':green[CREATE USER LOGIN]'):
+    #     try:
+    #         email_of_registered_user, username_of_registered_user, name_of_registered_user = authenticator.register_user(pre_authorization=False)
+    #         if email_of_registered_user:
+    #             with open('authen/config.yaml', 'w') as file:
+    #                 yaml.dump(config_authen, file, default_flow_style=False)
+    #             # conn = sqlite_connect_to_db(db_name)
+    #             db = DatabaseConnection()
+    #             conn= db.connection
+    #             # sqlite_insert_user(conn, username_of_registered_user, 'operator')
+    #             temp_user_insert = {'name': username_of_registered_user, 'class': 'operator'}
+    #             db.insert('users', temp_user_insert)
+    #             conn.close()
+    #             st.success('User registered successfully', icon="🔥")
+    #     except Exception as e:
+    #         st.error(e)
     with st.expander(':green[EDIT USER PRIVILEGES]'):
         col1, col2= st.columns([1,1])
         with col1:
@@ -3590,10 +3590,10 @@ if st.session_state.admin_page:
                     db.delete('blasters',"ip='%s'"%delete_blaster)
                     conn.close()
                     st.info(":green[Delete blaster successfully]")
-    with st.expander(':green[LOG USERS ACTIONS]'):
-        with open('auth.log', 'r') as log:
-            logging= log.read()
-            st.text_area(':orange[Logging]',logging, height = 400)
+    # with st.expander(':green[LOG USERS ACTIONS]'):
+    #     with open('auth.log', 'r') as log:
+    #         logging= log.read()
+    #         st.text_area(':orange[Logging]',logging, height = 400)
     with st.expander(':green[DATABASES]'):
         col1, col2= st.columns([1,1])
         with col1:
