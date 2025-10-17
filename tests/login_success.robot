@@ -23,18 +23,11 @@ Stop the webserver
 *** Variables ***
 ${URL}             http://localhost:8505/bngblaster
 ${BROWSER}         headlessfirefox
-${USERNAME}        admin
-${PASSWORD}        admin@123
 
 *** Test Cases ***
 login success test
     Log To Console  test1
     Open Browser  ${URL}  browser=${BROWSER}
     sleep   5
-    Page Should Contain     Username
-    Input Text      id=text_input_1    ${USERNAME}
-    Input Text      id=text_input_2    ${PASSWORD}
-    Click Button    Login
-    sleep   5
-    Page Should Contain     IP_BLASTER
+    Page Should Contain     Use button below for login by Google
     Close Browser

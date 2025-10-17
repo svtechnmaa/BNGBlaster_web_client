@@ -23,18 +23,11 @@ Stop the webserver
 *** Variables ***
 ${URL}             http://localhost:8505/bngblaster
 ${BROWSER}         headlessfirefox
-${USERNAME}        admin
-${PASSWORD}        admin@12345
 
 *** Test Cases ***
 login fail test
     Log To Console  test1
     Open Browser  ${URL}  browser=${BROWSER}
     sleep   5
-    Page Should Contain     Username
-    Input Text      id=text_input_1    ${USERNAME}
-    Input Text      id=text_input_2    ${PASSWORD}
-    Click Button    Login
-    sleep   5
-    Page Should Contain     Username/password is incorrect
+    Page Should Contain     Use button below for login by Google
     Close Browser
