@@ -38,7 +38,7 @@ if 'p1' not in st.session_state:
     st.session_state.p3_edit_select = ''
     st.session_state.p4_running_select = ''
     st.session_state.running_graph = False # Sign for running graph code
-    st.session_state.admin = False # Admin page
+    st.session_state.admin_page = False # Admin page
     st.session_state.running_graph_previous = False # Sign for back to p4 por p5 (False back to p4, True back to p5)
     st.session_state.running_graph_profile = ''
     st.session_state.count_sessions = 0
@@ -3454,19 +3454,29 @@ if st.session_state.running_graph:
             st.session_state.running_graph=False
             st.rerun()
     blaster_status_graph(blaster_server['ip'],blaster_server['port'], st.session_state.running_graph_profile) # call function display status of blaster server
-if st.session_state.admin:
+if st.session_state.admin_page:
     st.title(':material/fingerprint: :rainbow[ADMIN]')
     col41, col42 ,col43 =st.columns([19,0.9,0.9])
     with col43:
         if st.button(':material/arrow_back_ios:', use_container_width=True):
             st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, True, False, False, False
-            st.session_state.admin= False
+            st.session_state.admin_page= False
             st.rerun()
     ################################# For ADMIN ##########################################
-    # if dict_user_db[st.session_state.user] == 'admin' and st.session_state.admin:
+    # if dict_user_db[st.session_state.user] == 'admin' and st.session_state.admin_page:
     # st.divider()
     # with col25:
-    st.info('session_status.user: %s'%st.session_state.user)
+    from streamlit.runtime.scriptrunner import get_script_run_ctx
+
+    def get_session_id():
+        ctx = get_script_run_ctx()
+        if ctx and ctx.session_id:
+            return ctx.session_id
+        return "Unknown session"
+
+    session_id = get_session_id()
+    st.info(f"**Session ID:** {session_id}")
+    st.info('**session_status.user:** %s'%st.session_state.user)
     with st.expander(':green[SESSIONS STATISTICS]', expanded=True):
         st.session_state.count_sessions +=1
         interval_query= st.selectbox(':orange[Select your interval for statistics]', ['1','3','7','14','30','60','90','180','270','365'], index=4)
@@ -3672,7 +3682,7 @@ if dict_user_db[st.session_state.user] == 'admin':
     if st.session_state.p2 :
         with col27:
             if st.button(':material/fingerprint:', use_container_width= True):
-                st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5,  st.session_state.admin= False, False, False, False, False, True
+                st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5,  st.session_state.admin_page= False, False, False, False, False, True
                 st.rerun()
 if st.session_state.p1 or st.session_state.p2 :
     with col28:
