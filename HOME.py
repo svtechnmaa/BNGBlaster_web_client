@@ -157,7 +157,7 @@ def login():
         with col3:
             if st.button("Login with Google", use_container_width=True, type='primary'):
                 st.login()
-                st.stop()
+            st.stop()
     else:
         # st.write(st.experimental_user)
         st.session_state.user= st.experimental_user.email
@@ -177,7 +177,8 @@ def login():
             db.insert('users', temp_user_insert)
         conn.close()
 ############################# Enable when bypass authen by google ##############
-login() # Func disable when bypass authen by google
+if st.session_state.user == '':
+    login() # Func disable when bypass authen by google
 # st.session_state.user= 'admin'
 ############################## For local login ##################################
 # import yaml
@@ -3460,10 +3461,12 @@ if st.session_state.admin:
         if st.button(':material/arrow_back_ios:', use_container_width=True):
             st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, True, False, False, False
             st.session_state.admin= False
+            st.rerun()
     ################################# For ADMIN ##########################################
     # if dict_user_db[st.session_state.user] == 'admin' and st.session_state.admin:
     # st.divider()
     # with col25:
+    st.info('session_status.user: %s'%st.session_state.user)
     with st.expander(':green[SESSIONS STATISTICS]', expanded=True):
         st.session_state.count_sessions +=1
         interval_query= st.selectbox(':orange[Select your interval for statistics]', ['1','3','7','14','30','60','90','180','270','365'], index=4)
