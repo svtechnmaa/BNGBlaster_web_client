@@ -157,7 +157,7 @@ def login():
         with col3:
             if st.button("Login with Google", use_container_width=True, type='primary'):
                 st.login()
-            st.stop()
+                st.stop()
     else:
         # st.write(st.experimental_user)
         st.session_state.user= st.experimental_user.email
@@ -3460,91 +3460,8 @@ if st.session_state.admin:
         if st.button(':material/arrow_back_ios:', use_container_width=True):
             st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, True, False, False, False
             st.session_state.admin= False
-            st.rerun()
-if st.session_state.p5:
-    st.title(':material/insights: :rainbow[DASHBOARD]')
-    col61, col62 ,col63 =st.columns([19,0.9,0.9])
-    with col62:
-        # if st.button('◀️'):
-        if st.button(':material/widgets: ', use_container_width=True):
-            st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, True, False, False, False
-            log_authorize(st.session_state.user,blaster_server['ip'], 'REPORT return HOME')
-            st.rerun()
-    with col63:
-        if st.button(':material/all_inclusive:', use_container_width=True):
-            st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, True, False
-            log_authorize(st.session_state.user,blaster_server['ip'], 'REPORT return RUN')
-            st.rerun()
-    blaster_status(blaster_server['ip'],blaster_server['port'],list_instance_running_from_blaster, list_instance_avail_from_blaster) # call function display status of blaster server
-    # instance_running= ['bgp_linhnt','bras_pppoe_linhnt','bras_pppoe_hoand']
-    with st.container(border=True):
-        st.subheader(':sunny: :green[REPORTING]')
-    col29, col30 = st.columns([1,1])
-    with col29:
-        with st.container(border=True):
-            instance_report = st.selectbox(':orange[Select your test profile for reporting]', list_instance_avail_from_blaster)
-    # run_report_sc, run_report = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], f'{st.session_state.report}', 'GET', payload_start, '/run_report.json')
-    run_report_sc, run_report = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance_report, 'GET', payload_start, '/run_report.json')
-    if run_report_sc == 200:
-        report_timestamp = execute_remote_command_use_passwd_get_time(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"stat --printf=%y /var/bngblaster/{instance_report}/config.json | cut -d. -f1")
-        st.info(f"*Last run: :orange[{report_timestamp}]*")
-        report= json.loads(run_report)
-        df= pd.DataFrame.from_dict(report, orient="index") # convert report to dataframe
-        with col30:
-            with st.container(border=True):
-                key_select = st.multiselect(':orange[Select your fields]',df.columns, default=['interfaces', 'sessions', 'streams'], placeholder = 'Select your filed for reporting')
-        # st.write(key_select)
-        # st.write(list(df.columns))
-        col27, col28 = st.columns([1,3])
-        with col27:
-            with st.container(border=True):
-                st.subheader(":label: :green[METRICS]")
-        with col28:
-            with st.container(border=True):
-                st.subheader(":newspaper: :green[TABLES]")
-        if key_select:
-            for i in key_select:
-                x= json.loads(df[i].to_json(orient= 'index'))
-                # st.write(x['report'])
-                with col27:
-                    with st.container(border=True):
-                        if isinstance(x['report'], int) or isinstance(x['report'], float) or i == 'version':
-                            label= f":orange[**{i}**]"
-                            value= "%s"%x['report']
-                            delta= f"{i}"
-                            st.metric(label= label, value= value, delta=delta)
-                with col28:
-                    with st.container(border=True):
-                        if not (isinstance(x['report'], int) or isinstance(x['report'], float) or i == 'version'):
-                            st.write(f":orange[**{i} statistics**]")
-                            st.dataframe(x['report'], use_container_width= True)
-    else:
-        with col30:
-            with st.container(border=True):
-                st.warning('Report not existed', icon="🚨")
-        print('[404] File report.json does not exist')
-st.divider()
-col25,col27,col26,col28 = st.columns([10,1,1,1])
-if dict_user_db[st.session_state.user] == 'admin':
-    if st.session_state.p2 :
-        with col27:
-            if st.button(':material/fingerprint:', use_container_width= True):
-                st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5,  st.session_state.admin= False, False, False, False, False, True
-                st.rerun()
-if st.session_state.p1 or st.session_state.p2 :
-    with col28:
-        # if st.session_state.login_mode == 'local':
-        #     authenticator.logout(':x:', 'main')
-        # if st.session_state.login_mode == 'google':
-        if st.button('**:material/logout:**', use_container_width= True):
-            st.logout()
-with col26:
-    if st.session_state.p2:
-        if st.button(":material/storage:", use_container_width= True):
-            st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= True, False, False, False, False
-            st.rerun()
-################################# For ADMIN ##########################################
-if dict_user_db[st.session_state.user] == 'admin' and st.session_state.admin:
+    ################################# For ADMIN ##########################################
+    # if dict_user_db[st.session_state.user] == 'admin' and st.session_state.admin:
     # st.divider()
     # with col25:
     with st.expander(':green[SESSIONS STATISTICS]', expanded=True):
@@ -3684,6 +3601,88 @@ if dict_user_db[st.session_state.user] == 'admin' and st.session_state.admin:
                     st.info(":green[Delete successfully]")
                 # conn.close()
                 db.close_connection()
+if st.session_state.p5:
+    st.title(':material/insights: :rainbow[DASHBOARD]')
+    col61, col62 ,col63 =st.columns([19,0.9,0.9])
+    with col62:
+        # if st.button('◀️'):
+        if st.button(':material/widgets: ', use_container_width=True):
+            st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, True, False, False, False
+            log_authorize(st.session_state.user,blaster_server['ip'], 'REPORT return HOME')
+            st.rerun()
+    with col63:
+        if st.button(':material/all_inclusive:', use_container_width=True):
+            st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= False, False, False, True, False
+            log_authorize(st.session_state.user,blaster_server['ip'], 'REPORT return RUN')
+            st.rerun()
+    blaster_status(blaster_server['ip'],blaster_server['port'],list_instance_running_from_blaster, list_instance_avail_from_blaster) # call function display status of blaster server
+    # instance_running= ['bgp_linhnt','bras_pppoe_linhnt','bras_pppoe_hoand']
+    with st.container(border=True):
+        st.subheader(':sunny: :green[REPORTING]')
+    col29, col30 = st.columns([1,1])
+    with col29:
+        with st.container(border=True):
+            instance_report = st.selectbox(':orange[Select your test profile for reporting]', list_instance_avail_from_blaster)
+    # run_report_sc, run_report = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], f'{st.session_state.report}', 'GET', payload_start, '/run_report.json')
+    run_report_sc, run_report = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance_report, 'GET', payload_start, '/run_report.json')
+    if run_report_sc == 200:
+        report_timestamp = execute_remote_command_use_passwd_get_time(blaster_server['ip'], dict_blaster_db_format[blaster_server['ip']].get('user'), dict_blaster_db_format[blaster_server['ip']].get('passwd'), f"stat --printf=%y /var/bngblaster/{instance_report}/config.json | cut -d. -f1")
+        st.info(f"*Last run: :orange[{report_timestamp}]*")
+        report= json.loads(run_report)
+        df= pd.DataFrame.from_dict(report, orient="index") # convert report to dataframe
+        with col30:
+            with st.container(border=True):
+                key_select = st.multiselect(':orange[Select your fields]',df.columns, default=['interfaces', 'sessions', 'streams'], placeholder = 'Select your filed for reporting')
+        # st.write(key_select)
+        # st.write(list(df.columns))
+        col27, col28 = st.columns([1,3])
+        with col27:
+            with st.container(border=True):
+                st.subheader(":label: :green[METRICS]")
+        with col28:
+            with st.container(border=True):
+                st.subheader(":newspaper: :green[TABLES]")
+        if key_select:
+            for i in key_select:
+                x= json.loads(df[i].to_json(orient= 'index'))
+                # st.write(x['report'])
+                with col27:
+                    with st.container(border=True):
+                        if isinstance(x['report'], int) or isinstance(x['report'], float) or i == 'version':
+                            label= f":orange[**{i}**]"
+                            value= "%s"%x['report']
+                            delta= f"{i}"
+                            st.metric(label= label, value= value, delta=delta)
+                with col28:
+                    with st.container(border=True):
+                        if not (isinstance(x['report'], int) or isinstance(x['report'], float) or i == 'version'):
+                            st.write(f":orange[**{i} statistics**]")
+                            st.dataframe(x['report'], use_container_width= True)
+    else:
+        with col30:
+            with st.container(border=True):
+                st.warning('Report not existed', icon="🚨")
+        print('[404] File report.json does not exist')
+st.divider()
+col25,col27,col26,col28 = st.columns([10,1,1,1])
+if dict_user_db[st.session_state.user] == 'admin':
+    if st.session_state.p2 :
+        with col27:
+            if st.button(':material/fingerprint:', use_container_width= True):
+                st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5,  st.session_state.admin= False, False, False, False, False, True
+                st.rerun()
+if st.session_state.p1 or st.session_state.p2 :
+    with col28:
+        # if st.session_state.login_mode == 'local':
+        #     authenticator.logout(':x:', 'main')
+        # if st.session_state.login_mode == 'google':
+        if st.button('**:material/logout:**', use_container_width= True):
+            st.logout()
+with col26:
+    if st.session_state.p2:
+        if st.button(":material/storage:", use_container_width= True):
+            st.session_state.p1, st.session_state.p2, st.session_state.p3, st.session_state.p4, st.session_state.p5= True, False, False, False, False
+            st.rerun()
 ################################# For user ##########################################
 # if st.session_state.p1:
 #     with col25:
