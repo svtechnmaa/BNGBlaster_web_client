@@ -7,7 +7,7 @@
         "gateway": "120.10.10.1",
         "interface": "ens16.2901",
         "ipv6": false,
-        "stream-group-id": 2900,
+        "stream-group-id": 2901,
         "type": "ipoe",
         "vlan-mode": "N:1"
       }
@@ -30,10 +30,10 @@
     {
       "direction": "both",
       "length": 1000,
-      "name": "IPoE-2900",
+      "name": "IPoE-2901",
       "network-interface": "ens17.2900",
       "pps": 1000,
-      "stream-group-id": 2900,
+      "stream-group-id": 2901,
       "type": "ipv4"
     }
   ]

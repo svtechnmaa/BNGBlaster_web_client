@@ -30,7 +30,7 @@ bgp:
     __datatype: str
     __label: bgp/local-as
     __options: []
-    __value: '1401'
+    __value: '2112'
     __widget: text_input
   peer-address:
     __datatype: str

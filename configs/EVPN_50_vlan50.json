@@ -1,0 +1,39 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "10.50.50.3",
+        "address-iter": "0.0.0.1",
+        "gateway": "10.50.50.2",
+        "interface": "ens16.50",
+        "ipv6": false,
+        "stream-group-id": 555,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "network": [
+      {
+        "address": "10.50.50.2/24",
+        "gateway": "10.50.50.1",
+        "gateway-resolve-wait": false,
+        "interface": "ens17.50"
+      }
+    ]
+  },
+  "sessions": {
+    "count": 1
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "name": "EVPN_VL50",
+      "network-interface": "ens8.50",
+      "network-ipv4-address": "10.50.50.2",
+      "pps": 1000,
+      "start-delay": 2,
+      "stream-group-id": 555,
+      "type": "ipv4"
+    }
+  ]
+}

@@ -4,7 +4,7 @@ interfaces:
       __datatype: str
       __label: interfaces/access/address
       __options: []
-      __value: 120.10.10.2
+      __value: 10.31.31.2
       __widget: text_input
     address-iter:
       __datatype: str
@@ -16,13 +16,13 @@ interfaces:
       __datatype: str
       __label: interfaces/access/gateway
       __options: []
-      __value: 120.10.10.1
+      __value: 10.31.31.1
       __widget: text_input
     interface:
       __datatype: interface_auto
       __label: interfaces/access/interface
       __options: []
-      __value: ens16.2901
+      __value: ens16.300
       __widget: text_input
     ipv6:
       __datatype: bool
@@ -68,31 +68,31 @@ interfaces:
       __datatype: str
       __label: interfaces/network/address
       __options: []
-      __value: 160.10.10.2/30
+      __value: 10.32.32.2/24
       __widget: text_input
     gateway:
       __datatype: str
       __label: interfaces/network/gateway
       __options: []
-      __value: 160.10.10.1
+      __value: 10.32.32.1
       __widget: text_input
     interface:
       __datatype: interface_auto
       __label: interfaces/network/interface
       __options: []
-      __value: ens17.2900
+      __value: ens17.300
       __widget: text_input
   rx-threads:
     __datatype: str
     __label: interfaces/rx-threads
     __options: []
-    __value: '5'
+    __value: '100'
     __widget: text_input
   tx-threads:
     __datatype: str
     __label: interfaces/tx-threads
     __options: []
-    __value: '5'
+    __value: '100'
     __widget: text_input
 sessions:
   count:
@@ -124,13 +124,13 @@ streams:
     __datatype: str
     __label: streams/name
     __options: []
-    __value: IPoE-2900
+    __value: clear_all_sessions
     __widget: text_input
   network-interface:
     __datatype: interface_auto
     __label: streams/network-interface
     __options: []
-    __value: ens17.2900
+    __value: ens17.300
     __widget: text_input
   pps:
     __datatype: str

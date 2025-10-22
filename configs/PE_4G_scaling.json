@@ -4,7 +4,7 @@
       "ipv4-unicast"
     ],
     "local-address": "10.73.73.2",
-    "local-as": 1401,
+    "local-as": 7552,
     "peer-address": "10.73.73.1",
     "peer-as": 7552,
     "raw-update-file": "/var/bngblaster/PE_4G_scaling/scale.bgp"

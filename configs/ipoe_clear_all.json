@@ -2,10 +2,10 @@
   "interfaces": {
     "access": [
       {
-        "address": "120.10.10.2",
+        "address": "10.31.31.2",
         "address-iter": "0.0.0.1",
-        "gateway": "120.10.10.1",
-        "interface": "ens16.2901",
+        "gateway": "10.31.31.1",
+        "interface": "ens16.300",
         "ipv6": false,
         "stream-group-id": 2900,
         "type": "ipoe",
@@ -15,13 +15,13 @@
     "io-slots": 65535,
     "network": [
       {
-        "address": "160.10.10.2/30",
-        "gateway": "160.10.10.1",
-        "interface": "ens17.2900"
+        "address": "10.32.32.2/24",
+        "gateway": "10.32.32.1",
+        "interface": "ens17.300"
       }
     ],
-    "rx-threads": 5,
-    "tx-threads": 5
+    "rx-threads": 100,
+    "tx-threads": 100
   },
   "sessions": {
     "count": 100
@@ -30,8 +30,8 @@
     {
       "direction": "both",
       "length": 1000,
-      "name": "IPoE-2900",
-      "network-interface": "ens17.2900",
+      "name": "clear_all_sessions",
+      "network-interface": "ens17.300",
       "pps": 1000,
       "stream-group-id": 2900,
       "type": "ipv4"

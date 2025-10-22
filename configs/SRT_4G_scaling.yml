@@ -23,25 +23,25 @@ bgp:
     __datatype: str
     __label: bgp/local-address
     __options: []
-    __value: 10.200.200.2
+    __value: 10.31.31.2
     __widget: text_input
   local-as:
     __datatype: str
     __label: bgp/local-as
     __options: []
-    __value: 2112
+    __value: '7552'
     __widget: text_input
   peer-address:
     __datatype: str
     __label: bgp/peer-address
     __options: []
-    __value: 10.200.200.1
+    __value: 10.31.31.1
     __widget: text_input
   peer-as:
     __datatype: str
     __label: bgp/peer-as
     __options: []
-    __value: 7552
+    __value: '7552'
     __widget: text_input
   raw-update-file:
     __datatype: str
@@ -55,17 +55,17 @@ interfaces:
       __datatype: str
       __label: interfaces/network/address
       __options: []
-      __value: 10.200.200.2/24
+      __value: 10.31.31.2
       __widget: text_input
     gateway:
       __datatype: str
       __label: interfaces/network/gateway
       __options: []
-      __value: 10.200.200.1
+      __value: 10.31.31.1
       __widget: text_input
     interface:
       __datatype: interface_auto
       __label: interfaces/network/interface
       __options: []
-      __value: ens16.2000
+      __value: ens16.333
       __widget: text_input

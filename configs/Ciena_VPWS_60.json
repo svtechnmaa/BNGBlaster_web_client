@@ -1,0 +1,34 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "10.60.60.2",
+        "gateway": "10.60.60.1",
+        "interface": "ens16.60",
+        "ipv6": false,
+        "stream-group-id": 60,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "network": [
+      {
+        "address": "10.60.60.1/24",
+        "gateway": "10.60.60.2",
+        "gateway-resolve-wait": false,
+        "interface": "ens17.60"
+      }
+    ]
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "length": 1000,
+      "name": "vpws",
+      "network-interface": "ens17.60",
+      "pps": 1000,
+      "stream-group-id": 60,
+      "type": "ipv4"
+    }
+  ]
+}

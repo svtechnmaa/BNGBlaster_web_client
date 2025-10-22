@@ -75,7 +75,7 @@ credentials:
       failed_login_attempts: 0
       logged_in: false
       name: Nik
-      password: $2b$12$MQT.kTB4v4hdxnJwQEEEPerHg/3BSvbEY/gIKN9yxHWJSrODlf.4e
+      password: $2b$12$mCH8ynpl8d56Big15c7toOXHRrD8YYEco6se8UxR.aoZ35moCbsCK
     namnh:
       email: nam.hai@svtech.com.vn
       failed_login_attempts: 0
@@ -114,6 +114,7 @@ credentials:
       password: $2b$12$2Qk78eXGmjZtkCC58uNX4urKPOsKIqVE3Qksru9PNpZmgnu75kVGO
     thonv:
       email: tho.nguyen@svtech.com.vn
+      failed_login_attempts: 0
       logged_in: false
       name: Tho Nguyen
       password: $2b$12$3Q4CusVn7sgEy9fnXky7GuPRTInf5AKG95wu3Dk9EpKNbTVwF0qjq
@@ -128,7 +129,7 @@ credentials:
       failed_login_attempts: 0
       logged_in: false
       name: Tu Doan
-      password: $2b$12$rUStbIAGy/tvj/EvYIXN8umdeS3u77smmdgxYJd/.wD3ubt1BQn4e
+      password: $2b$12$eKfW52tJbPnIQzl.AJUIeunVGi/yip5YGARbpr/nbd/72dscrKQUO
 preauthorized:
   emails:
   - linh.nguyentuan@svtech.com.vncookie: null

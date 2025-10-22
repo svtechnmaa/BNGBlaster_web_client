@@ -4,7 +4,7 @@ interfaces:
       __datatype: str
       __label: interfaces/access/address
       __options: []
-      __value: 120.10.10.2
+      __value: 10.31.31.2
       __widget: text_input
     address-iter:
       __datatype: str
@@ -16,13 +16,13 @@ interfaces:
       __datatype: str
       __label: interfaces/access/gateway
       __options: []
-      __value: 120.10.10.1
+      __value: 10.31.31.1
       __widget: text_input
     interface:
       __datatype: interface_auto
       __label: interfaces/access/interface
       __options: []
-      __value: ens16.2901
+      __value: ens16.30
       __widget: text_input
     ipv6:
       __datatype: bool
@@ -39,7 +39,7 @@ interfaces:
         __max: 65535
         __min: 0
         __step: 1000
-      __value: 2900
+      __value: 30
       __widget: number_input
     type:
       __datatype: str
@@ -57,52 +57,43 @@ interfaces:
       - N:1
       __value: N:1
       __widget: selectbox
-  io-slots:
-    __datatype: str
-    __label: interfaces/io-slots
-    __options: []
-    __value: '65535'
-    __widget: text_input
   network:
   - address:
       __datatype: str
       __label: interfaces/network/address
       __options: []
-      __value: 160.10.10.2/30
+      __value: 10.32.32.2/24
       __widget: text_input
     gateway:
       __datatype: str
       __label: interfaces/network/gateway
       __options: []
-      __value: 160.10.10.1
+      __value: 10.32.32.1
       __widget: text_input
     interface:
       __datatype: interface_auto
       __label: interfaces/network/interface
       __options: []
-      __value: ens17.2900
+      __value: ens17.30
       __widget: text_input
-  rx-threads:
-    __datatype: str
-    __label: interfaces/rx-threads
-    __options: []
-    __value: '5'
-    __widget: text_input
-  tx-threads:
-    __datatype: str
-    __label: interfaces/tx-threads
-    __options: []
-    __value: '5'
-    __widget: text_input
 sessions:
   count:
     __datatype: str
     __label: sessions/count
     __options: []
-    __value: '100'
+    __value: '1'
     __widget: text_input
 streams:
-- direction:
+- Mbps:
+    __datatype: float
+    __label: streams/Mbps
+    __options:
+      __max: 1024.0
+      __min: 0.0
+      __step: 10.0
+    __value: 100.0
+    __widget: number_input
+  direction:
     __datatype: str
     __label: streams/direction
     __options:
@@ -118,31 +109,34 @@ streams:
       __max: 9000
       __min: 76
       __step: 100
-    __value: 1000
+    __value: 3936
     __widget: number_input
   name:
     __datatype: str
     __label: streams/name
     __options: []
-    __value: IPoE-2900
+    __value: L3VPN_30
     __widget: text_input
   network-interface:
     __datatype: interface_auto
     __label: streams/network-interface
     __options: []
-    __value: ens17.2900
+    __value: ens17.30
     __widget: text_input
-  pps:
-    __datatype: str
-    __label: streams/pps
-    __options: []
-    __value: '1000'
-    __widget: text_input
+  priority:
+    __datatype: int
+    __label: streams/priority
+    __options:
+      __max: 256
+      __min: 0
+      __step: 1
+    __value: 72
+    __widget: number_input
   stream-group-id:
     __datatype: str
     __label: streams/stream-group-id
     __options: []
-    __value: '2900'
+    __value: '30'
     __widget: text_input
   type:
     __datatype: str

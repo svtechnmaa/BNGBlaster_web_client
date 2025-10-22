@@ -4,7 +4,7 @@
       "ipv4-unicast"
     ],
     "local-address": "10.25.25.2",
-    "local-as": 1401,
+    "local-as": 7552,
     "peer-address": "10.25.25.1",
     "peer-as": 7552,
     "raw-update-file": "/var/bngblaster/L3VPN_PE_scaling/scale.bgp"

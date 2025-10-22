@@ -29,7 +29,7 @@ bgp:
     __datatype: str
     __label: bgp/local-as
     __options: []
-    __value: 1401
+    __value: '7552'
     __widget: text_input
   peer-address:
     __datatype: str
@@ -41,7 +41,7 @@ bgp:
     __datatype: str
     __label: bgp/peer-as
     __options: []
-    __value: 7552
+    __value: '7552'
     __widget: text_input
   raw-update-file:
     __datatype: str

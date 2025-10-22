@@ -1,0 +1,30 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "authentication-protocol": "PAP",
+        "interface": "ens17.20",
+        "type": "pppoe",
+        "username": "6test01",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "mac-modifier": 10
+  },
+  "ppp": {
+    "authentication": {
+      "password": "svtechmb2030",
+      "retry": 30,
+      "timeout": 2,
+      "username": "6test02"
+    },
+    "mru": 1492
+  },
+  "pppoe": {
+    "reconnect": true,
+    "session-time": 0
+  },
+  "sessions": {
+    "count": 1
+  }
+}

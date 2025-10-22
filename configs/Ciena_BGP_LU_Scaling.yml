@@ -18,36 +18,37 @@ bgp:
     - evpn
     __value:
     - ipv4-unicast
+    - ipv4-labeled-unicast
     __widget: multiselect
   local-address:
     __datatype: str
     __label: bgp/local-address
     __options: []
-    __value: 10.15.15.2
+    __value: 10.103.103.2
     __widget: text_input
   local-as:
     __datatype: str
     __label: bgp/local-as
     __options: []
-    __value: '7552'
+    __value: 2112
     __widget: text_input
   peer-address:
     __datatype: str
     __label: bgp/peer-address
     __options: []
-    __value: 10.15.15.1
+    __value: 10.103.103.1
     __widget: text_input
   peer-as:
     __datatype: str
     __label: bgp/peer-as
     __options: []
-    __value: '7552'
+    __value: 100
     __widget: text_input
   raw-update-file:
     __datatype: str
     __label: bgp/raw-update-file
     __options: []
-    __value: /var/bngblaster/PE_3G_scaling/scale.bgp
+    __value: /var/bngblaster/Ciena_BGP_LU_scaling/scale.bgp
     __widget: text_input
 interfaces:
   network:
@@ -55,17 +56,17 @@ interfaces:
       __datatype: str
       __label: interfaces/network/address
       __options: []
-      __value: 10.15.15.2/24
+      __value: 10.103.103.2/30
       __widget: text_input
     gateway:
       __datatype: str
       __label: interfaces/network/gateway
       __options: []
-      __value: 10.15.15.1
+      __value: 10.103.103.1
       __widget: text_input
     interface:
       __datatype: interface_auto
       __label: interfaces/network/interface
       __options: []
-      __value: ens17.1500
+      __value: ens17.103
       __widget: text_input
