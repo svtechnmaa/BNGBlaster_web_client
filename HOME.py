@@ -263,7 +263,7 @@ def get_stats_sessions(interval_query):
     db= DatabaseConnection()
     conn = db.connection
     query = """
-        SELECT DATE(visit_time) AS date, COUNT(*) AS count
+        SELECT DATE(visit_time) AS date, (COUNT(*)/5) AS count
         FROM sessions
         GROUP BY DATE(visit_time)
         ORDER BY DATE(visit_time)
@@ -937,7 +937,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                     if list_interfaces != []:
                         for i in list_interfaces:
                             if '.' in i['name']: 
-                                st.write(":orange[*%s*]"%i['name'])
+                                # st.write(":orange[*%s*]"%i['name'])
                                 execute_remote_command_use_passwd(ip, dict_blaster_db_format[ip]['user'], dict_blaster_db_format[ip]['passwd'], f"sudo -S ip link delete link {i['name'].split('.')[0]} name {i['name']} type vlan id {i['name'].split('.')[1]}")
                 else:
                     st.toast(":red[Do not have any test profile running]")
@@ -1162,33 +1162,44 @@ def blaster_status_graph(ip, port, running_graph_profile):
                         exec("display_acc_interface_%s = st.empty()"%i)
             with st.container(border= True):
                 with st.container(border= True):
-                    col_stream1, col_stream2,col_stream3,col_stream4,col_stream5= st.columns([1,0.2,3,0.2,1])
-                    with col_stream1:
-                        with st.container(border= True):
+                    payload_command_stream_stats="""
+                    {
+                        "command": "stream-stats"
+                    }
+                    """
+                    run_command_streams_stats_sc, run_command_streams_stats_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_stream_stats, '/_command')
+                    if run_command_streams_stats_sc == 200:
+                        data_streams_stats = json.loads(run_command_streams_stats_ct)
+                        total_flows = data_streams_stats['stream-stats']['total-flows']
+                    if total_flows > 0:
+                        col_stream1, col_stream2,col_stream3,col_stream4,col_stream5= st.columns([1,0.1,3,0.1,1], vertical_alignment='center')
+                        with col_stream1:
+                            # with st.container(border= True):
                             st.write('##### :green[:material/bolt: **STREAMS STATISTICS**]')
-                    with col_stream3:
-                        payload_command_stream_stats="""
-                        {
-                            "command": "stream-stats"
-                        }
-                        """
-                        run_command_streams_stats_sc, run_command_streams_stats_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_stream_stats, '/_command')
-                        if run_command_streams_stats_sc == 200:
-                            data_streams_stats = json.loads(run_command_streams_stats_ct)
-                            total_flows = data_streams_stats['stream-stats']['total-flows']
-                        if total_flows > 0:
+                        with col_stream3:
                             with st.container(border= True):
-                                exec("flow_selection_%s = st.multiselect(':green[:material/add: Select flow-id]', options=range(1,%s), default=[1])"%(i,total_flows+1))
-                    with col_stream5:
-                        if st.button(':orange[:material/bolt: **RESET**]', use_container_width=True, key='%s'%i):
-                            payload_command_stream_reset="""
-                            {
-                                "command": "stream-reset"
-                            }
-                            """
-                            run_command_streams_reset_sc, run_command_streams_reset_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_stream_reset, '/_command')
-                            if run_command_streams_reset_sc == 200:
-                                st.toast(':blue[Reset stream statistic test profile %s successfully]'%i, icon="🔥")
+                                flow_select = st.container(border=True)
+                                col1, col2= st.columns([1,3], border=True)
+                                with col1:
+                                    all =st.toggle(':orange[*Select all flows*]', value=False)
+                                if all:
+                                    with st.container(border= True):
+                                        exec("flow_selection_%s = flow_select.multiselect(':green[:material/add: Select flow-id]', options=range(1,%s), default=range(1,%s))"%(i,total_flows+1,total_flows+1))
+                                else:
+                                    with col2:
+                                        graph_flow_id_tuple= st.slider(':orange[*:material/straighten: Select range of flow-id to display*]', min_value=1, max_value=total_flows, value=(1,1))
+                                    with st.container(border= True):
+                                        exec("flow_selection_%s = flow_select.multiselect(':green[:material/add: Select flow-id]', options=range(1,%s), default=list(range(%s[0],%s[1]+1)))"%(i,total_flows+1, graph_flow_id_tuple,graph_flow_id_tuple))
+                        with col_stream5:
+                            if st.button(':orange[:material/bolt: **RESET**]', use_container_width=True, key='%s'%i):
+                                payload_command_stream_reset="""
+                                {
+                                    "command": "stream-reset"
+                                }
+                                """
+                                run_command_streams_reset_sc, run_command_streams_reset_ct = CALL_API_BLASTER(ip, port, i, 'POST', payload_command_stream_reset, '/_command')
+                                if run_command_streams_reset_sc == 200:
+                                    st.toast(':blue[Reset stream statistic test profile %s successfully]'%i, icon="🔥")
                 with st.container(border= True):
                     exec("display_streams_%s = st.empty()"%i)
             with col_graph:
@@ -3590,10 +3601,11 @@ if st.session_state.admin_page:
                     db.delete('blasters',"ip='%s'"%delete_blaster)
                     conn.close()
                     st.info(":green[Delete blaster successfully]")
-    # with st.expander(':green[LOG USERS ACTIONS]'):
-    #     with open('auth.log', 'r') as log:
-    #         logging= log.read()
-    #         st.text_area(':orange[Logging]',logging, height = 400)
+    with st.expander(':green[LOG USERS ACTIONS]'):
+        if st.button(':material/visibility:', type= 'primary'):
+            with open('auth.log', 'r') as log:
+                logging= log.read()
+            st.text_area(':orange[Logging]',logging, height = 400)
     with st.expander(':green[DATABASES]'):
         col1, col2= st.columns([1,1])
         with col1:
