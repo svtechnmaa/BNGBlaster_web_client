@@ -920,7 +920,7 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
                 final = [dict_sub_interfaces]
                 for i in final:
                     for k, v in i.items():
-                        st.write(':green[ :material/share: *Interface %s existed sub: %s*]'%(k, v)) # Display interface existed sub-interface
+                        st.write(':green[ :material/share: *Interface %s existed sub: %s*]'%(k, sorted(v))) # Display interface existed sub-interface
             # for i in list_int_server:
             #     st.write(':green[ :material/share: *Interface %s existed sub: %s*]'%(i, find_used_vlans(ip, dict_blaster_db_format[ip]['user'], dict_blaster_db_format[ip]['passwd'], i)))
 
@@ -1785,7 +1785,7 @@ def dict_selection_part_UI_new(data, key_up_level, number_column, number_key=0, 
                     list_options.append(e)
             selection= st.multiselect(
                 ":green[:material/add: Level %s]"%number_column,
-                list_options,
+                sorted(list_options),
                 key="%s_%s_%s_%s"%(num_col,number_key,key_up_level, list_to_string(indices,'_'))
             )
             for i in selection:
@@ -1812,10 +1812,10 @@ def dict_selection_part_UI_new(data, key_up_level, number_column, number_key=0, 
                             elif widget_type == "selectbox":
                                 varload = list_to_string(indices, '___') # for using in command below
                                 index = options.index(value) if value in options else 0
-                                exec("%s = st.selectbox(':orange[:material/add: **%s**]', options=options, index=index, key=full_key)"%(varload, label))
+                                exec("%s = st.selectbox(':orange[:material/add: **%s**]', options=sorted(options), index=index, key=full_key)"%(varload, label))
                             elif widget_type == "multiselect":
                                 varload = list_to_string(indices, '___') # for using in command below
-                                exec("%s = st.multiselect(':orange[:material/add: **%s**]', options=options, default=value or [], key=full_key)"%(varload,label))
+                                exec("%s = st.multiselect(':orange[:material/add: **%s**]', options=sorted(options), default=value or [], key=full_key)"%(varload,label))
                             elif widget_type == "checkbox":
                                 varload = list_to_string(indices, '___') # for using in command below
                                 exec("%s = st.checkbox(':orange[:material/add: **%s**]', value=bool(value), key=full_key)"%(varload,label))
@@ -1957,7 +1957,7 @@ def dict_selection_part_UI_edit(data, key_up_level, number_column, number_key=0,
                     list_options.append(e)
             selection= st.multiselect(
                 ":green[:material/add: Level %s]"%number_column,
-                list_options,
+                sorted(list_options),
                 list(data.keys()),
                 key="%s_%s_%s_%s"%(num_col,number_key,key_up_level, list_to_string(indices,'_'))
             )
@@ -1985,10 +1985,10 @@ def dict_selection_part_UI_edit(data, key_up_level, number_column, number_key=0,
                             elif widget_type == "selectbox":
                                 varload = list_to_string(indices, '___') # for using in command below
                                 index = options.index(value) if value in options else 0
-                                exec("%s = st.selectbox(':orange[:material/add: **%s**]', options=options, index=index, key=full_key)"%(varload, label))
+                                exec("%s = st.selectbox(':orange[:material/add: **%s**]', options=sorted(options), index=index, key=full_key)"%(varload, label))
                             elif widget_type == "multiselect":
                                 varload = list_to_string(indices, '___') # for using in command below
-                                exec("%s = st.multiselect(':orange[:material/add: **%s**]', options=options, default=value or [], key=full_key)"%(varload,label))
+                                exec("%s = st.multiselect(':orange[:material/add: **%s**]', options=sorted(options), default=value or [], key=full_key)"%(varload,label))
                             elif widget_type == "checkbox":
                                 varload = list_to_string(indices, '___') # for using in command below
                                 exec("%s = st.checkbox(':orange[:material/add: **%s**]', value=bool(value), key=full_key)"%(varload,label))
@@ -2597,7 +2597,7 @@ if st.session_state.p3:
             with col1:
                 with st.container(border=True):
                     import_clone_new= st.text_input("**:violet[1. NAME OF NEW TEST PROFILE]**")
-                    import_clone_instance= st.selectbox("**:violet[2. CHOOSE TEST PROFILE EXISTED]**", list_instance,placeholder = 'Select one test profile')
+                    import_clone_instance= st.selectbox("**:violet[2. CHOOSE TEST PROFILE EXISTED]**", sorted(list_instance),placeholder = 'Select one test profile')
                     with open("%s/%s.json"%(path_configs,import_clone_instance) , 'r') as edit_config_data:
                         import_clone_json= edit_config_data.read()
                     if import_clone_new:
@@ -2840,9 +2840,9 @@ if st.session_state.p3:
                 edit_list_var=[]
                 with st.container(border=True):
                     if st.session_state.p3_edit_select == '':
-                        edit_instance= st.selectbox(':orange[Select your test profile for modifing]?', options=list_instance, placeholder = 'Select one test profile')
+                        edit_instance= st.selectbox(':orange[Select your test profile for modifing]?', options=sorted(list_instance), placeholder = 'Select one test profile')
                     else:
-                        edit_instance= st.selectbox(':orange[Select your test profile for modifing]?',index=list_instance.index(st.session_state.p3_edit_select), options=list_instance, placeholder = 'Select one test profile')
+                        edit_instance= st.selectbox(':orange[Select your test profile for modifing]?',index=sorted(list_instance).index(st.session_state.p3_edit_select), options=sorted(list_instance), placeholder = 'Select one test profile')
                     log_authorize(st.session_state.user,blaster_server['ip'], f'Edit config {edit_instance}')
                 if os.path.exists('%s/%s.yml'%(path_configs,edit_instance)):
                     with open('%s/%s.yml'%(path_configs,edit_instance), 'r') as file_template:
@@ -3052,9 +3052,9 @@ if st.session_state.p4:
             st.subheader(':sunny: :green[CONFIG MANAGEMENT [%s JSONs]]'%len(list_json))
             with st.container(border= True):
                 if st.session_state.p4_running_select == '':
-                    instance= st.selectbox(':orange[:material/done: Select your test profile]?', list_instance, placeholder = 'Select one test profile')
+                    instance= st.selectbox(':orange[:material/done: Select your test profile]?', sorted(list_instance), placeholder = 'Select one test profile')
                 else:
-                    instance= st.selectbox(':orange[:material/done: Select your test profile]?', index =list_instance.index(st.session_state.p4_running_select), options=list_instance, placeholder = 'Select one test profile')
+                    instance= st.selectbox(':orange[:material/done: Select your test profile]?', index =list_instance.index(st.session_state.p4_running_select), options=sorted(list_instance), placeholder = 'Select one test profile')
                 instance_exist_st, instance_exist_ct = CALL_API_BLASTER(blaster_server['ip'], blaster_server['port'], instance, 'GET', payload_start)
         with col20:
             st.subheader(':sunny: :green[DIAGRAM]')
@@ -3547,7 +3547,7 @@ if st.session_state.admin_page:
                 list_user=[]
                 for i in users:
                     list_user.append(i[0])
-                user_select= st.selectbox(":orange[User]", list_user)
+                user_select= st.selectbox(":orange[User]", sorted(list_user))
                 if st.button(":blue[**DELETE_USER**]"):
                     # sqlite_delete_user(conn, user_select)
                     db.delete('users',"name='%s'"%user_select)
@@ -3564,8 +3564,8 @@ if st.session_state.admin_page:
                 list_user=[]
                 for i in users:
                     list_user.append(i[0])
-                user_update= st.selectbox(":orange[User update]", list_user)
-                user_class_update= st.selectbox(":orange[User]", user_privilege)
+                user_update= st.selectbox(":orange[User update]", sorted(list_user))
+                user_class_update= st.selectbox(":orange[User]", sorted(user_privilege))
                 if st.button(":blue[**UPDATE**]"):
                     # sqlite_update_user_class(conn, user_update, user_class_update)
                     db.update('users', {'class': '%s'%user_class_update}, "name='%s'"%user_update)
@@ -3592,7 +3592,7 @@ if st.session_state.admin_page:
         with col2:
             with st.container(border=True):
                 st.write(":orange[**DELETE BLASTER**]")
-                delete_blaster = st.selectbox(":orange[Select Delete Blaster IP]", dict_blaster_db_format.keys())
+                delete_blaster = st.selectbox(":orange[Select Delete Blaster IP]", sorted(dict_blaster_db_format.keys()))
                 if st.button(":blue[**DELETE BLASTER**]"):
                     # conn = sqlite_connect_to_db(db_name)
                     db = DatabaseConnection()
@@ -3616,7 +3616,7 @@ if st.session_state.admin_page:
                 conn= db.connection
                 # list_table= sqlite_get_all_tables(conn)
                 list_table= db.get_all_tables()
-                select_table= st.selectbox(":orange[Get Table]", list_table)
+                select_table= st.selectbox(":orange[Get Table]", sorted(list_table))
                 # table_detail= sqlite_fetch_table(conn, select_table)
                 exec("table_detail= db.execute_query(\"SELECT * FROM %s\")"%select_table)
                 st.table(table_detail)
@@ -3657,7 +3657,7 @@ if st.session_state.p5:
         df= pd.DataFrame.from_dict(report, orient="index") # convert report to dataframe
         with col30:
             with st.container(border=True):
-                key_select = st.multiselect(':orange[Select your fields]',df.columns, default=['interfaces', 'sessions', 'streams'], placeholder = 'Select your filed for reporting')
+                key_select = st.multiselect(':orange[Select your fields]',sorted(df.columns), default=['interfaces'], placeholder = 'Select your filed for reporting')
         # st.write(key_select)
         # st.write(list(df.columns))
         col27, col28 = st.columns([1,3])
