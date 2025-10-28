@@ -12,7 +12,7 @@ RUN apt-get update -y \
     && apt-get clean all \
     && rm -rf /var/cache/apt/archives /var/lib/apt/lists/* \
     && wget https://github.com/rtbrick/bngblaster/releases/download/0.9.5/bngblaster-0.9.5-ubuntu-22.04_amd64.deb \
-    && sudo dpkg -i bngblaster-0.9.5-ubuntu-22.04_amd64.deb
+    && dpkg -i bngblaster-0.9.5-ubuntu-22.04_amd64.deb
 
 COPY ./requirements.txt /tmp/requirements.txt
 RUN pip install -r /tmp/requirements.txt --no-cache-dir
