@@ -1811,7 +1811,7 @@ def dict_selection_part_UI_new(data, key_up_level, number_column, number_key=0, 
                                     exec("%s = %s(%s)"%(varload, data_type, varload))
                             elif widget_type == "selectbox":
                                 varload = list_to_string(indices, '___') # for using in command below
-                                index = options.index(value) if value in options else 0
+                                index = sorted(options).index(value) if value in options else 0
                                 exec("%s = st.selectbox(':orange[:material/add: **%s**]', options=sorted(options), index=index, key=full_key)"%(varload, label))
                             elif widget_type == "multiselect":
                                 varload = list_to_string(indices, '___') # for using in command below
@@ -1984,7 +1984,7 @@ def dict_selection_part_UI_edit(data, key_up_level, number_column, number_key=0,
                                     exec("%s = %s(%s)"%(varload, data_type, varload))
                             elif widget_type == "selectbox":
                                 varload = list_to_string(indices, '___') # for using in command below
-                                index = options.index(value) if value in options else 0
+                                index = sorted(options).index(value) if value in options else 0
                                 exec("%s = st.selectbox(':orange[:material/add: **%s**]', options=sorted(options), index=index, key=full_key)"%(varload, label))
                             elif widget_type == "multiselect":
                                 varload = list_to_string(indices, '___') # for using in command below
