@@ -177,9 +177,9 @@ def login():
             db.insert('users', temp_user_insert)
         conn.close()
 ############################# Enable when bypass authen by google ##############
-if st.session_state.user == '':
-    login() # Func disable when bypass authen by google
-# st.session_state.user= 'admin'
+# if st.session_state.user == '':
+#     login() # Func disable when bypass authen by google
+st.session_state.user= 'admin'
 ############################## For local login ##################################
 # import yaml
 # from yaml.loader import SafeLoader
@@ -1052,21 +1052,26 @@ def blaster_status(ip, port, list_instance_running_from_blaster, list_instance_a
             #     if select_running_instance[i]:
             #         select_running_instance_cb.append(i)    
     with  st.expander(":material/graphic_eq: :violet[**TEST PROFILE EXISTED CONFIG**]"):
-        for i in list_instance_avail_from_blaster:
-            with st.container(border=True):
-                col1, col2= st.columns([1,1])
-                with col1:
-                    st.write(f":orange[**Profile :**] *{i}*")
-                with col2:
-                    with st.popover(f":blue[:material/visibility: **CONFIG**]", use_container_width=True):
-                        view_config_avail_sc,  view_config_avail_ct = CALL_API_BLASTER(ip, port, i, 'GET', payload_start, '/config.json')
-                        if view_config_avail_sc==200:
-                            try:
-                                config_avail = json.loads(view_config_avail_ct)
-                                st.code(json.dumps(config_avail, indent=2), language='json')
-                            except Exception as e:
-                                st.error(':blue[Test profile %s have json syntax error %s]'%(i,e), icon="🔥")
-                                continue
+        col1, col2=st.columns([1,2], border= True)
+        with col1:
+                existed_select = st.multiselect(':orange[:material/check: Select your existed test profile]',sorted(list_instance_avail_from_blaster), placeholder = 'Select your profile existed')
+        with col2:
+            if existed_select:
+                for i in existed_select:
+                    with st.container(border=True):
+                        col1, col2= st.columns([1,1])
+                        with col1:
+                            st.write(f":orange[**Profile :**] *{i}*")
+                        with col2:
+                            with st.popover(f":blue[:material/visibility: **CONFIG**]", use_container_width=True):
+                                view_config_avail_sc,  view_config_avail_ct = CALL_API_BLASTER(ip, port, i, 'GET', payload_start, '/config.json')
+                                if view_config_avail_sc==200:
+                                    try:
+                                        config_avail = json.loads(view_config_avail_ct)
+                                        st.code(json.dumps(config_avail, indent=2), language='json')
+                                    except Exception as e:
+                                        st.error(':blue[Test profile %s have json syntax error %s]'%(i,e), icon="🔥")
+                                        continue
 def blaster_status_graph(ip, port, running_graph_profile):
     # with col_display:
     # with st.container(border=True):
