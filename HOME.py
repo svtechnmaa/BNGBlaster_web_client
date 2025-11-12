@@ -89,7 +89,7 @@ def log_authorize(user, server , action):
 import sys
 sys.path.append('../')
 from lib import *
-colx, coly, colz = st.columns([1,1.8,1])
+colx, coly, colz = st.columns([1,1,1])
 if not st.session_state.p2:
     st.logo('./images/svtech-logo.png', size= 'large', link = 'https://www.svtech.com.vn/')
     with coly:
@@ -177,9 +177,9 @@ def login():
             db.insert('users', temp_user_insert)
         conn.close()
 ############################# Enable when bypass authen by google ##############
-# if st.session_state.user == '':
-#     login() # Func disable when bypass authen by google
-st.session_state.user= 'admin'
+if st.session_state.user == '':
+    login() # Func disable when bypass authen by google
+# st.session_state.user= 'admin'
 ############################## For local login ##################################
 # import yaml
 # from yaml.loader import SafeLoader
@@ -2417,7 +2417,7 @@ if st.session_state.p2:
             #max-width: 300px;
         }
         .stButton>button p {
-            color: #333;
+            # color: #333;
             font-size: 1.1rem;
             font-weight: bold;
             transition: color 0.3s ease;
@@ -2452,7 +2452,7 @@ if st.session_state.p2:
 
             subject = "[STREAMLIT] BNGBlaster Web Email from %s email <%s>"%(name, email)
 
-            submitted = st.form_submit_button(":material/send: Send", use_container_width=True)
+            submitted = st.form_submit_button(":material/send:", use_container_width=True)
 
             if submitted:
                 if name and email_receiver and message:
