@@ -105,11 +105,11 @@ jobs:
       if: steps.check_commit_message.outputs.no_ci != 'true'
       id: get_job_id
       run: |
-        curl -s -H "Authorization: Bearer ${{ secrets.PUSH_TOKEN }}" \
+        job_id=$(curl -s -H "Authorization: Bearer ${{ secrets.PUSH_TOKEN }}" \
         "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs" \
-        | jq --arg job "${{ github.job }}" '.jobs[] | select(.name==$job) | .id' > job_id.txt
+        | jq --arg job "${{ github.job }}" '.jobs[] | select(.name==$job) | .id')
 
-        echo "job_id=$(cat job_id.txt)" >> $GITHUB_OUTPUT
+        echo "job_id=$job_id" >> $GITHUB_OUTPUT
 
     - name: Determine Commit ID and Comitter Email
       if: steps.check_commit_message.outputs.no_ci != 'true'
@@ -120,7 +120,7 @@ jobs:
         COMMIT_AUTHOR_NAME=$(git show -s --format='%aN' $COMMIT_ID)
         echo "COMMIT_ID=${COMMIT_ID}" >> $GITHUB_OUTPUT
         echo "COMMIT_AUTHOR_EMAIL=${COMMIT_AUTHOR_EMAIL}" >> $GITHUB_OUTPUT
-        echo "COMMIT_AUTHOR_NAME=${COMMIT_AUTHOR_NAME}" >> $GITHUB_OUTPUT 
+        echo "COMMIT_AUTHOR_NAME=${COMMIT_AUTHOR_NAME}" >> $GITHUB_OUTPUT   
 
     - name: Login to Docker Container Registry
       if: |
@@ -158,7 +158,7 @@ jobs:
 
     - name: Scan Dockerfile using Trivy and send mail if vulnerabilities detected
       if: steps.check_commit_message.outputs.no_ci != 'true' && steps.check_commit_message.outputs.no_scan != 'true'
-      uses: svtechnmaa/.github/actions/run_trivy_scan_dockerfile@main
+      uses: svtechnmaa/.github/actions/run_trivy_scan_dockerfile@fix/workflow
       with:
         dockerfile_path: './Dockerfile'
         commit_id: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_ID }}
@@ -170,7 +170,7 @@ jobs:
 
     - name: Scan Docker image using Trivy and send mail if vulnerabilities detected
       if: steps.check_commit_message.outputs.no_ci != 'true' && steps.check_commit_message.outputs.no_scan != 'true'
-      uses: svtechnmaa/.github/actions/run_trivy_scan_image@main
+      uses: svtechnmaa/.github/actions/run_trivy_scan_image@fix/workflow
       with:
         trivy_server: ${{ secrets.TRIVY_SERVER }}
         image_name: ${{env.IMAGE_NAME}}
