@@ -111,16 +111,35 @@ jobs:
 
         echo "job_id=$job_id" >> $GITHUB_OUTPUT
 
-    - name: Determine Commit ID and Comitter Email
-      if: steps.check_commit_message.outputs.no_ci != 'true'
-      id: determine_commit_id_and_email_author
+    - name: Get Commit ID and Committer Info
       run: |
         COMMIT_ID=${{ env.COMMIT_FULL_ID }}
-        COMMIT_AUTHOR_EMAIL=$(git show -s --format='%ae' $COMMIT_ID)
-        COMMIT_AUTHOR_NAME=$(git show -s --format='%aN' $COMMIT_ID)
-        echo "COMMIT_ID=${COMMIT_ID}" >> $GITHUB_OUTPUT
-        echo "COMMIT_AUTHOR_EMAIL=${COMMIT_AUTHOR_EMAIL}" >> $GITHUB_OUTPUT
-        echo "COMMIT_AUTHOR_NAME=${COMMIT_AUTHOR_NAME}" >> $GITHUB_OUTPUT   
+
+        # Get committer info
+        echo "Getting committer info for commit ID: $COMMIT_ID"
+        COMMITTER_EMAIL=$(git show -s --format='%ce' $COMMIT_ID)
+        COMMITTER_NAME=$(git show -s --format='%cn' $COMMIT_ID)
+
+        # Get author info if committer email is noreply
+        if [[ "$COMMITTER_EMAIL" == *noreply* ]]; then 
+          echo "Committer email is noreply, getting author info..."
+          COMMITTER_NAME=$(git show -s --format='%an' $COMMIT_ID)
+          COMMITTER_EMAIL=$(git show -s --format='%ae' $COMMIT_ID)
+        fi
+
+        # Fallback to github event info if still noreply
+        if [[ "$COMMITTER_EMAIL" == *noreply* ]]; then 
+          echo "Committer email is still noreply, using github event info..."
+          COMMITTER_NAME=${{ github.event.pusher.name || github.event.sender.login }}
+          COMMITTER_EMAIL=${{ github.event.pusher.email}}
+        fi
+
+        echo "COMMIT_ID=${COMMIT_ID}" >> $GITHUB_ENV
+        echo "COMMITTER_NAME=${COMMITTER_NAME}" >> $GITHUB_ENV
+        echo "COMMITTER_EMAIL=${COMMITTER_EMAIL}" >> $GITHUB_ENV
+        echo "COMMIT_ID: $COMMIT_ID"
+        echo "COMMITTER_NAME: $COMMITTER_NAME"
+        echo "COMMITTER_EMAIL: $COMMITTER_EMAIL"   
 
     - name: Login to Docker Container Registry
       if: |
@@ -158,7 +177,7 @@ jobs:
 
     - name: Scan Dockerfile using Trivy and send mail if vulnerabilities detected
       if: steps.check_commit_message.outputs.no_ci != 'true' && steps.check_commit_message.outputs.no_scan != 'true'
-      uses: svtechnmaa/.github/actions/run_trivy_scan_dockerfile@fix/workflow
+      uses: svtechnmaa/.github/actions/run_trivy_scan_dockerfile@main
       with:
         dockerfile_path: './Dockerfile'
         commit_id: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_ID }}
@@ -170,7 +189,7 @@ jobs:
 
     - name: Scan Docker image using Trivy and send mail if vulnerabilities detected
       if: steps.check_commit_message.outputs.no_ci != 'true' && steps.check_commit_message.outputs.no_scan != 'true'
-      uses: svtechnmaa/.github/actions/run_trivy_scan_image@fix/workflow
+      uses: svtechnmaa/.github/actions/run_trivy_scan_image@main
       with:
         trivy_server: ${{ secrets.TRIVY_SERVER }}
         image_name: ${{env.IMAGE_NAME}}
