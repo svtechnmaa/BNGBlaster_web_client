@@ -183,8 +183,8 @@ jobs:
         commit_id: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_ID }}
         mail_username: ${{ vars.MAIL_USERNAME }}
         mail_password: ${{ secrets.MAIL_PASSWORD }}
-        mail_receivers: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_AUTHOR_EMAIL }},${{ vars.DEFAULT_MAIL_RECIPIENTS }}
-        commit_author_name: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_AUTHOR_NAME }}
+        mail_receivers: ${{ steps.determine_commit_id_and_email_author.outputs.COMMITTER_EMAIL }},${{ vars.DEFAULT_MAIL_RECIPIENTS }}
+        commit_author_name: ${{ steps.determine_commit_id_and_email_author.outputs.COMMITTER_NAME }}
         job_id: ${{ steps.get_job_id.outputs.job_id }}
 
     - name: Scan Docker image using Trivy and send mail if vulnerabilities detected
@@ -197,8 +197,8 @@ jobs:
         commit_id: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_ID }}
         mail_username: ${{ vars.MAIL_USERNAME }}
         mail_password: ${{ secrets.MAIL_PASSWORD }}
-        mail_receivers: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_AUTHOR_EMAIL }},${{ vars.DEFAULT_MAIL_RECIPIENTS }}
-        commit_author_name: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_AUTHOR_NAME }}
+        mail_receivers: ${{ steps.determine_commit_id_and_email_author.outputs.COMMITTER_EMAIL }},${{ vars.DEFAULT_MAIL_RECIPIENTS }}
+        commit_author_name: ${{ steps.determine_commit_id_and_email_author.outputs.COMMITTER_NAME }}
         job_id: ${{ steps.get_job_id.outputs.job_id }}
 
     - name: Run BNGBlaster app
