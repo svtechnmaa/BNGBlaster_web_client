@@ -105,22 +105,41 @@ jobs:
       if: steps.check_commit_message.outputs.no_ci != 'true'
       id: get_job_id
       run: |
-        curl -s -H "Authorization: Bearer ${{ secrets.PUSH_TOKEN }}" \
+        job_id=$(curl -s -H "Authorization: Bearer ${{ secrets.PUSH_TOKEN }}" \
         "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs" \
-        | jq --arg job "${{ github.job }}" '.jobs[] | select(.name==$job) | .id' > job_id.txt
+        | jq --arg job "${{ github.job }}" '.jobs[] | select(.name==$job) | .id')
 
-        echo "job_id=$(cat job_id.txt)" >> $GITHUB_OUTPUT
+        echo "job_id=$job_id" >> $GITHUB_OUTPUT
 
-    - name: Determine Commit ID and Comitter Email
-      if: steps.check_commit_message.outputs.no_ci != 'true'
-      id: determine_commit_id_and_email_author
+    - name: Get Commit ID and Committer Info
       run: |
         COMMIT_ID=${{ env.COMMIT_FULL_ID }}
-        COMMIT_AUTHOR_EMAIL=$(git show -s --format='%ae' $COMMIT_ID)
-        COMMIT_AUTHOR_NAME=$(git show -s --format='%aN' $COMMIT_ID)
-        echo "COMMIT_ID=${COMMIT_ID}" >> $GITHUB_OUTPUT
-        echo "COMMIT_AUTHOR_EMAIL=${COMMIT_AUTHOR_EMAIL}" >> $GITHUB_OUTPUT
-        echo "COMMIT_AUTHOR_NAME=${COMMIT_AUTHOR_NAME}" >> $GITHUB_OUTPUT 
+
+        # Get committer info
+        echo "Getting committer info for commit ID: $COMMIT_ID"
+        COMMITTER_EMAIL=$(git show -s --format='%ce' $COMMIT_ID)
+        COMMITTER_NAME=$(git show -s --format='%cn' $COMMIT_ID)
+
+        # Get author info if committer email is noreply
+        if [[ "$COMMITTER_EMAIL" == *noreply* ]]; then 
+          echo "Committer email is noreply, getting author info..."
+          COMMITTER_NAME=$(git show -s --format='%an' $COMMIT_ID)
+          COMMITTER_EMAIL=$(git show -s --format='%ae' $COMMIT_ID)
+        fi
+
+        # Fallback to github event info if still noreply
+        if [[ "$COMMITTER_EMAIL" == *noreply* ]]; then 
+          echo "Committer email is still noreply, using github event info..."
+          COMMITTER_NAME=${{ github.event.pusher.name || github.event.sender.login }}
+          COMMITTER_EMAIL=${{ github.event.pusher.email}}
+        fi
+
+        echo "COMMIT_ID=${COMMIT_ID}" >> $GITHUB_ENV
+        echo "COMMITTER_NAME=${COMMITTER_NAME}" >> $GITHUB_ENV
+        echo "COMMITTER_EMAIL=${COMMITTER_EMAIL}" >> $GITHUB_ENV
+        echo "COMMIT_ID: $COMMIT_ID"
+        echo "COMMITTER_NAME: $COMMITTER_NAME"
+        echo "COMMITTER_EMAIL: $COMMITTER_EMAIL"   
 
     - name: Login to Docker Container Registry
       if: |
@@ -164,8 +183,8 @@ jobs:
         commit_id: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_ID }}
         mail_username: ${{ vars.MAIL_USERNAME }}
         mail_password: ${{ secrets.MAIL_PASSWORD }}
-        mail_receivers: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_AUTHOR_EMAIL }},${{ vars.DEFAULT_MAIL_RECIPIENTS }}
-        commit_author_name: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_AUTHOR_NAME }}
+        mail_receivers: ${{ steps.determine_commit_id_and_email_author.outputs.COMMITTER_EMAIL }},${{ vars.DEFAULT_MAIL_RECIPIENTS }}
+        commit_author_name: ${{ steps.determine_commit_id_and_email_author.outputs.COMMITTER_NAME }}
         job_id: ${{ steps.get_job_id.outputs.job_id }}
 
     - name: Scan Docker image using Trivy and send mail if vulnerabilities detected
@@ -178,8 +197,8 @@ jobs:
         commit_id: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_ID }}
         mail_username: ${{ vars.MAIL_USERNAME }}
         mail_password: ${{ secrets.MAIL_PASSWORD }}
-        mail_receivers: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_AUTHOR_EMAIL }},${{ vars.DEFAULT_MAIL_RECIPIENTS }}
-        commit_author_name: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_AUTHOR_NAME }}
+        mail_receivers: ${{ steps.determine_commit_id_and_email_author.outputs.COMMITTER_EMAIL }},${{ vars.DEFAULT_MAIL_RECIPIENTS }}
+        commit_author_name: ${{ steps.determine_commit_id_and_email_author.outputs.COMMITTER_NAME }}
         job_id: ${{ steps.get_job_id.outputs.job_id }}
 
     - name: Run BNGBlaster app
