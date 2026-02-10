@@ -1,0 +1,52 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "authentication-protocol": "PAP",
+        "interface": "ens17.155",
+        "stream-group-id": 1,
+        "type": "pppoe",
+        "username": "longlong_{session-global}",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "io-slots": 65535,
+    "mac-modifier": 0,
+    "network": [
+      {
+        "address": "50.60.70.2/30",
+        "gateway": "50.60.70.1",
+        "interface": "ens16.155"
+      }
+    ],
+    "rx-threads": 5,
+    "tx-threads": 5
+  },
+  "ppp": {
+    "authentication": {
+      "password": "svtech@123",
+      "retry": 30,
+      "timeout": 30,
+      "username": "longlong_{session-global}"
+    },
+    "mru": 1492
+  },
+  "pppoe": {
+    "reconnect": true,
+    "session-time": 0
+  },
+  "sessions": {
+    "count": 10,
+    "max-outstanding": 2000
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "name": "HSI_IPv4",
+      "pps": 1000,
+      "start-delay": 10,
+      "stream-group-id": 1,
+      "type": "ipv4"
+    }
+  ]
+}

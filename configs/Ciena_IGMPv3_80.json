@@ -1,10 +1,10 @@
 {
   "igmp": {
     "group": "239.80.80.1",
-    "group-count": 1,
+    "group-count": 2000,
     "group-iter": "0.0.0.1",
     "multicast-traffic-length": 1000,
-    "multicast-traffic-pps": 1000,
+    "multicast-traffic-pps": 1,
     "send-multicast-traffic": true,
     "source": "10.80.80.1",
     "start-delay": 2,
@@ -31,6 +31,6 @@
     ]
   },
   "sessions": {
-    "count": 1
+    "count": 2000
   }
 }

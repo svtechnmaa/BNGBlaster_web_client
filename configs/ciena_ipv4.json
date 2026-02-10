@@ -1,0 +1,38 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "10.71.71.2",
+        "address-iter": "0.0.0.1",
+        "gateway": "10.71.71.1",
+        "interface": "ens16.70",
+        "ipv6": false,
+        "stream-group-id": 70,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "network": [
+      {
+        "address": "10.70.70.1/24",
+        "gateway": "10.70.70.2",
+        "interface": "ens17.70"
+      }
+    ]
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "length": 1000,
+      "name": "IPv4",
+      "network-interface": "ens17.70",
+      "priority": 72,
+      "pps": 2,
+      "stream-group-id": 70,
+      "type": "ipv4"
+    }
+  ],
+  "sessions": {
+    "count": 1
+  }
+}

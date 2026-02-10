@@ -10,7 +10,7 @@ interfaces:
       __datatype: interface_auto
       __label: interfaces/access/interface
       __options: []
-      __value: ens17.10
+      __value: ens17.3333
       __widget: text_input
     type:
       __datatype: str
@@ -97,5 +97,5 @@ sessions:
     __datatype: str
     __label: sessions/count
     __options: []
-    __value: '3'
+    __value: '100'
     __widget: text_input

@@ -1,0 +1,44 @@
+{
+  "interfaces": {
+    "links": [
+      {
+        "tx-threads": 10,
+        "rx-threads": 10
+      }
+    ],
+    "access": [
+      {
+        "type": "ipoe",
+        "interface": "ens16.1511",
+        "address": "192.168.6.2",
+        "address-iter": "0.0.0.1",
+        "gateway": "192.168.6.1",
+        "ipv6": false,
+        "vlan-mode": "N:1",
+        "stream-group-id": 24
+      }
+    ],
+    "network": [
+      {
+        "interface": "ens17.1512",
+        "address": "192.168.5.6/30",
+        "gateway": "192.168.5.5"
+      }
+    ]
+  },
+  "sessions": {
+    "count": 1
+  },
+  "streams": [
+    {
+      "name": "DIEPNK_TEST_LOOP_MPC8E",
+      "type": "ipv4",
+      "direction": "both",
+      "network-interface": "ens17.1512",
+      "stream-group-id": 24,
+      "pps": 1000,
+      "ttl": 246,
+      "length": 1500
+    }
+  ]
+}

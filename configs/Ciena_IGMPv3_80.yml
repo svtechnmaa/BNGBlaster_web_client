@@ -9,7 +9,7 @@ igmp:
     __datatype: int
     __label: igmp/group-count
     __options: []
-    __value: 1
+    __value: 2000
     __widget: text_input
   group-iter:
     __datatype: str
@@ -27,7 +27,7 @@ igmp:
     __datatype: int
     __label: igmp/multicast-traffic-pps
     __options: []
-    __value: 1000
+    __value: 1
     __widget: text_input
   send-multicast-traffic:
     __datatype: bool
@@ -135,5 +135,5 @@ sessions:
     __datatype: str
     __label: sessions/count
     __options: []
-    __value: '1'
+    __value: '2000'
     __widget: text_input

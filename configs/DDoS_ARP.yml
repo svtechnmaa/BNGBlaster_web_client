@@ -1,0 +1,57 @@
+interfaces:
+  access:
+  - address:
+      __datatype: str
+      __label: interfaces/access/address
+      __options: []
+      __value: 10.200.200.1
+      __widget: text_input
+    address-iter:
+      __datatype: str
+      __label: interfaces/access/address-iter
+      __options: []
+      __value: 0.0.0.1
+      __widget: text_input
+    gateway:
+      __datatype: str
+      __label: interfaces/access/gateway
+      __options: []
+      __value: 10.200.200.2
+      __widget: text_input
+    interface:
+      __datatype: interface_auto
+      __label: interfaces/access/interface
+      __options: []
+      __value: ens16.69
+      __widget: text_input
+    ipv6:
+      __datatype: bool
+      __label: interfaces/access/ipv6
+      __options:
+      - true
+      - false
+      __value: false
+      __widget: selectbox
+    type:
+      __datatype: str
+      __label: interfaces/access/type
+      __options:
+      - pppoe
+      - ipoe
+      __value: ipoe
+      __widget: selectbox
+    vlan-mode:
+      __datatype: str
+      __label: interfaces/access/vlan-mode
+      __options:
+      - '1:1'
+      - N:1
+      __value: N:1
+      __widget: selectbox
+sessions:
+  count:
+    __datatype: str
+    __label: sessions/count
+    __options: []
+    __value: '1000'
+    __widget: text_input

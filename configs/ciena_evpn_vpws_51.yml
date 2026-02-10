@@ -1,0 +1,151 @@
+interfaces:
+  access:
+  - address:
+      __datatype: str
+      __label: interfaces/access/address
+      __options: []
+      __value: 10.51.51.2
+      __widget: text_input
+    address-iter:
+      __datatype: str
+      __label: interfaces/access/address-iter
+      __options: []
+      __value: 0.0.0.5
+      __widget: text_input
+    gateway:
+      __datatype: str
+      __label: interfaces/access/gateway
+      __options: []
+      __value: 10.51.51.1
+      __widget: text_input
+    interface:
+      __datatype: interface_auto
+      __label: interfaces/access/interface
+      __options: []
+      __value: ens16.51
+      __widget: text_input
+    ipv6:
+      __datatype: bool
+      __label: interfaces/access/ipv6
+      __options:
+      - true
+      - false
+      __value: false
+      __widget: selectbox
+    stream-group-id:
+      __datatype: int
+      __label: interfaces/access/stream-group-id
+      __options:
+        __max: 65535
+        __min: 0
+        __step: 1000
+      __value: 51
+      __widget: number_input
+    type:
+      __datatype: str
+      __label: interfaces/access/type
+      __options:
+      - pppoe
+      - ipoe
+      __value: ipoe
+      __widget: selectbox
+    vlan-mode:
+      __datatype: str
+      __label: interfaces/access/vlan-mode
+      __options:
+      - '1:1'
+      - N:1
+      __value: N:1
+      __widget: selectbox
+  network:
+  - address:
+      __datatype: str
+      __label: interfaces/network/address
+      __options: []
+      __value: 10.51.51.1/24
+      __widget: text_input
+    gateway:
+      __datatype: str
+      __label: interfaces/network/gateway
+      __options: []
+      __value: 10.51.51.2
+      __widget: text_input
+    gateway-resolve-wait:
+      __datatype: bool
+      __label: interfaces/network/gateway-resolve-wait
+      __options:
+      - true
+      - false
+      __value: false
+      __widget: selectbox
+    interface:
+      __datatype: interface_auto
+      __label: interfaces/network/interface
+      __options: []
+      __value: ens17.51
+      __widget: text_input
+sessions:
+  count:
+    __datatype: str
+    __label: sessions/count
+    __options: []
+    __value: '1'
+    __widget: text_input
+streams:
+- direction:
+    __datatype: str
+    __label: streams/direction
+    __options:
+    - both
+    - upstream
+    - downstream
+    __value: both
+    __widget: selectbox
+  length:
+    __datatype: int
+    __label: streams/length
+    __options:
+      __max: 9000
+      __min: 76
+      __step: 100
+    __value: 1000
+    __widget: number_input
+  name:
+    __datatype: str
+    __label: streams/name
+    __options: []
+    __value: EVPN-VPWS_51
+    __widget: text_input
+  network-interface:
+    __datatype: interface_auto
+    __label: streams/network-interface
+    __options: []
+    __value: ens17.51
+    __widget: text_input
+  pps:
+    __datatype: str
+    __label: streams/pps
+    __options: []
+    __value: '1000'
+    __widget: text_input
+  start-delay:
+    __datatype: int
+    __label: streams/start-delay
+    __options: []
+    __value: 2
+    __widget: text_input
+  stream-group-id:
+    __datatype: str
+    __label: streams/stream-group-id
+    __options: []
+    __value: '51'
+    __widget: text_input
+  type:
+    __datatype: str
+    __label: streams/type
+    __options:
+    - ipv4
+    - ipv6
+    - ipv6pd
+    __value: ipv4
+    __widget: selectbox

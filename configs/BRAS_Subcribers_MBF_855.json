@@ -33,11 +33,11 @@
     "session-time": 0
   },
   "sessions": {
-    "count": 1000
+    "count": 1
   },
   "streams": [
     {
-      "direction": "both",
+      "direction": "downstream",
       "name": "HSI_IPv4",
       "pps": 1000,
       "stream-group-id": 1,

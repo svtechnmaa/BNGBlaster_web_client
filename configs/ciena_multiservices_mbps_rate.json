@@ -1,0 +1,209 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "10.31.31.2",
+        "gateway": "10.31.31.1",
+        "interface": "ens16.30",
+        "ipv6": false,
+        "stream-group-id": 30,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      },
+      {
+        "address": "10.60.60.2",
+        "gateway": "10.60.60.1",
+        "interface": "ens16.60",
+        "ipv6": false,
+        "stream-group-id": 60,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      },
+      {
+        "address": "10.62.62.2",
+        "gateway": "10.62.62.1",
+        "interface": "ens16.62",
+        "ipv6": false,
+        "stream-group-id": 62,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      },
+      {
+        "address": "10.63.63.2",
+        "gateway": "10.63.63.1",
+        "interface": "ens16.63",
+        "ipv6": false,
+        "stream-group-id": 63,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      },
+      {
+        "address": "10.50.50.2",
+        "gateway": "10.50.50.1",
+        "interface": "ens16.50",
+        "ipv6": false,
+        "stream-group-id": 50,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      },
+      {
+        "address": "10.51.51.2",
+        "gateway": "10.51.51.1",
+        "interface": "ens16.51",
+        "ipv6": false,
+        "stream-group-id": 51,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      },
+      {
+        "address": "10.71.71.2",
+        "gateway": "10.71.71.1",
+        "interface": "ens16.70",
+        "ipv6": false,
+        "stream-group-id": 70,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      },
+      {
+        "address": "10.81.81.2",
+        "gateway": "10.81.81.1",
+        "interface": "ens16.80",
+        "ipv6": false,
+        "stream-group-id": 80,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "network": [
+      {
+        "address": "10.32.32.2/24",
+        "gateway": "10.32.32.1",
+        "interface": "ens17.30"
+      },
+      {
+        "address": "10.60.60.1/24",
+        "gateway": "10.60.60.2",
+        "gateway-resolve-wait": false,
+        "interface": "ens17.60"
+      },
+      {
+        "address": "10.62.62.1/24",
+        "gateway": "10.62.62.2",
+        "gateway-resolve-wait": false,
+        "interface": "ens17.62"
+      },
+      {
+        "address": "10.63.63.1/24",
+        "gateway": "10.63.63.2",
+        "gateway-resolve-wait": false,
+        "interface": "ens17.63"
+      },
+      {
+        "address": "10.50.50.1/24",
+        "gateway": "10.50.50.2",
+        "gateway-resolve-wait": false,
+        "interface": "ens17.50"
+      },
+      {
+        "address": "10.51.51.1/24",
+        "gateway": "10.51.51.2",
+        "gateway-resolve-wait": false,
+        "interface": "ens17.51"
+      },
+      {
+        "address": "10.70.70.1/24",
+        "gateway": "10.70.70.2",
+        "interface": "ens17.70"
+      },
+      {
+        "address": "10.80.80.1/24",
+        "gateway": "10.80.80.2",
+        "interface": "ens17.80"
+      }
+    ],
+    "rx-threads": 5,
+    "tx-threads": 5
+  },
+  "sessions": {
+    "count": 8
+  },
+  "streams": [
+    {
+      "Mbps": 0.2,
+      "direction": "both",
+      "length": 3936,
+      "name": "BE",
+      "network-interface": "ens17.30",
+      "stream-group-id": 30,
+      "type": "ipv4"
+    },
+    {
+      "Mbps": 0.4,
+      "direction": "both",
+      "length": 3936,
+      "name": "AF1",
+      "network-interface": "ens17.60",
+      "stream-group-id": 60,
+      "type": "ipv4"
+    },
+    {
+      "Mbps": 0.6,
+      "direction": "both",
+      "length": 3936,
+      "name": "AF2",
+      "network-interface": "ens17.62",
+      "start-delay": 2,
+      "stream-group-id": 62,
+      "type": "ipv4"
+    },
+    {
+      "Mbps": 0.8,
+      "direction": "both",
+      "length": 3936,
+      "name": "AF3",
+      "network-interface": "ens17.63",
+      "stream-group-id": 63,
+      "type": "ipv4"
+    },
+    {
+      "Mbps": 1.0,
+      "direction": "both",
+      "length": 3936,
+      "name": "AF4",
+      "network-interface": "ens17.50",
+      "start-delay": 2,
+      "stream-group-id": 50,
+      "type": "ipv4"
+    },
+    {
+      "Mbps": 12.0,
+      "direction": "both",
+      "length": 3936,
+      "name": "EF",
+      "network-interface": "ens17.51",
+      "start-delay": 2,
+      "stream-group-id": 51,
+      "type": "ipv4"
+    },
+    {
+      "Mbps": 1.5,
+      "direction": "both",
+      "length": 3936,
+      "name": "CS6",
+      "network-interface": "ens17.70",
+      "start-delay": 2,
+      "stream-group-id": 70,
+      "type": "ipv4"
+    },
+    {
+      "Mbps": 1.0,
+      "direction": "both",
+      "length": 3936,
+      "name": "CS7",
+      "network-interface": "ens17.80",
+      "start-delay": 2,
+      "stream-group-id": 80,
+      "type": "ipv4"
+    }
+  ]
+}

@@ -82,13 +82,13 @@ ppp:
       __datatype: str
       __label: ppp/authentication/retry
       __options: []
-      __value: 30
+      __value: '30'
       __widget: text_input
     timeout:
       __datatype: str
       __label: ppp/authentication/timeout
       __options: []
-      __value: 2
+      __value: '2'
       __widget: text_input
     username:
       __datatype: str
@@ -118,14 +118,14 @@ pppoe:
     __datatype: str
     __label: pppoe/session-time
     __options: []
-    __value: 0
+    __value: '0'
     __widget: text_input
 sessions:
   count:
     __datatype: str
     __label: sessions/count
     __options: []
-    __value: 1000
+    __value: '1'
     __widget: text_input
 streams:
 - direction:
@@ -135,7 +135,7 @@ streams:
     - both
     - upstream
     - downstream
-    __value: both
+    __value: downstream
     __widget: selectbox
   name:
     __datatype: str
@@ -147,13 +147,13 @@ streams:
     __datatype: str
     __label: streams/pps
     __options: []
-    __value: 1000
+    __value: '1000'
     __widget: text_input
   stream-group-id:
     __datatype: str
     __label: streams/stream-group-id
     __options: []
-    __value: 1
+    __value: '1'
     __widget: text_input
   type:
     __datatype: str

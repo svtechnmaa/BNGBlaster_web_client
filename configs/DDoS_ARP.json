@@ -1,0 +1,18 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "10.200.200.1",
+        "address-iter": "0.0.0.1",
+        "gateway": "10.200.200.2",
+        "interface": "ens16.69",
+        "ipv6": false,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ]
+  },
+  "sessions": {
+    "count": 1000
+  }
+}

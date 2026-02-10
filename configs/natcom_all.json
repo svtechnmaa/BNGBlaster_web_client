@@ -1,0 +1,110 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "10.20.20.2",
+        "address-iter": "0.0.0.1",
+        "gateway": "10.20.20.1",
+        "interface": "ens16.200",
+        "ipv6": false,
+        "stream-group-id": 200,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      },
+      {
+        "address": "10.21.21.2",
+        "address-iter": "0.0.0.1",
+        "gateway": "10.21.21.1",
+        "interface": "ens16.666",
+        "ipv6": false,
+        "stream-group-id": 666,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      },
+      {
+        "address": "10.40.40.2",
+        "address-iter": "0.0.0.1",
+        "gateway": "10.40.40.1",
+        "interface": "ens16.2636",
+        "ipv6": false,
+        "stream-group-id": 2636,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      },
+      {
+        "address": "10.30.30.2",
+        "address-iter": "0.0.0.1",
+        "gateway": "10.30.30.1",
+        "interface": "ens16.4001",
+        "ipv6": false,
+        "stream-group-id": 4001,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "network": [
+      {
+        "address": "10.20.20.1/24",
+        "gateway": "10.20.20.1",
+        "gateway-resolve-wait": false,
+        "interface": "ens17.200"
+      },
+      {
+        "address": "10.22.22.2/24",
+        "gateway": "10.22.22.1",
+        "interface": "ens17.666"
+      },
+      {
+        "address": "10.41.41.2/24",
+        "gateway": "10.41.41.1",
+        "interface": "ens17.2636"
+      },
+      {
+        "address": "190.102.95.118/30",
+        "gateway": "190.102.95.117",
+        "interface": "ens17.4001"
+      }
+    ]
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "length": 1000,
+      "name": "2G-TDM",
+      "pps": 1000,
+      "network-interface": "ens17.200",
+      "stream-group-id": 200,
+      "type": "ipv4"
+    },
+    {
+      "direction": "both",
+      "length": 1000,
+      "name": "2G-IP",
+      "pps": 1000,
+      "network-interface": "ens17.666",
+      "stream-group-id": 666,
+      "type": "ipv4"
+    },
+    {
+      "direction": "both",
+      "length": 1000,
+      "name": "4G",
+      "pps": 1000,
+      "network-interface": "ens17.2636",
+      "stream-group-id": 2636,
+      "type": "ipv4"
+    },
+    {
+      "direction": "both",
+      "length": 1000,
+      "name": "L3LL",
+      "pps": 1000,
+      "network-interface": "ens17.4001",
+      "stream-group-id": 4001,
+      "type": "ipv4"
+    }
+  ],
+  "sessions": {
+    "count": 4
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "bgp": {
+    "family": [
+      "ipv4-unicast"
+    ],
+    "local-address": "10.32.32.2",
+    "local-as": 2112,
+    "peer-address": "10.32.32.1",
+    "peer-as": 100,
+    "raw-update-file": "/var/bngblaster/ciena_l3vpn_scaling/test.bgp"
+  },
+  "interfaces": {
+    "network": [
+      {
+        "address": "10.32.32.2/30",
+        "gateway": "10.32.32.1",
+        "interface": "ens17.30"
+      }
+    ]
+  }
+}
