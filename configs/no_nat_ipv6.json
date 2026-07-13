@@ -1,0 +1,36 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "interface": "ens17.61",
+        "type": "ipoe",
+        "vlan-mode": "N:1",
+        "ipv6": true,
+        "stream-group-id": 101
+      }
+    ],
+    "network": [
+      {
+        "interface": "ens16.60",
+        "address-ipv6": "2002:db8:61::2/48",
+        "gateway-ipv6": "2002:db8:61::1"
+      }
+    ]
+  },
+  "dhcpv6": {
+    "enable": true
+  },
+  "sessions": {
+    "count": 1000
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "length": 1000,
+      "name": "BestEffort-v6",
+      "pps": 100000,
+      "stream-group-id": 101,
+      "type": "ipv6"
+    }
+  ]
+}

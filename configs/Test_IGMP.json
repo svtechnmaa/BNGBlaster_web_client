@@ -1,0 +1,26 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "interface": "ens16.366",
+        "type": "ipoe",
+        "address": "172.10.10.2",
+        "gateway": "172.10.10.1",
+        "stream-group-id": 1,
+        "ipv6": false
+      }
+    ]
+  },
+  "sessions": {
+    "count": 1
+  },
+  "igmp": {
+    "version": 2,
+    "autostart": true,
+    "group": "225.10.10.1",
+    "group-count": 2,
+    "group-iter": "0.0.0.1",
+    "zapping-interval": 5,
+    "zapping-count": 1000
+  }
+}

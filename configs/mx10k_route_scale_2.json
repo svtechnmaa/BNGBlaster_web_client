@@ -1,0 +1,21 @@
+{
+  "bgp": {
+    "family": [
+      "ipv4-unicast"
+    ],
+    "local-address": "30.0.1.2",
+    "local-as": 1401,
+    "peer-address": "30.0.1.1",
+    "peer-as": 7552,
+    "raw-update-file": "/var/bngblaster/mx10k_route_scale_2/scale.bgp"
+  },
+  "interfaces": {
+    "network": [
+      {
+        "address": "30.0.1.2/30",
+        "gateway": "30.0.1.1",
+        "interface": "ens17.3001"
+      }
+    ]
+  }
+}

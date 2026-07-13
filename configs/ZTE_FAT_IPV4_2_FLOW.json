@@ -1,0 +1,63 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "192.168.101.1",
+        "address-iter": "0.0.0.1",
+        "gateway": "192.168.101.2",
+        "interface": "ens16.355",
+        "ipv6": false,
+        "stream-group-id": 70,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      },
+      {
+        "address": "192.168.103.1",
+        "address-iter": "0.0.0.1",
+        "gateway": "192.168.103.2",
+        "interface": "ens16.356",
+        "ipv6": false,
+        "stream-group-id": 71,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "network": [
+      {
+        "address": "192.168.102.1/24",
+        "gateway": "192.168.102.2",
+        "interface": "ens17.350"
+      },
+      {
+        "address": "192.168.104.1/24",
+        "gateway": "192.168.104.2",
+        "interface": "ens17.351"
+      }
+    ]
+  },
+  "sessions": {
+    "count": 1
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "length": 1000,
+      "name": "IPv4",
+      "network-interface": "ens17.350",
+      "pps": 1000,
+      "priority": 72,
+      "stream-group-id": 70,
+      "type": "ipv4"
+    },
+    {
+      "direction": "both",
+      "length": 1000,
+      "name": "IPv4",
+      "network-interface": "ens17.351",
+      "pps": 1000,
+      "priority": 72,
+      "stream-group-id": 71,
+      "type": "ipv4"
+    }
+  ]
+}

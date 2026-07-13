@@ -1,0 +1,28 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "10.200.200.10",
+        "address-iter": "0.0.0.1",
+        "gateway": "10.200.200.1",
+        "interface": "ens16.69",
+        "ipv6": false,
+        "stream-group-id": 69,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ]
+  },
+  "sessions": {
+    "count": 100
+  },
+  "streams": [
+    {
+      "direction": "downstream",
+      "name": "ARP_KEEP_ALIVE",
+      "pps": 1,
+      "stream-group-id": 69,
+      "type": "ipv4"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "interfaces": {
+    "access": [
+      {
+        "address": "172.168.0.2",
+        "address-iter": "0.0.0.1",
+        "gateway": "172.168.0.1",
+        "interface": "ens16.1000",
+        "ipv6": false,
+        "stream-group-id": 24,
+        "type": "ipoe",
+        "vlan-mode": "N:1"
+      }
+    ],
+    "network": [
+      {
+        "address": "172.168.0.6/30",
+        "gateway": "172.168.0.5",
+        "interface": "ens17.2000"
+      }
+    ]
+  },
+  "streams": [
+    {
+      "direction": "both",
+      "length": 200,
+      "name": "MX10K_DIEPNK_TEST_THROUGHPUT_CARD2",
+      "network-interface": "ens17.2000",
+      "pps": 1250000,
+      "stream-group-id": 24,
+      "ttl": 250,
+      "type": "ipv4"
+    }
+  ]
+}
