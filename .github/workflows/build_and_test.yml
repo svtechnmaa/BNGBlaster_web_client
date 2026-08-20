@@ -51,7 +51,7 @@ jobs:
       image_name: ${{ steps.build.outputs.image_name }}
       container_name: ${{ steps.build.outputs.container_name }}
     steps:
-      - name: Build, scan, and publish image
+      - name: Build and scan image
         id: build
         uses: svtechnmaa/.github/actions/run_build@feat/workflow_template
         with:
@@ -83,17 +83,26 @@ jobs:
         with:
           ref: ${{ env.COMMIT_FULL_ID }}
           fetch-depth: 0
+      - name: Resolve commit image reference
+        id: resolve_image
+        shell: bash
+        run: |
+          set -euo pipefail
+          commit_short_id="$(git rev-parse --short HEAD)"
+          image_ref="ghcr.io/${GITHUB_REPOSITORY,,}:${commit_short_id}"
+          echo "commit_short_id=${commit_short_id}" >> "${GITHUB_OUTPUT}"
+          echo "image_ref=${image_ref}" >> "${GITHUB_OUTPUT}"
       - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Pull commit image
-        run: docker pull "${{ needs.build.outputs.image_ref }}"
+        run: docker pull "${{ steps.resolve_image.outputs.image_ref }}"
       - name: Run application container
         uses: svtechnmaa/.github/actions/run_docker_container@main
         with:
-          imageName: ${{ needs.build.outputs.image_ref }}
+          imageName: ${{ steps.resolve_image.outputs.image_ref }}
           containerName: ${{ needs.build.outputs.container_name }}
           containerMappingPort: ${{ env.CONTAINER_MAPPING_PORT }}
       - name: Run repository tests
@@ -105,7 +114,7 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COMMIT_TAG: ${{ needs.build.outputs.commit_short_id }}
+          COMMIT_TAG: ${{ steps.resolve_image.outputs.commit_short_id }}
         run: |
           set -euo pipefail
           if [[ "${{ needs.build.outputs.is_latest_or_release_image }}" == "true" ]]; then
